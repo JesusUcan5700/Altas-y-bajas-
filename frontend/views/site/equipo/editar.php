@@ -171,7 +171,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     </div>
 
                     <div class="form-group text-center mt-4">
-                        <?= Html::submitButton('Actualizar Equipo', ['class' => 'btn btn-success btn-lg me-3']) ?>
+                        <?= Html::submitButton('<i class="fas fa-save me-2"></i>Actualizar Equipo', ['class' => 'btn btn-success btn-lg me-3', 'id' => 'btn-actualizar-equipo']) ?>
                         <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver al Listado', ['site/equipo-listar'], ['class' => 'btn btn-secondary btn-lg me-3']) ?>
                         <?= Html::a('<i class="fas fa-home me-2"></i>Menú Principal', ['site/index'], ['class' => 'btn btn-outline-secondary btn-lg']) ?>
                     </div>
@@ -182,6 +182,13 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 </div>
+
+<!-- SweetAlert2 para confirmaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Sistema de confirmación personalizado -->
+<script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
+<!-- Configuraciones específicas de confirmación -->
+<script src="<?= Yii::getAlias('@web') ?>/js/edit-confirmations-config.js"></script>
 
 <script>
 // Funciones para activar/desactivar DD2, DD3 y DD4 en cascada
@@ -479,3 +486,10 @@ function mostrarNotificacionTemporal(mensaje) {
     }, 3000);
 }
 </script>
+
+<!-- SweetAlert2 para confirmaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<!-- Sistema de confirmación de guardado -->
+<script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>

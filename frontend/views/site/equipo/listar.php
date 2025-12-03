@@ -7,6 +7,7 @@ use yii\helpers\Html;
 
 $this->title = 'Gestión de Equipos de Cómputo';
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+$this->registerMetaTag(['name' => 'csrf-token', 'content' => Yii::$app->request->getCsrfToken()]);
 
 // Función para calcular días activos directamente
 function calcularDiasActivo($fechaEmision) {
@@ -151,6 +152,23 @@ $this->registerCss("
                         </div>
                     <?php endif; ?>
 
+                    <!-- Mensajes Flash -->
+                    <?php if (Yii::$app->session->hasFlash('success')): ?>
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <?= Yii::$app->session->getFlash('success') ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (Yii::$app->session->hasFlash('error')): ?>
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <?= Yii::$app->session->getFlash('error') ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- Barra de herramientas -->
                     <div class="row mb-4">
                         <div class="col-md-6">
@@ -188,11 +206,24 @@ $this->registerCss("
                         </div>
                     </div>
 
+                    <!-- Botones de acción múltiple -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <button type="button" class="btn btn-danger" id="eliminarSeleccionados" disabled>
+                                <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
+                            </button>
+                            <span id="contadorSeleccionados" class="ms-3 text-muted">0 elementos seleccionados</span>
+                        </div>
+                    </div>
+
                     <!-- Tabla de Equipos -->
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -210,13 +241,13 @@ $this->registerCss("
                             <tbody id="tbody_equipos">
                                 <?php if (empty($equipos) && !$error): ?>
                                     <tr>
-                                        <td colspan="12" class="text-center text-muted">
-                                            <i class="fas fa-info-circle"></i> No hay equipos de cómputo registrados en el sistema. Por favor, agregue algunos equipos para comenzar.
+                                        <td colspan="13" class="text-center text-muted">
+                                            <i class="fas fa-info-circle"></i> No hay equipos registrados
                                         </td>
                                     </tr>
                                 <?php elseif ($error): ?>
                                     <tr>
-                                        <td colspan="12" class="text-center text-danger">
+                                        <td colspan="13" class="text-center text-danger">
                                             <i class="fas fa-exclamation-triangle"></i> Error al cargar los datos: <?= Html::encode($error) ?>
                                         </td>
                                     </tr>
@@ -226,6 +257,9 @@ $this->registerCss("
                                         $diasActivo = calcularDiasActivo($equipo['EMISION_INVENTARIO']);
                                         ?>
                                         <tr>
+                                            <td>
+                                                <input type="checkbox" class="equipo-checkbox" value="<?= $equipo['idEQUIPO'] ?>">
+                                            </td>
                                             <td><strong><?= htmlspecialchars($equipo['idEQUIPO']) ?></strong></td>
                                             <td><?= htmlspecialchars($equipo['MARCA'] ?? '-') ?></td>
                                             <td><?= htmlspecialchars($equipo['MODELO'] ?? '-') ?></td>
@@ -301,20 +335,40 @@ $this->registerCss("
                                             <td>
                                                 <?php
                                                 $estado = strtolower($equipo['Estado'] ?? '');
-                                                $badgeClass = match($estado) {
-                                                    'activo' => 'bg-success',
-                                                    'reparación', 'reparacion' => 'bg-warning',
-                                                    'inactivo', 'dañado', 'danado' => 'bg-secondary',
-                                                    'baja' => 'bg-danger',
-                                                    default => 'bg-dark'
-                                                };
+                                                $badgeClass = '';
+                                                switch($estado) {
+                                                    case 'activo':
+                                                        $badgeClass = 'bg-success';
+                                                        break;
+                                                    case 'reparación':
+                                                    case 'reparacion':
+                                                        $badgeClass = 'bg-warning';
+                                                        break;
+                                                    case 'inactivo':
+                                                    case 'dañado':
+                                                    case 'danado':
+                                                        $badgeClass = 'bg-secondary';
+                                                        break;
+                                                    case 'baja':
+                                                        $badgeClass = 'bg-danger';
+                                                        break;
+                                                    default:
+                                                        $badgeClass = 'bg-dark';
+                                                        break;
+                                                }
                                                 ?>
                                                 <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($equipo['Estado'] ?? '-') ?></span>
                                             </td>
                                             <td>
-                                                <a href="<?= \yii\helpers\Url::to(['site/equipo-editar', 'id' => $equipo['idEQUIPO']]) ?>" class="btn btn-sm btn-primary" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
+                                                <div class="btn-group" role="group">
+                                                    <a href="<?= \yii\helpers\Url::to(['site/equipo-editar', 'id' => $equipo['idEQUIPO']]) ?>" class="btn btn-sm btn-primary" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-danger" title="Eliminar" 
+                                                            onclick="confirmarEliminar(<?= $equipo['idEQUIPO'] ?>, '<?= Html::encode($equipo['MARCA'] . ' ' . $equipo['MODELO']) ?>')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -329,9 +383,12 @@ $this->registerCss("
 </div>
 
 <?php
-$this->registerJs("
+$equiposJson = json_encode($equipos, JSON_HEX_TAG|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE);
+?>
+
+<script>
 // Datos de Equipos
-let equiposData = " . json_encode($equipos, JSON_HEX_TAG|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE) . ";
+let equiposData = <?= $equiposJson ?>;
 
 // Función de búsqueda
 document.getElementById('buscar_equipo').addEventListener('input', function() {
@@ -347,5 +404,97 @@ document.getElementById('buscar_equipo').addEventListener('input', function() {
 });
 
 console.log('✅ Sistema de Equipos de Cómputo cargado con', equiposData.length, 'equipos');
-");
-?>
+
+// Manejar selección de equipos
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const equipoCheckboxes = document.querySelectorAll('.equipo-checkbox');
+    const eliminarSeleccionadosBtn = document.getElementById('eliminarSeleccionados');
+    const contadorSeleccionados = document.getElementById('contadorSeleccionados');
+
+    // Función para actualizar contador y botón
+    function actualizarSeleccion() {
+        const seleccionados = document.querySelectorAll('.equipo-checkbox:checked');
+        const cantidad = seleccionados.length;
+        
+        contadorSeleccionados.textContent = cantidad + ' elementos seleccionados';
+        eliminarSeleccionadosBtn.disabled = cantidad === 0;
+        
+        // Actualizar estado del checkbox "seleccionar todos"
+        selectAllCheckbox.indeterminate = cantidad > 0 && cantidad < equipoCheckboxes.length;
+        selectAllCheckbox.checked = cantidad === equipoCheckboxes.length && cantidad > 0;
+    }
+
+    // Seleccionar/deseleccionar todos
+    selectAllCheckbox.addEventListener('change', function() {
+        equipoCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        actualizarSeleccion();
+    });
+
+    // Manejar selección individual
+    equipoCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', actualizarSeleccion);
+    });
+
+    // Eliminar seleccionados
+    eliminarSeleccionadosBtn.addEventListener('click', function() {
+        const seleccionados = document.querySelectorAll('.equipo-checkbox:checked');
+        const ids = Array.from(seleccionados).map(cb => cb.value);
+        
+        if (ids.length === 0) return;
+        
+        const mensaje = '¿Está seguro que desea eliminar ' + ids.length + ' equipo(s) seleccionado(s)?\\n\\nEsta acción no se puede deshacer.';
+        
+        if (confirm(mensaje)) {
+            eliminarEquipos(ids);
+        }
+    });
+
+    // Inicializar contador
+    actualizarSeleccion();
+});
+
+// Función para eliminar equipos de manera simple y confiable
+function eliminarEquipos(ids) {
+    const isMultiple = Array.isArray(ids);
+    
+    // Crear un formulario dinámico para envío seguro
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.style.display = 'none';
+    
+    if (isMultiple) {
+        form.action = '<?= \yii\helpers\Url::to(['site/equipo-eliminar-multiple']) ?>';
+        // Agregar cada ID como campo individual
+        ids.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids[]';
+            input.value = id;
+            form.appendChild(input);
+        });
+    } else {
+        form.action = '<?= \yii\helpers\Url::to(['site/equipo-eliminar']) ?>';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'id';
+        input.value = ids;
+        form.appendChild(input);
+    }
+    
+    // CSRF token ya no es necesario por la configuración del controlador
+    
+    // Agregar al documento y enviar
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Función para confirmar eliminación individual
+function confirmarEliminar(id, nombre) {
+    if (confirm('¿Está seguro que desea eliminar el equipo "' + nombre + '"?\\n\\nEsta acción no se puede deshacer.')) {
+        eliminarEquipos(id);
+    }
+}
+</script>

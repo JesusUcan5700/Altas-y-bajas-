@@ -115,9 +115,12 @@ $this->registerJs("
                             </div>
                         </div>
                         <div class="form-group text-center mt-4">
-                            <?= Html::submitButton('Actualizar', ['class' => 'btn btn-success btn-lg me-2']) ?>
+                            <?= Html::submitButton('<i class="fas fa-save me-2"></i>Actualizar Monitor', [
+                                'class' => 'btn btn-success btn-lg me-2',
+                                'id' => 'btn-guardar-monitor'
+                            ]) ?>
                             <?= Html::a('<i class="fas fa-list me-2"></i>Listar Monitores', ['site/monitor-listar'], ['class' => 'btn btn-info btn-lg me-2']) ?>
-                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Agregar Nuevo', ['site/monitor-agregar'], ['class' => 'btn btn-secondary btn-lg me-2']) ?>
+                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Agregar Nuevo', ['site/agregar-nuevo'], ['class' => 'btn btn-secondary btn-lg me-2']) ?>
                             <?= Html::a('<i class="fas fa-home me-2"></i>Menú Principal', ['site/index'], ['class' => 'btn btn-outline-secondary btn-lg']) ?>
                         </div>
                     <?php ActiveForm::end(); ?>
@@ -126,3 +129,10 @@ $this->registerJs("
         </div>
     </div>
 </div>
+
+<!-- SweetAlert2 para confirmaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Sistema de confirmación personalizado -->
+<script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
+<!-- Configuraciones específicas de confirmación -->
+<script src="<?= Yii::getAlias('@web') ?>/js/edit-confirmations-config.js"></script>

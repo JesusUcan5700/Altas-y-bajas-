@@ -104,21 +104,29 @@ $this->registerCss("
                     </div>
                     <?php endif; ?>
 
-                    <!-- Buscador -->
+                    <!-- Barra de búsqueda -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-8">
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-search"></i></span>
                                 <input type="text" class="form-control" id="buscar_almacenamiento" placeholder="Buscar por marca, modelo, tipo, capacidad...">
                             </div>
                         </div>
+                        <div class="col-md-4 text-end">
+                            <button type="button" id="deleteSelectedStorage" class="btn btn-danger" onclick="deleteSelectedStorages()" style="display: none;">
+                                <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Tabla de Dispositivos de Almacenamiento -->
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                        <table class="table table-striped table-hover" id="storageTable">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllStorage" onchange="toggleAllStorageCheckboxes(this)">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -149,6 +157,9 @@ $this->registerCss("
                                 <?php else: ?>
                                     <?php foreach ($almacenamientos as $almacenamiento): ?>
                                         <tr>
+                                            <td>
+                                                <input type="checkbox" class="storage-checkbox" value="<?= $almacenamiento->idAlmacenamiento ?>" onchange="updateStorageDeleteButton()">
+                                            </td>
                                             <td><strong><?= Html::encode($almacenamiento->idAlmacenamiento) ?></strong></td>
                                             <td><?= Html::encode($almacenamiento->MARCA ?? '-') ?></td>
                                             <td><?= Html::encode($almacenamiento->MODELO ?? '-') ?></td>
@@ -167,13 +178,26 @@ $this->registerCss("
                                             <td>
                                                 <?php
                                                 $estado = strtolower($almacenamiento->ESTADO ?? '');
-                                                $badgeClass = match($estado) {
-                                                    'activo' => 'bg-success',
-                                                    'reparación', 'reparacion' => 'bg-warning',
-                                                    'inactivo', 'dañado', 'danado' => 'bg-secondary',
-                                                    'baja' => 'bg-danger',
-                                                    default => 'bg-dark'
-                                                };
+                                                switch($estado) {
+                                                    case 'activo':
+                                                        $badgeClass = 'bg-success';
+                                                        break;
+                                                    case 'reparación':
+                                                    case 'reparacion':
+                                                        $badgeClass = 'bg-warning';
+                                                        break;
+                                                    case 'inactivo':
+                                                    case 'dañado':
+                                                    case 'danado':
+                                                        $badgeClass = 'bg-secondary';
+                                                        break;
+                                                    case 'baja':
+                                                        $badgeClass = 'bg-danger';
+                                                        break;
+                                                    default:
+                                                        $badgeClass = 'bg-dark';
+                                                        break;
+                                                }
                                                 ?>
                                                 <span class="badge <?= $badgeClass ?>"><?= Html::encode($almacenamiento->ESTADO ?? '-') ?></span>
                                             </td>
@@ -212,7 +236,10 @@ $this->registerCss("
                                                     </button>
                                                     <?= Html::a('<i class="fas fa-edit"></i>', 
                                                         ['site/almacenamiento-editar', 'id' => $almacenamiento->idAlmacenamiento], 
-                                                        ['class' => 'btn btn-sm btn-success', 'title' => 'Editar']) ?>
+                                                        ['class' => 'btn btn-sm btn-success me-1', 'title' => 'Editar']) ?>
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteStorage(<?= $almacenamiento->idAlmacenamiento ?>)" title="Eliminar">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -387,6 +414,97 @@ console.log('✅ Sistema de Almacenamiento cargado con', almacenamientoData.leng
 </div>
 
 <script>
+// Funciones para eliminar almacenamiento
+function toggleAllStorageCheckboxes(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.storage-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateStorageDeleteButton();
+}
+
+function updateStorageDeleteButton() {
+    const checkboxes = document.querySelectorAll('.storage-checkbox:checked');
+    const deleteButton = document.getElementById('deleteSelectedStorage');
+    const selectAllCheckbox = document.getElementById('selectAllStorage');
+    
+    if (checkboxes.length > 0) {
+        deleteButton.style.display = 'block';
+        deleteButton.innerHTML = `<i class="fas fa-trash me-2"></i>Eliminar Seleccionados (${checkboxes.length})`;
+    } else {
+        deleteButton.style.display = 'none';
+    }
+    
+    // Actualizar el checkbox "Seleccionar Todos"
+    const allCheckboxes = document.querySelectorAll('.storage-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+        selectAllCheckbox.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+    }
+}
+
+function deleteStorage(storageId) {
+    if (confirm('¿Está seguro de que desea eliminar este dispositivo de almacenamiento? Esta acción no se puede deshacer.')) {
+        // Crear formulario temporal para enviar la eliminación
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= \yii\helpers\Url::to(['site/eliminar-almacenamiento']) ?>';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '<?= Yii::$app->request->csrfParam ?>';
+        csrfInput.value = '<?= Yii::$app->request->csrfToken ?>';
+        
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'id';
+        idInput.value = storageId;
+        
+        form.appendChild(csrfInput);
+        form.appendChild(idInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function deleteSelectedStorages() {
+    const checkboxes = document.querySelectorAll('.storage-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('Por favor, seleccione al menos un dispositivo de almacenamiento para eliminar.');
+        return;
+    }
+    
+    const count = checkboxes.length;
+    const message = count === 1 
+        ? '¿Está seguro de que desea eliminar el dispositivo de almacenamiento seleccionado? Esta acción no se puede deshacer.'
+        : `¿Está seguro de que desea eliminar los ${count} dispositivos de almacenamiento seleccionados? Esta acción no se puede deshacer.`;
+    
+    if (confirm(message)) {
+        const ids = Array.from(checkboxes).map(cb => cb.value);
+        
+        // Crear formulario temporal para enviar la eliminación masiva
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= \yii\helpers\Url::to(['site/eliminar-almacenamiento-masivo']) ?>';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '<?= Yii::$app->request->csrfParam ?>';
+        csrfInput.value = '<?= Yii::$app->request->csrfToken ?>';
+        
+        const idsInput = document.createElement('input');
+        idsInput.type = 'hidden';
+        idsInput.name = 'ids';
+        idsInput.value = JSON.stringify(ids);
+        
+        form.appendChild(csrfInput);
+        form.appendChild(idsInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Manejar selección de todos los checkboxes
     const seleccionarTodos = document.getElementById('seleccionarTodos');

@@ -62,14 +62,24 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                             No hay procesadores registrados en el sistema. Por favor, agregue algunos equipos para comenzar.
                         </div>
                     <?php else: ?>
-                        <div class="mb-3">
-                            <input type="text" id="searchInput" class="form-control" placeholder="Buscar procesadores...">
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <input type="text" id="searchInput" class="form-control" placeholder="Buscar procesadores...">
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button type="button" id="deleteSelected" class="btn btn-danger" onclick="deleteSelectedProcessors()" style="display: none;">
+                                    <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="table-responsive">
                             <table class="table table-striped table-hover" id="procesadoresTable">
                                 <thead class="table-primary">
                                     <tr>
+                                        <th>
+                                            <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes(this)">
+                                        </th>
                                         <th>ID</th>
                                         <th>Marca</th>
                                         <th>Modelo</th>
@@ -85,6 +95,9 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                 <tbody>
                                     <?php foreach ($procesadores as $procesador): ?>
                                         <tr>
+                                            <td>
+                                                <input type="checkbox" class="processor-checkbox" value="<?= $procesador->idProcesador ?>" onchange="updateDeleteButton()">
+                                            </td>
                                             <td><?= Html::encode($procesador->idProcesador) ?></td>
                                             <td><?= Html::encode($procesador->MARCA ?? '-') ?></td>
                                             <td><?= Html::encode($procesador->MODELO ?? '-') ?></td>
@@ -111,7 +124,10 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                             <td>
                                                 <?= Html::a('<i class="fas fa-edit"></i>', 
                                                     ['site/procesador-editar', 'id' => $procesador->idProcesador], 
-                                                    ['class' => 'btn btn-sm btn-primary', 'title' => 'Editar']) ?>
+                                                    ['class' => 'btn btn-sm btn-primary me-1', 'title' => 'Editar']) ?>
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteProcessor(<?= $procesador->idProcesador ?>)" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -144,6 +160,95 @@ document.getElementById('searchInput').addEventListener('keyup', function() {
         row.style.display = text.includes(searchTerm) ? '' : 'none';
     }
 });
+
+// Funciones para eliminar procesadores
+function toggleAllCheckboxes(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.processor-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateDeleteButton();
+}
+
+function updateDeleteButton() {
+    const checkboxes = document.querySelectorAll('.processor-checkbox:checked');
+    const deleteButton = document.getElementById('deleteSelected');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    if (checkboxes.length > 0) {
+        deleteButton.style.display = 'block';
+        deleteButton.textContent = `Eliminar Seleccionados (${checkboxes.length})`;
+    } else {
+        deleteButton.style.display = 'none';
+    }
+    
+    // Actualizar el checkbox "Seleccionar Todos"
+    const allCheckboxes = document.querySelectorAll('.processor-checkbox');
+    selectAllCheckbox.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+    selectAllCheckbox.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+}
+
+function deleteProcessor(processorId) {
+    if (confirm('¿Está seguro de que desea eliminar este procesador? Esta acción no se puede deshacer.')) {
+        // Crear formulario temporal para enviar la eliminación
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= \yii\helpers\Url::to(['site/eliminar-procesador']) ?>';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '<?= Yii::$app->request->csrfParam ?>';
+        csrfInput.value = '<?= Yii::$app->request->csrfToken ?>';
+        
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'id';
+        idInput.value = processorId;
+        
+        form.appendChild(csrfInput);
+        form.appendChild(idInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function deleteSelectedProcessors() {
+    const checkboxes = document.querySelectorAll('.processor-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('Por favor, seleccione al menos un procesador para eliminar.');
+        return;
+    }
+    
+    const count = checkboxes.length;
+    const message = count === 1 
+        ? '¿Está seguro de que desea eliminar el procesador seleccionado? Esta acción no se puede deshacer.'
+        : `¿Está seguro de que desea eliminar los ${count} procesadores seleccionados? Esta acción no se puede deshacer.`;
+    
+    if (confirm(message)) {
+        const ids = Array.from(checkboxes).map(cb => cb.value);
+        
+        // Crear formulario temporal para enviar la eliminación masiva
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= \yii\helpers\Url::to(['site/eliminar-procesadores-masivo']) ?>';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '<?= Yii::$app->request->csrfParam ?>';
+        csrfInput.value = '<?= Yii::$app->request->csrfToken ?>';
+        
+        const idsInput = document.createElement('input');
+        idsInput.type = 'hidden';
+        idsInput.name = 'ids';
+        idsInput.value = JSON.stringify(ids);
+        
+        form.appendChild(csrfInput);
+        form.appendChild(idsInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 
 <!-- Modal para Equipos Dañados -->

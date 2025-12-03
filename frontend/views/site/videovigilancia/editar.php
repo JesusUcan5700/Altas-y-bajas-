@@ -137,7 +137,7 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                     ['class' => 'btn btn-secondary me-md-2']) ?>
                                 
                                 <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar Cambios', 
-                                    ['class' => 'btn btn-danger']) ?>
+                                    ['class' => 'btn btn-danger', 'id' => 'btn-guardar-videovigilancia']) ?>
                             </div>
                         </div>
                     </div>
@@ -149,3 +149,10 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
         </div>
     </div>
 </div>
+
+<!-- SweetAlert2 para confirmaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Sistema de confirmación personalizado -->
+<script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
+<!-- Configuraciones específicas de confirmación -->
+<script src="<?= Yii::getAlias('@web') ?>/js/edit-confirmations-config.js"></script>

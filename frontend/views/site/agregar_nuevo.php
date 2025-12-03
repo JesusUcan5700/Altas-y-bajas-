@@ -133,6 +133,12 @@ $this->registerCss("
                             <span class="text-center">Adaptadores</span>
                         </a>
                     </div>
+                    <div class="col-lg-2 col-md-3 col-6 mb-3">
+                        <a href="<?= \yii\helpers\Url::to(['/fuentes-de-poder/create']) ?>" class="btn btn-outline-secondary w-100 h-100 d-flex align-items-center justify-content-center flex-column" style="min-height: 70px; border-width: 2px; transition: all 0.3s ease;">
+                            <i class="fas fa-bolt me-2"></i>
+                            <span class="text-center">Fuentes de Poder</span>
+                        </a>
+                    </div>
                 </div>
                 
                 <!-- Botón para volver al menú principal -->

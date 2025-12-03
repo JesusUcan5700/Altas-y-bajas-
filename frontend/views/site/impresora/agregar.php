@@ -196,14 +196,19 @@ $this->registerCss("
 
                     <!-- Botones -->
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Cancelar', 
-                            ['site/index'], 
-                            ['class' => 'btn btn-secondary btn-form me-md-2']
-                        ) ?>
-                        <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar Impresora', [
-                            'class' => 'btn btn-info btn-form',
+                        <?= Html::submitButton('Guardar', [
+                            'class' => 'btn btn-success btn-form me-md-2',
                             'id' => 'submit-btn'
                         ]) ?>
+
+                        <?= Html::a('Volver a Agregar Nuevo', ['site/agregar-nuevo'], [
+                            'class' => 'btn btn-secondary btn-form me-md-2'
+                        ]) ?>
+
+                        <?= Html::a('Menú Principal',
+                            ['site/index'],
+                            ['class' => 'btn btn-outline-secondary btn-form', 'id' => 'menu-btn']
+                        ) ?>
                     </div>
                     
                     <?php ActiveForm::end(); ?>
@@ -247,9 +252,9 @@ $(document).ready(function() {
                 } else {
                     // Mostrar errores
                     if (response.errors) {
-                        var errorMsg = 'Se encontraron los siguientes errores:\n';
+                        var errorMsg = 'Se encontraron los siguientes errores:\\n';
                         $.each(response.errors, function(field, messages) {
-                            errorMsg += '• ' + messages.join(', ') + '\n';
+                            errorMsg += '• ' + messages.join(', ') + '\\n';
                         });
                         
                         Swal.fire({
@@ -277,6 +282,7 @@ $(document).ready(function() {
         
         return false; // Evitar envío normal del formulario
     });
+
 });
 JS;
 $this->registerJs($script);

@@ -95,8 +95,15 @@ class Procesador extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO', 'FRECUENCIA_BASE', 'NUCLEOS', 'HILOS', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'ubicacion_edificio'], 'required'],
-            [['NUCLEOS', 'HILOS'], 'integer', 'min' => 1],
+            // Reglas para escenario por defecto (modo completo)
+            [['MARCA', 'MODELO', 'FRECUENCIA_BASE', 'NUCLEOS', 'HILOS', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'ubicacion_edificio'], 'required', 'except' => 'simplificado'],
+            
+            // Reglas para escenario simplificado (solo marca y modelo)
+            [['MARCA', 'MODELO'], 'required', 'on' => 'simplificado'],
+            
+            // Reglas comunes para todos los escenarios
+            [['NUCLEOS', 'HILOS'], 'integer', 'min' => 1, 'except' => 'simplificado'],
+            [['NUCLEOS', 'HILOS'], 'integer', 'min' => 0, 'on' => 'simplificado'], // Para catálogo permitir 0
             [['fecha'], 'date', 'format' => 'yyyy-MM-dd'],
             [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
             [['FRECUENCIA_BASE'], 'string', 'max' => 20],
@@ -108,14 +115,24 @@ class Procesador extends \yii\db\ActiveRecord
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
             [['ultimo_editor'], 'string', 'max' => 100],
-            [['NUMERO_SERIE'], 'unique'],
-            [['NUMERO_INVENTARIO'], 'unique'],
-            [['FRECUENCIA_BASE'], 'match', 'pattern' => '/^[\d\.]+\s?(GHz|MHz)$/i', 'message' => 'Formato: 3.2 GHz o 2800 MHz'],
-            [['ubicacion_edificio'], 'in', 'range' => ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U']],
+            [['NUMERO_SERIE'], 'unique', 'except' => 'simplificado'],
+            [['NUMERO_INVENTARIO'], 'unique', 'except' => 'simplificado'],
+            [['FRECUENCIA_BASE'], 'match', 'pattern' => '/^[\d\.]+\s?(GHz|MHz)$/i', 'message' => 'Formato: 3.2 GHz o 2800 MHz', 'except' => 'simplificado'],
+            [['ubicacion_edificio'], 'in', 'range' => ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U'], 'except' => 'simplificado'],
             
             // Campos de auditoría - solo marcados como seguros, sin validación
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
         ];
+    }
+
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+        
+        // Escenario simplificado: solo marca y modelo son requeridos, campos técnicos pueden estar vacíos
+        $scenarios['simplificado'] = ['MARCA', 'MODELO', 'Estado', 'fecha', 'ubicacion_edificio', 'ubicacion_detalle', 'DESCRIPCION', 'FRECUENCIA_BASE', 'NUCLEOS', 'HILOS', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'];
+        
+        return $scenarios;
     }
 
     public function attributeLabels()

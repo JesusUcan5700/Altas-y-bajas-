@@ -86,6 +86,27 @@ class Ram extends \yii\db\ActiveRecord
                 $this->fecha_creacion = date('Y-m-d H:i:s');
             }
             
+            // Si estamos en escenario simplificado, completar campos faltantes
+            if ($this->scenario === 'simplificado' && $insert) {
+                $this->TIPO_DDR = $this->TIPO_DDR ?: 'No especificado';
+                $this->TIPO_INTERFAZ = $this->TIPO_INTERFAZ ?: 'No especificado';
+                $this->ESTADO = $this->ESTADO ?: self::ESTADO_INACTIVO; // Usar "Inactivo(Sin Asignar)" para catálogo
+                $this->FECHA = $this->FECHA ?: date('Y-m-d');
+                $this->ubicacion_edificio = $this->ubicacion_edificio ?: 'A';
+                $this->ubicacion_detalle = $this->ubicacion_detalle ?: 'Catálogo - Marca, modelo y capacidad';
+                $this->Descripcion = $this->Descripcion ?: 'Entrada de catálogo';
+                
+                // Generar números únicos solo si no existen
+                if (empty($this->numero_serie)) {
+                    $timestamp = time() . rand(100, 999);
+                    $this->numero_serie = 'CAT-RAM-' . $timestamp;
+                }
+                if (empty($this->numero_inventario)) {
+                    $timestamp = time() . rand(100, 999);
+                    $this->numero_inventario = 'CAT-RAM-' . $timestamp;
+                }
+            }
+            
             return true;
         }
         return false;
@@ -105,29 +126,32 @@ class Ram extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            // Campos requeridos
-            [['MARCA', 'MODELO', 'CAPACIDAD', 'TIPO_INTERFAZ', 'TIPO_DDR'], 'required'],
+            // Campos requeridos - todos los campos en modo normal
+            [['MARCA', 'MODELO', 'CAPACIDAD', 'TIPO_INTERFAZ', 'TIPO_DDR'], 'required', 'except' => 'simplificado'],
+            
+            // Campos requeridos - marca, modelo y capacidad en modo simplificado
+            [['MARCA', 'MODELO', 'CAPACIDAD'], 'required', 'on' => 'simplificado'],
             
             // Validación de fecha solo para FECHA (no para campos de auditoría)
             [['FECHA'], 'date', 'format' => 'php:Y-m-d'],
             
-            // Validaciones de longitud
+            // Validaciones de longitud - solo para modo normal
             [['MARCA', 'MODELO'], 'string', 'max' => 45],
-            [['CAPACIDAD', 'TIPO_INTERFAZ'], 'string', 'max' => 20],
-            [['TIPO_DDR', 'ESTADO'], 'string', 'max' => 100],
-            [['numero_serie', 'numero_inventario'], 'string', 'max' => 15],
-            [['Descripcion'], 'string', 'max' => 100],
-            [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
-            [['ultimo_editor'], 'string', 'max' => 100],
+            [['CAPACIDAD', 'TIPO_INTERFAZ'], 'string', 'max' => 20, 'except' => 'simplificado'],
+            [['TIPO_DDR', 'ESTADO'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['numero_serie', 'numero_inventario'], 'string', 'max' => 15, 'except' => 'simplificado'],
+            [['Descripcion'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
+            [['ultimo_editor'], 'string', 'max' => 100, 'except' => 'simplificado'],
             
-            // Validación de estados permitidos
+            // Validación de estados permitidos - solo para modo normal
             [['ESTADO'], 'in', 'range' => [
                 self::ESTADO_ACTIVO,
                 self::ESTADO_INACTIVO,
                 self::ESTADO_DAÑADO,
                 self::ESTADO_MANTENIMIENTO,
                 self::ESTADO_BAJA
-            ]],
+            ], 'except' => 'simplificado'],
             
             // Campos de auditoría - solo marcados como seguros, sin validación
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
@@ -135,6 +159,19 @@ class Ram extends \yii\db\ActiveRecord
             // Otros campos opcionales
             [['FECHA', 'ESTADO', 'numero_serie', 'numero_inventario', 'Descripcion', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
         ];
+    }
+
+    /**
+     * Define scenarios para diferentes contextos
+     */
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+        
+        // Scenario para modo simplificado (catálogo)
+        $scenarios['simplificado'] = ['MARCA', 'MODELO', 'CAPACIDAD', 'TIPO_DDR', 'TIPO_INTERFAZ', 'ESTADO', 'ubicacion_edificio', 'ubicacion_detalle', 'FECHA', 'Descripcion', 'numero_serie', 'numero_inventario'];
+        
+        return $scenarios;
     }
 
     /**

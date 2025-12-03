@@ -107,7 +107,7 @@ $this->registerJs("
                         <div class="form-group text-center mt-4">
                             <?= Html::submitButton('Actualizar', ['class' => 'btn btn-success btn-lg me-2']) ?>
                             <?= Html::a('<i class="fas fa-list me-2"></i>Listar Microfonos', ['site/microfono-listar'], ['class' => 'btn btn-info btn-lg me-2']) ?>
-                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Agregar Nuevo', ['site/microfono-agregar'], ['class' => 'btn btn-secondary btn-lg me-2']) ?>
+                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Agregar Nuevo', ['site/agregar-nuevo'], ['class' => 'btn btn-secondary btn-lg me-2']) ?>
                             <?= Html::a('<i class="fas fa-home me-2"></i>Menú Principal', ['site/index'], ['class' => 'btn btn-outline-secondary btn-lg']) ?>
                         </div>
                     <?php ActiveForm::end(); ?>

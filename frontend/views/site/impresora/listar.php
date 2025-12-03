@@ -182,9 +182,9 @@ $this->registerCss("
                                             </td>
                                             <td>
                                                 <?php
-                                                $propiedad = $impresora->propia_rentada ?? 'propio';
-                                                $propiedadClass = $propiedad === 'propio' ? 'bg-primary' : 'bg-warning';
-                                                $propiedadTexto = $propiedad === 'propio' ? 'Propio' : 'Arrendado';
+                                                $propiedad = $impresora->propia_rentada ?? 'propia';
+                                                $propiedadClass = $propiedad === 'propia' ? 'bg-primary' : 'bg-warning';
+                                                $propiedadTexto = $propiedad === 'propia' ? 'Propia' : 'Rentada';
                                                 ?>
                                                 <span class="badge <?= $propiedadClass ?>"><?= $propiedadTexto ?></span>
                                             </td>
@@ -239,7 +239,7 @@ document.getElementById('buscar_impresora').addEventListener('input', function()
 function verDetalles(id) {
     const impresora = impresorasData.find(i => i.idIMPRESORA == id);
     if (impresora) {
-        const propiedadTexto = impresora.propia_rentada === 'propio' ? 'Propio' : 'Arrendado';
+        const propiedadTexto = impresora.propia_rentada === 'propia' ? 'Propia' : 'Rentada';
         alert('📋 Detalles de la Impresora\\n\\n' +
               '🆔 ID: ' + (impresora.idIMPRESORA || 'N/A') + '\\n' +
               '🏷️ Marca: ' + (impresora.MARCA || 'N/A') + '\\n' +

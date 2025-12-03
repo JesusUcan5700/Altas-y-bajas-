@@ -17,6 +17,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     <h3 class="mb-0">
                         <i class="fas fa-desktop me-2"></i><?= Html::encode($this->title) ?>
                     </h3>
+                    <p class="mb-0 mt-2">Registra un nuevo monitor al catálogo</p>
                 </div>
                 <div class="card-body">
                     <?php if (Yii::$app->session->hasFlash('success')): ?>
@@ -31,76 +32,51 @@ $this->params['breadcrumbs'][] = $this->title;
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     <?php endif; ?>
-            <?php $form = ActiveForm::begin(); ?>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'MARCA')->dropDownList(frontend\models\Monitor::getMarcas(), ['prompt' => 'Selecciona Marca']) ?>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'MODELO')->textInput(['maxlength' => true]) ?>
+            <?php $form = ActiveForm::begin([
+                'id' => 'monitor-form',
+                'options' => ['class' => 'row g-3']
+            ]); ?>
+                <div class="col-md-6">
+                    <?= $form->field($model, 'MARCA')->dropDownList(frontend\models\Monitor::getMarcas(), ['prompt' => 'Selecciona Marca']) ?>
+                </div>
+                <div class="col-md-6">
+                    <?= $form->field($model, 'MODELO')->textInput(['maxlength' => true, 'placeholder' => 'Ej: UltraSharp U2415, Gaming G27C4']) ?>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex justify-content-between">
+                        <?= Html::a('Cancelar', ['/site/computo'], ['class' => 'btn btn-secondary', 'onclick' => 'localStorage.removeItem("returnToEquipo")']) ?>
+                        <?= Html::submitButton('Guardar Monitor', ['class' => 'btn btn-success']) ?>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'TAMANIO')->dropDownList(frontend\models\Monitor::getTamanios(), ['prompt' => 'Selecciona Tamaño']) ?>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'RESOLUCION')->dropDownList(frontend\models\Monitor::getResoluciones(), ['prompt' => 'Selecciona Resolución']) ?>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'TIPO_PANTALLA')->dropDownList(frontend\models\Monitor::getTiposPantalla(), ['prompt' => 'Selecciona Tipo de Pantalla']) ?>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'FRECUENCIA_HZ')->dropDownList(frontend\models\Monitor::getFrecuencias(), ['prompt' => 'Selecciona Frecuencia']) ?>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'ENTRADAS_VIDEO')->dropDownList(frontend\models\Monitor::getEntradasVideo(), ['prompt' => 'Selecciona Entrada de Video']) ?>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'NUMERO_SERIE')->textInput(['maxlength' => true]) ?>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'NUMERO_INVENTARIO')->textInput(['maxlength' => true]) ?>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'ESTADO')->dropDownList(frontend\models\Monitor::getEstados(), ['prompt' => 'Selecciona Estado']) ?>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'ubicacion_edificio')->dropDownList(frontend\models\Monitor::getEdificios(), ['prompt' => 'Selecciona Edificio']) ?>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'ubicacion_detalle')->textInput(['maxlength' => true]) ?>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'FECHA')->input('date') ?>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <!-- Espacio para simetría -->
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <?= $form->field($model, 'DESCRIPCION')->textarea(['rows' => 3, 'maxlength' => 100]) ?>
-                    </div>
-                </div>
-                    <div class="form-group text-center mt-4">
-                        <?= Html::submitButton('Guardar', ['class' => 'btn btn-success btn-lg me-2']) ?>
-                        <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Agregar Nuevo', ['site/agregar-nuevo'], ['class' => 'btn btn-secondary btn-lg me-2']) ?>
-                        <?= Html::a('<i class="fas fa-home me-2"></i>Menú Principal', ['site/index'], ['class' => 'btn btn-outline-secondary btn-lg']) ?>
-                    </div>
             <?php ActiveForm::end(); ?>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Verificar si venimos del formulario de equipo
+if (localStorage.getItem('returnToEquipo')) {
+    // Mostrar mensaje informativo
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-info alert-dismissible fade show mt-3';
+    alertDiv.innerHTML = `
+        <strong><i class="fas fa-info-circle"></i> Información:</strong> 
+        Después de guardar el monitor, serás redirigido automáticamente al formulario de equipo.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.card-body').prepend(alertDiv);
+    
+    // Mostrar botón para cancelar y volver
+    document.getElementById('btn-volver-equipo').style.display = 'inline-block';
+    
+    // Agregar redirección automática después del éxito
+    const successAlert = document.querySelector('.alert-success');
+    if (successAlert) {
+        setTimeout(function() {
+            window.location.href = '<?= \yii\helpers\Url::to(["site/computo"]) ?>';
+        }, 2000);
+    }
+}
+</script>

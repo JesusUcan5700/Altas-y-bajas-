@@ -104,21 +104,29 @@ $this->registerCss("
                     </div>
                     <?php endif; ?>
 
-                    <!-- Buscador -->
+                    <!-- Barra de búsqueda -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-8">
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-search"></i></span>
                                 <input type="text" class="form-control" id="buscar_monitor" placeholder="Buscar por marca, modelo, resolución, tipo pantalla...">
                             </div>
                         </div>
+                        <div class="col-md-4 text-end">
+                            <button type="button" id="deleteSelectedMonitors" class="btn btn-danger" onclick="deleteSelectedMonitors()" style="display: none;">
+                                <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Tabla de Monitores -->
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                        <table class="table table-striped table-hover" id="monitorsTable">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllMonitors" onchange="toggleAllMonitorCheckboxes(this)">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -149,6 +157,9 @@ $this->registerCss("
                                 <?php else: ?>
                                     <?php foreach ($monitores as $monitor): ?>
                                         <tr>
+                                            <td>
+                                                <input type="checkbox" class="monitor-checkbox" value="<?= $monitor->idMonitor ?>" onchange="updateMonitorDeleteButton()">
+                                            </td>
                                             <td><strong><?= Html::encode($monitor->idMonitor) ?></strong></td>
                                             <td><?= Html::encode($monitor->MARCA ?? '-') ?></td>
                                             <td><?= Html::encode($monitor->MODELO ?? '-') ?></td>
@@ -170,13 +181,26 @@ $this->registerCss("
                                             <td>
                                                 <?php
                                                 $estado = strtolower($monitor->ESTADO ?? '');
-                                                $badgeClass = match($estado) {
-                                                    'activo' => 'bg-success',
-                                                    'reparación', 'reparacion' => 'bg-warning',
-                                                    'inactivo', 'dañado', 'danado' => 'bg-secondary',
-                                                    'baja' => 'bg-danger',
-                                                    default => 'bg-dark'
-                                                };
+                                                switch($estado) {
+                                                    case 'activo':
+                                                        $badgeClass = 'bg-success';
+                                                        break;
+                                                    case 'reparación':
+                                                    case 'reparacion':
+                                                        $badgeClass = 'bg-warning';
+                                                        break;
+                                                    case 'inactivo':
+                                                    case 'dañado':
+                                                    case 'danado':
+                                                        $badgeClass = 'bg-secondary';
+                                                        break;
+                                                    case 'baja':
+                                                        $badgeClass = 'bg-danger';
+                                                        break;
+                                                    default:
+                                                        $badgeClass = 'bg-dark';
+                                                        break;
+                                                }
                                                 ?>
                                                 <span class="badge <?= $badgeClass ?>"><?= Html::encode($monitor->ESTADO ?? '-') ?></span>
                                             </td>
@@ -194,7 +218,10 @@ $this->registerCss("
                                                 <div class="btn-group" role="group">
                                                     <?= Html::a('<i class="fas fa-edit"></i>', 
                                                         ['site/monitor-editar', 'id' => $monitor->idMonitor], 
-                                                        ['class' => 'btn btn-sm btn-success', 'title' => 'Editar']) ?>
+                                                        ['class' => 'btn btn-sm btn-success me-1', 'title' => 'Editar']) ?>
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteMonitor(<?= $monitor->idMonitor ?>)" title="Eliminar">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -369,6 +396,97 @@ console.log('✅ Sistema de Monitores cargado con', monitoresData.length, 'equip
 </div>
 
 <script>
+// Funciones para eliminar monitores
+function toggleAllMonitorCheckboxes(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.monitor-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateMonitorDeleteButton();
+}
+
+function updateMonitorDeleteButton() {
+    const checkboxes = document.querySelectorAll('.monitor-checkbox:checked');
+    const deleteButton = document.getElementById('deleteSelectedMonitors');
+    const selectAllCheckbox = document.getElementById('selectAllMonitors');
+    
+    if (checkboxes.length > 0) {
+        deleteButton.style.display = 'block';
+        deleteButton.innerHTML = `<i class="fas fa-trash me-2"></i>Eliminar Seleccionados (${checkboxes.length})`;
+    } else {
+        deleteButton.style.display = 'none';
+    }
+    
+    // Actualizar el checkbox "Seleccionar Todos"
+    const allCheckboxes = document.querySelectorAll('.monitor-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+        selectAllCheckbox.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+    }
+}
+
+function deleteMonitor(monitorId) {
+    if (confirm('¿Está seguro de que desea eliminar este monitor? Esta acción no se puede deshacer.')) {
+        // Crear formulario temporal para enviar la eliminación
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= \yii\helpers\Url::to(['site/eliminar-monitor']) ?>';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '<?= Yii::$app->request->csrfParam ?>';
+        csrfInput.value = '<?= Yii::$app->request->csrfToken ?>';
+        
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'id';
+        idInput.value = monitorId;
+        
+        form.appendChild(csrfInput);
+        form.appendChild(idInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function deleteSelectedMonitors() {
+    const checkboxes = document.querySelectorAll('.monitor-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('Por favor, seleccione al menos un monitor para eliminar.');
+        return;
+    }
+    
+    const count = checkboxes.length;
+    const message = count === 1 
+        ? '¿Está seguro de que desea eliminar el monitor seleccionado? Esta acción no se puede deshacer.'
+        : `¿Está seguro de que desea eliminar los ${count} monitores seleccionados? Esta acción no se puede deshacer.`;
+    
+    if (confirm(message)) {
+        const ids = Array.from(checkboxes).map(cb => cb.value);
+        
+        // Crear formulario temporal para enviar la eliminación masiva
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= \yii\helpers\Url::to(['site/eliminar-monitores-masivo']) ?>';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '<?= Yii::$app->request->csrfParam ?>';
+        csrfInput.value = '<?= Yii::$app->request->csrfToken ?>';
+        
+        const idsInput = document.createElement('input');
+        idsInput.type = 'hidden';
+        idsInput.name = 'ids';
+        idsInput.value = JSON.stringify(ids);
+        
+        form.appendChild(csrfInput);
+        form.appendChild(idsInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Manejar selección de todos los checkboxes
     const seleccionarTodos = document.getElementById('seleccionarTodos');

@@ -89,6 +89,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <?= Html::submitButton('Guardar', ['class' => 'btn btn-success btn-lg me-2']) ?>
                         <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Agregar Nuevo', ['site/agregar-nuevo'], ['class' => 'btn btn-secondary btn-lg me-2']) ?>
                         <?= Html::a('<i class="fas fa-home me-2"></i>Menú Principal', ['site/index'], ['class' => 'btn btn-outline-secondary btn-lg']) ?>
+                        <?= Html::a('<i class="fas fa-computer me-2"></i>Cancelar y volver a Equipo', ['/site/computo'], ['class' => 'btn btn-outline-info btn-lg', 'onclick' => 'localStorage.removeItem("returnToEquipo")', 'style' => 'display:none', 'id' => 'btn-volver-equipo']) ?>
                     </div>
             <?php ActiveForm::end(); ?>
                 </div>
@@ -96,3 +97,29 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 </div>
+
+<script>
+// Verificar si venimos del formulario de equipo
+if (localStorage.getItem('returnToEquipo')) {
+    // Mostrar mensaje informativo
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-info alert-dismissible fade show mt-3';
+    alertDiv.innerHTML = `
+        <strong><i class="fas fa-info-circle"></i> Información:</strong> 
+        Después de guardar el dispositivo de almacenamiento, serás redirigido automáticamente al formulario de equipo.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.card-body').prepend(alertDiv);
+    
+    // Mostrar botón para cancelar y volver
+    document.getElementById('btn-volver-equipo').style.display = 'inline-block';
+    
+    // Agregar redirección automática después del éxito
+    const successAlert = document.querySelector('.alert-success');
+    if (successAlert) {
+        setTimeout(function() {
+            window.location.href = '<?= \yii\helpers\Url::to(["site/computo"]) ?>';
+        }, 2000);
+    }
+}
+</script>

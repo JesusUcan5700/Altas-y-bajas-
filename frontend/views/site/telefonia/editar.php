@@ -3,8 +3,29 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
 /** @var yii\web\View $this */
-/** @var frontend\models\Telefonia $model */
+/** @var frontend\models\Telef                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Cancelar', 
+                                ['telefonia-listar'], 
+                                ['class' => 'btn btn-secondary']) ?>
+                            
+                            <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar Cambios', 
+                                ['class' => 'btn btn-success', 'id' => 'btn-guardar-telefonia']) ?>
+                        </div>
+                    </div>
 
+                    <?php ActiveForm::end(); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SweetAlert2 para confirmaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Sistema de confirmación personalizado -->
+<script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
+<!-- Configuraciones específicas de confirmación -->
+<script src="<?= Yii::getAlias('@web') ?>/js/edit-confirmations-config.js"></script>
 $this->title = 'Editar Telefonía - ID: ' . $model->idTELEFONIA;
 
 // Registrar Font Awesome CDN

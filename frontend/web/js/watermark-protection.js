@@ -32,14 +32,16 @@
             font-family: 'Courier New', monospace !important;
             text-shadow: 1px 1px 3px rgba(255,255,255,0.9) !important;
             transform: rotate(-3deg) !important;
-            background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(0,0,0,0.1)) !important;
+            background: rgba(255,255,255,0.9) !important;
             padding: 4px 8px !important;
             border-radius: 5px !important;
-            opacity: 0.8 !important;
+            opacity: 0.7 !important;
             font-weight: 600 !important;
             letter-spacing: 0.8px !important;
-            border: 1px solid rgba(0,0,0,0.1) !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+            border: 1px solid rgba(0,0,0,0.05) !important;
+            box-shadow: none !important;
+            will-change: transform !important;
+            backface-visibility: hidden !important;
         `;
         
         document.body.appendChild(watermark);
@@ -75,26 +77,19 @@
             attributeFilter: ['style', 'class', 'id']
         });
         
-        // Verificación periódica
-        setInterval(function() {
-            if (!document.getElementById(watermarkId)) {
-                createWatermark();
-            }
-        }, 5000);
-        
         // Protección contra inspección de elementos
         watermark.addEventListener('contextmenu', function(e) {
             e.preventDefault();
             return false;
         });
         
-        // Recrear si se modifica el texto
+        // Una sola verificación periódica más eficiente
         setInterval(function() {
             var wm = document.getElementById(watermarkId);
-            if (wm && wm.textContent !== watermarkText) {
-                wm.textContent = watermarkText;
+            if (!wm || wm.textContent !== watermarkText) {
+                createWatermark();
             }
-        }, 2000);
+        }, 10000);
     }
     
     // Inicializar cuando el DOM esté listo

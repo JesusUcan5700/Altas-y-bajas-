@@ -107,12 +107,15 @@ $this->registerCss("
                         </div>
                         
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="<?= \yii\helpers\Url::to(['site/index']) ?>" class="btn btn-secondary btn-form me-md-2">
-                                <i class="fas fa-arrow-left me-2"></i>Cancelar
+                            <?= Html::submitButton('Guardar', ['class' => 'btn btn-success btn-form me-md-2']) ?>
+
+                            <a href="<?= \yii\helpers\Url::to(['site/agregar-nuevo']) ?>" class="btn btn-secondary btn-form me-md-2">
+                                Volver a Agregar Nuevo
                             </a>
-                            <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar No Break', [
-                                'class' => 'btn btn-warning btn-form'
-                            ]) ?>
+
+                            <a href="<?= \yii\helpers\Url::to(['site/index']) ?>" class="btn btn-outline-secondary btn-form">
+                                Menú Principal
+                            </a>
                         </div>
                     
                     <?php ActiveForm::end(); ?>

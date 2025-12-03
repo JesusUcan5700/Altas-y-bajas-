@@ -46,6 +46,28 @@ class Almacenamiento extends \yii\db\ActiveRecord
             } else {
                 $this->ultimo_editor = 'Sistema';
             }
+            
+            // Si estamos en escenario simplificado, completar campos faltantes
+            if ($this->scenario === 'simplificado' && $insert) {
+                // TIPO y CAPACIDAD ahora vienen del formulario, solo llenar otros campos
+                $this->INTERFAZ = $this->INTERFAZ ?: 'No especificado';
+                $this->ESTADO = $this->ESTADO ?: 'Inactivo(Sin Asignar)';
+                $this->FECHA = $this->FECHA ?: date('Y-m-d');
+                $this->ubicacion_edificio = $this->ubicacion_edificio ?: 'A';
+                $this->ubicacion_detalle = $this->ubicacion_detalle ?: 'Catálogo - Solo marca y modelo';
+                $this->DESCRIPCION = $this->DESCRIPCION ?: 'Entrada de catálogo';
+                
+                // Generar números únicos solo si no existen
+                if (empty($this->NUMERO_SERIE)) {
+                    $timestamp = time() . rand(100, 999);
+                    $this->NUMERO_SERIE = 'CAT-ALM-' . $timestamp;
+                }
+                if (empty($this->NUMERO_INVENTARIO)) {
+                    $timestamp = time() . rand(100, 999);
+                    $this->NUMERO_INVENTARIO = 'CAT-ALM-' . $timestamp;
+                }
+            }
+            
             return true;
         }
         return false;
@@ -65,16 +87,39 @@ class Almacenamiento extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO', 'TIPO'], 'required'],
+            // Campos requeridos - todos los campos en modo normal
+            [['MARCA', 'MODELO', 'TIPO'], 'required', 'except' => 'simplificado'],
+            
+            // Campos requeridos - marca, modelo, capacidad y tipo en modo simplificado
+            [['MARCA', 'MODELO', 'CAPACIDAD', 'TIPO'], 'required', 'on' => 'simplificado'],
+            
             [['FECHA', 'fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
+            
+            // Validaciones de longitud - aplicar a todos los modos
             [['MARCA', 'MODELO'], 'string', 'max' => 45],
-            [['TIPO', 'INTERFAZ', 'ESTADO'], 'string', 'max' => 100],
             [['CAPACIDAD'], 'string', 'max' => 30],
-            [['NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
-            [['DESCRIPCION', 'ultimo_editor'], 'string', 'max' => 100],
-            [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
+            [['TIPO'], 'string', 'max' => 100],
+            // Validaciones solo para modo normal
+            [['INTERFAZ', 'ESTADO'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45, 'except' => 'simplificado'],
+            [['DESCRIPCION', 'ultimo_editor'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
+            
             [['INTERFAZ', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'DESCRIPCION', 'ESTADO', 'ubicacion_edificio', 'ubicacion_detalle', 'ultimo_editor'], 'safe'],
         ];
+    }
+
+    /**
+     * Define scenarios para diferentes contextos
+     */
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+        
+        // Scenario para modo simplificado (catálogo)
+        $scenarios['simplificado'] = ['MARCA', 'MODELO', 'TIPO', 'CAPACIDAD', 'INTERFAZ', 'ESTADO', 'FECHA', 'ubicacion_edificio', 'ubicacion_detalle', 'DESCRIPCION', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'];
+        
+        return $scenarios;
     }
 
     /**

@@ -108,10 +108,127 @@ $this->registerCss("
             </div>
         </div>
 
+        <!-- Sección: Catálogos -->
+        <h2 class="section-title display-6 fw-bold text-dark">Catálogos Rápidos</h2>
+        
+        <div class="row justify-content-center g-4 mb-5">
+            <!-- Catálogo Procesadores -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-success" style="border: 3px solid #28a745 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-success">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Procesadores</h3>
+                        <p class="card-text text-muted mb-4">Gestiona procesadores de catálogo (formulario rápido)</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/catalogo-listar']) ?>" class="btn btn-success btn-equipment">
+                                <i class="fas fa-microchip me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Solo marca y modelo básicos</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Almacenamiento -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-info" style="border: 3px solid #17a2b8 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-info">
+                            <i class="fas fa-hdd"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Almacenamiento</h3>
+                        <p class="card-text text-muted mb-4">Gestiona dispositivos de almacenamiento del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/almacenamiento-catalogo-listar']) ?>" class="btn btn-info btn-equipment">
+                                <i class="fas fa-database me-2"></i>Ver Catálogo
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo RAM -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-warning" style="border: 3px solid #ffc107 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-warning">
+                            <i class="fas fa-memory"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo RAM</h3>
+                        <p class="card-text text-muted mb-4">Gestiona memoria RAM del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/ram-catalogo-listar']) ?>" class="btn btn-warning btn-equipment">
+                                <i class="fas fa-memory me-2"></i>Ver Catálogo
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Fuentes de Poder -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-warning" style="border: 3px solid #ffc107 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-warning">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Fuentes de Poder</h3>
+                        <p class="card-text text-muted mb-4">Gestiona fuentes de poder del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/fuentes-catalogo-listar']) ?>" class="btn btn-warning btn-equipment">
+                                <i class="fas fa-bolt me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Monitor -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-primary" style="border: 3px solid #007bff !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-primary">
+                            <i class="fas fa-desktop"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Monitor</h3>
+                        <p class="card-text text-muted mb-4">Gestiona monitores del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/monitor-catalogo-listar']) ?>" class="btn btn-primary btn-equipment">
+                                <i class="fas fa-desktop me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Sección: Gestión por Tipo de Equipo -->
         <h2 class="section-title display-6 fw-bold text-dark">Categorías de Equipos</h2>
         
         <div class="row justify-content-center g-4 mb-5">
+            <!-- Fuentes de Poder -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-warning">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-warning">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Fuentes de Poder</h3>
+                        <p class="card-text text-muted mb-4">Gestiona fuentes de poder y PSUs</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['/fuentes-de-poder/index']) ?>" class="btn btn-warning btn-equipment">
+                                <i class="fas fa-list me-2"></i>Ver / Editar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- No Break -->
             <div class="col-lg-4 col-md-6">
                 <div class="card equipment-card h-100 border-warning">

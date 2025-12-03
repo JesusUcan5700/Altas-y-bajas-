@@ -121,7 +121,7 @@ $this->title = 'Editar Memoria RAM';
                     <div class="form-group text-center mt-4">
                         <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar Cambios', [
                             'class' => 'btn btn-success btn-lg me-2',
-                            'data-confirm' => '¿Está seguro de que desea guardar los cambios?'
+                            'id' => 'btn-guardar-ram'
                         ]) ?>
                         
                         <?= Html::a('<i class="fas fa-list me-2"></i>Volver al Listado', 
@@ -141,3 +141,10 @@ $this->title = 'Editar Memoria RAM';
         </div>
     </div>
 </div>
+
+<!-- SweetAlert2 para confirmaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Sistema de confirmación personalizado -->
+<script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
+<!-- Configuraciones específicas de confirmación -->
+<script src="<?= Yii::getAlias('@web') ?>/js/edit-confirmations-config.js"></script>

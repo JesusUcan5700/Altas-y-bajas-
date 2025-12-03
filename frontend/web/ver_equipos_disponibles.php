@@ -322,8 +322,38 @@
         }
 
         function exportarExcel() {
-            // Aquí implementarías la exportación a Excel
-            alert('Exportando datos a Excel...');
+            // Implementación de exportación a Excel en mayúsculas
+            const tabla = document.querySelector('table');
+            if (!tabla) {
+                alert('NO HAY DATOS PARA EXPORTAR');
+                return;
+            }
+            
+            // Obtener headers y convertir a mayúsculas
+            const headers = [];
+            const headerRows = tabla.querySelectorAll('thead tr th');
+            headerRows.forEach(th => {
+                headers.push('"' + th.textContent.trim().toUpperCase() + '"');
+            });
+            
+            let csv = headers.join(',') + '\n';
+            
+            const filas = tabla.querySelectorAll('tbody tr');
+            filas.forEach(fila => {
+                const celdas = fila.querySelectorAll('td');
+                const datos = Array.from(celdas).map(celda => '"' + celda.textContent.trim().toUpperCase() + '"').join(',');
+                csv += datos + '\n';
+            });
+            
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `EQUIPOS_DISPONIBLES_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Búsqueda en tiempo real

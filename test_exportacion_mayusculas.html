@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Exportación en Mayúsculas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4><i class="fas fa-test-tube me-2"></i>Prueba de Exportación en Mayúsculas</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Esta página prueba que la exportación de datos funcione correctamente y que todos los datos se exporten en MAYÚSCULAS.
+                        </p>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <button class="btn btn-success w-100 mb-3" onclick="testExportarMayusculas()">
+                                    <i class="fas fa-file-excel me-2"></i>Probar Exportación Excel (Mayúsculas)
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button class="btn btn-info w-100 mb-3" onclick="testImprimirMayusculas()">
+                                    <i class="fas fa-print me-2"></i>Probar Impresión PDF (Mayúsculas)
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabla de prueba -->
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="tabla-prueba">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Marca</th>
+                                        <th>Modelo</th>
+                                        <th>Serie</th>
+                                        <th>Estado</th>
+                                        <th>Ubicación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>hp</td>
+                                        <td>pavilion g4</td>
+                                        <td>abc123</td>
+                                        <td>baja</td>
+                                        <td>oficina principal - piso 2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>dell</td>
+                                        <td>optiplex 3020</td>
+                                        <td>def456</td>
+                                        <td>baja</td>
+                                        <td>sistemas - laboratorio</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>lenovo</td>
+                                        <td>thinkpad l540</td>
+                                        <td>ghi789</td>
+                                        <td>baja</td>
+                                        <td>recursos humanos - cubículo a</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="alert alert-success mt-3">
+                            <h6><i class="fas fa-check-circle me-2"></i>Resultados esperados:</h6>
+                            <ul>
+                                <li>📄 El archivo Excel debe contener todos los datos en MAYÚSCULAS</li>
+                                <li>🖨️ La impresión PDF debe mostrar todos los datos en MAYÚSCULAS</li>
+                                <li>📁 Los nombres de archivos deben estar en MAYÚSCULAS</li>
+                                <li>✅ Los headers deben estar en MAYÚSCULAS</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para exportar a Excel (copiada y modificada del archivo principal)
+        function exportarExcel(tabla, categoria) {
+            const nombreCategoria = {
+                'prueba': 'PRUEBA_EXPORTACION'
+            };
+            
+            // Obtener headers de la tabla y convertir a mayúsculas
+            const headers = [];
+            const headerRows = tabla.querySelectorAll('thead tr th');
+            headerRows.forEach(th => {
+                headers.push('"' + th.textContent.trim().toUpperCase() + '"');
+            });
+            
+            let csv = headers.join(',') + '\n';
+            
+            const filas = tabla.querySelectorAll('tbody tr');
+            filas.forEach(fila => {
+                const celdas = fila.querySelectorAll('td');
+                const datos = Array.from(celdas).map(celda => '"' + celda.textContent.trim().toUpperCase() + '"').join(',');
+                csv += datos + '\n';
+            });
+            
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `HISTORIAL_BAJAS_${nombreCategoria[categoria]}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Función para exportar a PDF
+        function exportarPDF(tabla, categoria) {
+            const nombreCategoria = {
+                'prueba': 'PRUEBA DE EXPORTACIÓN'
+            };
+            
+            const ventana = window.open('', '_blank');
+            
+            // Clonar la tabla y convertir todo el contenido a mayúsculas
+            const tablaClonada = tabla.cloneNode(true);
+            
+            // Convertir todos los headers a mayúsculas
+            const headers = tablaClonada.querySelectorAll('thead tr th');
+            headers.forEach(th => {
+                th.textContent = th.textContent.toUpperCase();
+            });
+            
+            // Convertir todos los datos a mayúsculas
+            const celdas = tablaClonada.querySelectorAll('tbody tr td');
+            celdas.forEach(celda => {
+                celda.textContent = celda.textContent.toUpperCase();
+            });
+            
+            const contenido = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>HISTORIAL DE BAJAS - ${nombreCategoria[categoria]}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { color: #333; text-align: center; text-transform: uppercase; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; text-transform: uppercase; }
+                        th { background-color: #f2f2f2; font-weight: bold; }
+                        tr:nth-child(even) { background-color: #f9f9f9; }
+                        .fecha { text-align: center; margin-top: 20px; color: #666; text-transform: uppercase; }
+                    </style>
+                </head>
+                <body>
+                    <h1>HISTORIAL DE BAJAS - ${nombreCategoria[categoria]}</h1>
+                    ${tablaClonada.outerHTML}
+                    <div class="fecha">GENERADO EL: ${new Date().toLocaleDateString('es-ES').toUpperCase()}</div>
+                </body>
+                </html>
+            `;
+            
+            ventana.document.write(contenido);
+            ventana.document.close();
+            ventana.focus();
+            setTimeout(() => {
+                ventana.print();
+            }, 250);
+        }
+
+        function testExportarMayusculas() {
+            const tabla = document.getElementById('tabla-prueba');
+            exportarExcel(tabla, 'prueba');
+            
+            // Mostrar mensaje de confirmación
+            setTimeout(() => {
+                alert('✅ EXPORTACIÓN EXCEL COMPLETADA\n\n' +
+                      'Verifica que el archivo descargado tenga:\n' +
+                      '• Todos los datos en MAYÚSCULAS\n' +
+                      '• Nombre del archivo en MAYÚSCULAS\n' +
+                      '• Headers en MAYÚSCULAS');
+            }, 500);
+        }
+
+        function testImprimirMayusculas() {
+            const tabla = document.getElementById('tabla-prueba');
+            exportarPDF(tabla, 'prueba');
+            
+            // Mostrar mensaje de confirmación
+            setTimeout(() => {
+                alert('✅ IMPRESIÓN PDF INICIADA\n\n' +
+                      'Verifica que la página impresa tenga:\n' +
+                      '• Todos los datos en MAYÚSCULAS\n' +
+                      '• Título en MAYÚSCULAS\n' +
+                      '• Headers en MAYÚSCULAS\n' +
+                      '• Fecha en MAYÚSCULAS');
+            }, 500);
+        }
+
+        // Mostrar información inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 Página de prueba de exportación en mayúsculas cargada');
+            console.log('📊 Datos de prueba disponibles en la tabla');
+            console.log('✅ Funciones de exportación configuradas para MAYÚSCULAS');
+        });
+    </script>
+</body>
+</html>

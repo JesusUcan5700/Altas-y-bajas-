@@ -79,8 +79,8 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                 <div class="equipment-header">
                     <h3><i class="fas fa-hdd me-3"></i>Editar Dispositivo de Almacenamiento</h3>
                     <p class="mb-0 mt-2 opacity-90">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Modifica la información del dispositivo de almacenamiento
+                        <i class="fas fa-edit me-2"></i>
+                        Editar información del catálogo - Solo marca y modelo
                     </p>
                 </div>
                 
@@ -96,163 +96,52 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                         ],
                     ]); ?>
 
-                    <div class="row">
-                        <!-- Información Básica -->
-                        <div class="col-lg-6">
+                    <div class="row justify-content-center">
+                        <!-- Información Básica Simplificada -->
+                        <div class="col-lg-8">
                             <div class="form-section">
-                                <h5><i class="fas fa-tag me-2"></i>Información Básica</h5>
-                                
-                                <?= $form->field($model, 'MARCA')->dropDownList(
-                                    Almacenamiento::getMarcas(),
-                                    [
-                                        'prompt' => 'Seleccione una marca...',
-                                        'class' => 'form-select'
-                                    ]
-                                )->label('Marca <span class="required-field">*</span>') ?>
-
-                                <?= $form->field($model, 'MODELO')->textInput([
-                                    'maxlength' => true,
-                                    'placeholder' => 'Ej: WD Blue 1TB'
-                                ])->label('Modelo <span class="required-field">*</span>') ?>
-
-                                <?= $form->field($model, 'TIPO')->dropDownList(
-                                    Almacenamiento::getTipos(),
-                                    [
-                                        'prompt' => 'Seleccione un tipo...',
-                                        'class' => 'form-select'
-                                    ]
-                                )->label('Tipo <span class="required-field">*</span>') ?>
-
-                                <?= $form->field($model, 'CAPACIDAD')->textInput([
-                                    'maxlength' => true,
-                                    'placeholder' => 'Ej: 1TB, 256GB, 32GB'
-                                ]) ?>
-
-                                <?= $form->field($model, 'INTERFAZ')->dropDownList(
-                                    Almacenamiento::getInterfaces(),
-                                    [
-                                        'prompt' => 'Seleccione una interfaz...',
-                                        'class' => 'form-select'
-                                    ]
-                                ) ?>
-                            </div>
-                        </div>
-
-                        <!-- Información de Inventario -->
-                        <div class="col-lg-6">
-                            <div class="form-section">
-                                <h5><i class="fas fa-clipboard-list me-2"></i>Información de Inventario</h5>
-                                
-                                <?= $form->field($model, 'NUMERO_SERIE')->textInput([
-                                    'maxlength' => true,
-                                    'placeholder' => 'Número de serie del dispositivo'
-                                ]) ?>
-
-                                <?= $form->field($model, 'NUMERO_INVENTARIO')->textInput([
-                                    'maxlength' => true,
-                                    'placeholder' => 'Código de inventario interno'
-                                ]) ?>
-
-                                <?= $form->field($model, 'ESTADO')->dropDownList(
-                                    Almacenamiento::getEstados(),
-                                    ['class' => 'form-select']
-                                ) ?>
-
-                                <?= $form->field($model, 'FECHA')->input('date') ?>
-                            </div>
-                        </div>
-
-                        <!-- Ubicación y Descripción -->
-                        <div class="col-12">
-                            <div class="form-section">
-                                <h5><i class="fas fa-map-marker-alt me-2"></i>Ubicación y Descripción</h5>
+                                <h5><i class="fas fa-tag me-2"></i>Información del Catálogo</h5>
+                                <p class="text-muted mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Edita únicamente la información básica del dispositivo de almacenamiento
+                                </p>
                                 
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <?= $form->field($model, 'ubicacion_edificio')->dropDownList(
-                                            Almacenamiento::getEdificios(),
+                                        <?= $form->field($model, 'MARCA')->dropDownList(
+                                            Almacenamiento::getMarcas(),
                                             [
-                                                'prompt' => 'Seleccione un edificio...',
+                                                'prompt' => 'Seleccione una marca...',
                                                 'class' => 'form-select'
                                             ]
-                                        ) ?>
+                                        )->label('Marca <span class="required-field">*</span>') ?>
                                     </div>
+                                    
                                     <div class="col-md-6">
-                                        <?= $form->field($model, 'ubicacion_detalle')->textInput([
+                                        <?= $form->field($model, 'MODELO')->textInput([
                                             'maxlength' => true,
-                                            'placeholder' => 'Ej: Sala 101, Oficina TI, Laboratorio'
-                                        ]) ?>
+                                            'placeholder' => 'Ej: WD Blue 1TB, SSD EVO 970'
+                                        ])->label('Modelo <span class="required-field">*</span>') ?>
                                     </div>
                                 </div>
 
-                                <?= $form->field($model, 'DESCRIPCION')->textarea([
-                                    'rows' => 3,
-                                    'maxlength' => true,
-                                    'placeholder' => 'Descripción adicional, observaciones o características especiales...'
-                                ]) ?>
+                                <div class="alert alert-info mt-3" role="alert">
+                                    <h6><i class="fas fa-infinity me-2"></i>Reutilización Infinita</h6>
+                                    <p class="mb-0">Este dispositivo del catálogo puede usarse en múltiples equipos sin perder su disponibilidad.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Información de Auditoría -->
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="card border-info">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0 text-info">
-                                        <i class="fas fa-info-circle me-2"></i>Información de Auditoría
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-3">
-                                            <strong><i class="fas fa-calendar-plus text-success me-1"></i>Fecha de Creación:</strong><br>
-                                            <span class="text-muted">
-                                                <?= $model->getFechaCreacionFormateada() ?: 'No disponible' ?>
-                                            </span>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <strong><i class="fas fa-clock text-primary me-1"></i>Tiempo Activo:</strong><br>
-                                            <span class="text-success fw-bold">
-                                                <?= $model->getTiempoActivo() ?>
-                                            </span>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <strong><i class="fas fa-edit text-warning me-1"></i>Última Modificación:</strong><br>
-                                            <span class="text-muted">
-                                                <?= $model->getFechaUltimaEdicionFormateada() ?: 'No disponible' ?>
-                                            </span><br>
-                                            <small class="text-info">
-                                                <?= $model->getTiempoUltimaEdicion() ?>
-                                            </small>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <strong><i class="fas fa-user text-danger me-1"></i>Último Editor:</strong><br>
-                                            <span class="text-primary fw-bold">
-                                                <?= Html::encode($model->getInfoUltimoEditor()) ?>
-                                            </span>
-                                            <?php if ($model->ultimoEditor && $model->ultimoEditor->email): ?>
-                                                <br><small class="text-muted">
-                                                    <i class="fas fa-envelope me-1"></i><?= Html::encode($model->ultimoEditor->email) ?>
-                                                </small>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Botones de Acción -->
                     <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                        <a href="<?= \yii\helpers\Url::to(['site/almacenamiento-listar']) ?>" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Volver al Listado
+                        <a href="<?= \yii\helpers\Url::to(['site/almacenamiento-catalogo-listar']) ?>" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver al Catálogo
                         </a>
                         
                         <div>
-                            <button type="button" class="btn btn-outline-secondary me-2" onclick="resetForm()">
-                                <i class="fas fa-undo me-2"></i>Resetear
-                            </button>
                             <?= Html::submitButton('<i class="fas fa-save me-2"></i>Actualizar Dispositivo', [
                                 'class' => 'btn btn-primary',
                                 'id' => 'submit-btn'
@@ -266,6 +155,13 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
         </div>
     </div>
 </div>
+
+<!-- SweetAlert2 para confirmaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Sistema de confirmación personalizado -->
+<script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
+<!-- Configuraciones específicas de confirmación -->
+<script src="<?= Yii::getAlias('@web') ?>/js/edit-confirmations-config.js"></script>
 
 <script>
 // Validación del formulario
@@ -308,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validación al enviar
     form.addEventListener('submit', function(e) {
         let isValid = true;
-        const requiredFields = ['almacenamiento-marca', 'almacenamiento-modelo', 'almacenamiento-tipo'];
+        const requiredFields = ['almacenamiento-marca', 'almacenamiento-modelo'];
         
         requiredFields.forEach(function(fieldId) {
             const field = document.getElementById(fieldId);
@@ -385,3 +281,10 @@ document.getElementById('almacenamiento-marca')?.addEventListener('change', func
     }
 });
 </script>
+
+<!-- SweetAlert2 para confirmaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<!-- Sistema de confirmación de guardado -->
+<script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>

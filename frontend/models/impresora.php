@@ -40,8 +40,8 @@ class Impresora extends \yii\db\ActiveRecord
     const TIPO_MATRICIAL = 'Matricial';
     const TIPO_TERMICA = 'Térmica';
 
-    const PROPIEDAD_PROPIA = 'propio';
-    const PROPIEDAD_ARRENDADO = 'arrendado';
+    const PROPIEDAD_PROPIA = 'propia';
+    const PROPIEDAD_RENTADA = 'rentada';
 
     /**
      * {@inheritdoc}
@@ -84,7 +84,7 @@ class Impresora extends \yii\db\ActiveRecord
                 self::ESTADO_BAJA
             ]],
             [['TIPO'], 'in', 'range' => array_keys(self::getTipos())],
-            [['propia_rentada'], 'in', 'range' => [self::PROPIEDAD_PROPIA, self::PROPIEDAD_ARRENDADO]],
+            [['propia_rentada'], 'in', 'range' => [self::PROPIEDAD_PROPIA, self::PROPIEDAD_RENTADA]],
             [['Estado'], 'default', 'value' => self::ESTADO_ACTIVO],
             [['TIPO'], 'default', 'value' => self::TIPO_INKJET],
             [['propia_rentada'], 'default', 'value' => self::PROPIEDAD_PROPIA],
@@ -185,8 +185,8 @@ class Impresora extends \yii\db\ActiveRecord
     public static function getPropiedades()
     {
         return [
-            self::PROPIEDAD_PROPIA => 'Propio',
-            self::PROPIEDAD_ARRENDADO => 'Arrendado',
+            self::PROPIEDAD_PROPIA => 'Propia',
+            self::PROPIEDAD_RENTADA => 'Rentada',
         ];
     }
 
@@ -390,7 +390,9 @@ class Impresora extends \yii\db\ActiveRecord
             if (empty($this->Estado)) {
                 $this->Estado = self::ESTADO_ACTIVO;
             }
-            if (empty($this->propia_rentada)) {
+            
+            // Solo establecer valor por defecto para registros nuevos o si realmente está vacío/null
+            if ($insert && ($this->propia_rentada === null || $this->propia_rentada === '')) {
                 $this->propia_rentada = self::PROPIEDAD_PROPIA;
             }
             

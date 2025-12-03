@@ -78,8 +78,8 @@ class Monitor extends ActiveRecord
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO', 'TAMANIO', 'RESOLUCION', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'ESTADO', 'EMISION_INVENTARIO'], 'required'],
-            [['TIPO_PANTALLA', 'FRECUENCIA_HZ', 'ENTRADAS_VIDEO', 'DESCRIPCION', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
+            [['MARCA', 'MODELO'], 'required'],
+            [['TAMANIO', 'RESOLUCION', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'ESTADO', 'EMISION_INVENTARIO', 'TIPO_PANTALLA', 'FRECUENCIA_HZ', 'ENTRADAS_VIDEO', 'DESCRIPCION', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
             [['EMISION_INVENTARIO'], 'date', 'format' => 'php:Y-m-d'],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
@@ -164,12 +164,31 @@ class Monitor extends ActiveRecord
     public function beforeSave($insert)
     {
         if (parent::beforeSave($insert)) {
-            if (empty($this->ESTADO)) {
-                $this->ESTADO = self::ESTADO_ACTIVO;
-            }
-            
             // Configurar el editor actual
             $this->ultimo_editor = $this->getCurrentUser();
+            
+            // Completar campos obligatorios automáticamente para formulario simplificado
+            if (empty($this->TAMANIO)) {
+                $this->TAMANIO = '24"';
+            }
+            if (empty($this->RESOLUCION)) {
+                $this->RESOLUCION = '1920x1080';
+            }
+            if (empty($this->NUMERO_SERIE)) {
+                $this->NUMERO_SERIE = 'MON-' . date('YmdHis');
+            }
+            if (empty($this->NUMERO_INVENTARIO)) {
+                $this->NUMERO_INVENTARIO = 'MON-' . date('YmdHis') . '-INV';
+            }
+            if (empty($this->ESTADO)) {
+                $this->ESTADO = self::ESTADO_INACTIVO;
+            }
+            if (empty($this->EMISION_INVENTARIO)) {
+                $this->EMISION_INVENTARIO = date('Y-m-d');
+            }
+            if (empty($this->ubicacion_detalle)) {
+                $this->ubicacion_detalle = 'Catálogo';
+            }
             
             return true;
         }

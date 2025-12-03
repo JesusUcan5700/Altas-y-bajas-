@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Confirmaciones - Sistema de Edición</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            Prueba del Sistema de Confirmaciones
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Instrucciones:</strong> Modifica algunos campos y luego haz clic en "Guardar" para probar las confirmaciones.
+                        </div>
+
+                        <!-- Formulario de prueba para equipos -->
+                        <form method="POST" action="#" class="mb-4">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-desktop me-2"></i>Formulario de Equipo (Simulación)
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Marca</label>
+                                    <select class="form-select">
+                                        <option value="">Seleccionar marca</option>
+                                        <option value="Dell" selected>Dell</option>
+                                        <option value="HP">HP</option>
+                                        <option value="Lenovo">Lenovo</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Modelo</label>
+                                    <input type="text" class="form-control" value="OptiPlex 7080" placeholder="Modelo del equipo">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Número de Serie</label>
+                                    <input type="text" class="form-control" value="ABC123456" placeholder="Número de serie">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Estado</label>
+                                    <select class="form-select">
+                                        <option value="Activo" selected>Activo</option>
+                                        <option value="Inactivo">Inactivo</option>
+                                        <option value="Mantenimiento">Mantenimiento</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Descripción</label>
+                                <textarea class="form-control" rows="3" placeholder="Descripción del equipo">Equipo de cómputo asignado al área de administración</textarea>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-secondary me-md-2">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                                </button>
+                            </div>
+                        </form>
+
+                        <hr>
+
+                        <!-- Formulario de prueba para almacenamiento -->
+                        <form method="POST" action="#" class="mb-4">
+                            <h5 class="text-success mb-3">
+                                <i class="fas fa-hdd me-2"></i>Formulario de Almacenamiento (Simulación)
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Tipo</label>
+                                    <select class="form-select">
+                                        <option value="SSD" selected>SSD</option>
+                                        <option value="HDD">HDD</option>
+                                        <option value="USB">USB</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Capacidad</label>
+                                    <input type="text" class="form-control" value="1TB" placeholder="Ej: 500GB, 1TB">
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-secondary me-md-2">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-2"></i>Actualizar Dispositivo
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Estado del sistema -->
+                        <div class="mt-4">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-cogs me-2"></i>Estado del Sistema
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="system-status" class="text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>Verificando sistema de confirmaciones...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+    
+    <!-- Sistema de confirmaciones -->
+    <script src="js/confirm-save.js"></script>
+
+    <script>
+        // Verificar que el sistema esté funcionando
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const statusDiv = document.getElementById('system-status');
+                if (typeof Swal !== 'undefined' && window.ConfirmSave) {
+                    statusDiv.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Sistema de confirmaciones activo y funcionando';
+                } else {
+                    statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-2"></i>Problema con el sistema de confirmaciones';
+                }
+            }, 1000);
+        });
+
+        // Evitar envío real de formularios para la demo
+        document.addEventListener('submit', function(e) {
+            // Solo prevenir si no es nuestro sistema de confirmación
+            if (!e.target.hasAttribute('data-confirmed')) {
+                // El sistema de confirmación se encargará
+            }
+        });
+    </script>
+</body>
+</html>

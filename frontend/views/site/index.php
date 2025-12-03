@@ -96,6 +96,22 @@ $this->registerCss("
     .btn-outline-primary:hover i {
         color: #495057 !important;
     }
+    
+    .btn-outline-success:hover {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+    }
+    
+    .btn-outline-success i {
+        transition: color 0.3s ease;
+    }
+    
+    .btn-outline-success:hover i {
+        color: #ffffff !important;
+    }
 ");
 ?>
 
@@ -121,7 +137,7 @@ $this->registerCss("
             <div class="col-lg-12">
                 <div class="row justify-content-center g-4">
                     <!-- Botón Agregar Nuevo -->
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <div class="text-center">
                             <a href="<?= \yii\helpers\Url::to(['site/agregar-nuevo']) ?>" class="btn btn-outline-primary btn-lg w-100 py-4" style="font-size: 1.1rem; border-radius: 15px; border-width: 2px; transition: all 0.3s ease;">
                                 <i class="fas fa-plus-circle me-2" style="font-size: 1.8rem; color: #6c757d;"></i>
@@ -134,7 +150,7 @@ $this->registerCss("
                     </div>
                     
                     <!-- Botón Gestión por Categorías -->
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <div class="text-center">
                             <a href="<?= \yii\helpers\Url::to(['site/gestion-categorias']) ?>" class="btn btn-outline-primary btn-lg w-100 py-4" style="font-size: 1.1rem; border-radius: 15px; border-width: 2px; transition: all 0.3s ease;">
                                 <i class="fas fa-list-alt me-2" style="font-size: 1.8rem; color: #6c757d;"></i>
@@ -146,21 +162,53 @@ $this->registerCss("
                         </div>
                     </div>
                     
-                        <!-- Botón Stock -->
-                        <div class="col-lg-4 col-md-6">
-                            <div class="text-center">
-                                <a href="<?= \yii\helpers\Url::to(['site/stock']) ?>" class="btn btn-outline-primary btn-lg w-100 py-4" style="font-size: 1.1rem; border-radius: 15px; border-width: 2px; transition: all 0.3s ease;">
-                                    <i class="fas fa-boxes me-2" style="font-size: 1.8rem; color: #6c757d;"></i>
-                                    <br>
-                                    <strong>STOCK</strong>
-                                    <br>
-                                    <small style="font-size: 0.85rem; opacity: 0.8;">Ver inventario de equipos</small>
-                                </a>
-                            </div>
+                    <!-- Botón Stock -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="text-center">
+                            <a href="<?= \yii\helpers\Url::to(['site/stock']) ?>" class="btn btn-outline-primary btn-lg w-100 py-4" style="font-size: 1.1rem; border-radius: 15px; border-width: 2px; transition: all 0.3s ease;">
+                                <i class="fas fa-boxes me-2" style="font-size: 1.8rem; color: #6c757d;"></i>
+                                <br>
+                                <strong>STOCK</strong>
+                                <br>
+                                <small style="font-size: 0.85rem; opacity: 0.8;">Ver inventario de equipos</small>
+                            </a>
                         </div>
+                    </div>
+
+                    <!-- Botón Historial de Bajas -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="text-center">
+                            <a href="<?= \yii\helpers\Url::to(['site/historial-bajas']) ?>" class="btn btn-outline-primary btn-lg w-100 py-4" style="font-size: 1.1rem; border-radius: 15px; border-width: 2px; transition: all 0.3s ease;">
+                                <i class="fas fa-history me-2" style="font-size: 1.8rem; color: #6c757d;"></i>
+                                <br>
+                                <strong>HISTORIAL DE BAJAS</strong>
+                                <br>
+                                <small style="font-size: 0.85rem; opacity: 0.8;">Ver equipos dados de baja</small>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
- 
+        <!-- Sección adicional para Reciclaje -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-12">
+                <div class="row justify-content-center g-4">
+                    <!-- Botón Reciclaje de Piezas -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="text-center">
+                            <a href="<?= \yii\helpers\Url::to(['site/recicja-piezas']) ?>" class="btn btn-outline-primary btn-lg w-100 py-4" style="font-size: 1.1rem; border-radius: 15px; border-width: 2px; transition: all 0.3s ease;">
+                                <i class="fas fa-recycle me-2" style="font-size: 1.8rem; color: #6c757d;"></i>
+                                <br>
+                                <strong>RECICLAJE DE PIEZAS DE EQUIPOS</strong>
+                                <br>
+                                <small style="font-size: 0.85rem; opacity: 0.8;">Gestionar componentes reutilizables</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

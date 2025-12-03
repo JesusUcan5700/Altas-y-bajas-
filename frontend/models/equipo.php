@@ -19,6 +19,20 @@ use yii\db\Expression;
  * @property string $RAM2
  * @property string $RAM3
  * @property string $RAM4
+ * @property int|null $FUENTE_PODER
+ * @property int|null $MONITOR_ID
+ * @property int|null $CPU_ID
+ * @property int|null $DD_ID
+ * @property int|null $DD2_ID
+ * @property int|null $DD3_ID
+ * @property int|null $DD4_ID
+ * @property int|null $RAM_ID
+ * @property int|null $RAM2_ID
+ * @property int|null $RAM3_ID
+ * @property int|null $RAM4_ID
+ * @property string|null $CPU_DESC
+ * @property string|null $DD_DESC
+ * @property string|null $RAM_DESC
  * @property string $MARCA
  * @property string $MODELO
  * @property string $NUM_SERIE
@@ -69,6 +83,9 @@ class Equipo extends \yii\db\ActiveRecord
     {
         return [
             [['CPU', 'DD', 'RAM', 'MARCA', 'MODELO', 'NUM_SERIE', 'NUM_INVENTARIO', 'EMISION_INVENTARIO', 'tipoequipo'], 'required'],
+            [['FUENTE_PODER', 'MONITOR_ID', 'CPU_ID', 'DD_ID', 'DD2_ID', 'DD3_ID', 'DD4_ID', 'RAM_ID', 'RAM2_ID', 'RAM3_ID', 'RAM4_ID'], 'integer'],
+            [['FUENTE_PODER', 'MONITOR_ID', 'CPU_ID', 'DD_ID', 'DD2_ID', 'DD3_ID', 'DD4_ID', 'RAM_ID', 'RAM2_ID', 'RAM3_ID', 'RAM4_ID', 'CPU_DESC', 'DD_DESC', 'RAM_DESC'], 'safe'],
+            [['CPU_DESC', 'DD_DESC', 'RAM_DESC'], 'string', 'max' => 255],
             [['CPU', 'DD', 'DD2', 'DD3', 'DD4', 'RAM', 'RAM2', 'RAM3', 'RAM4', 'MARCA', 'MODELO'], 'string', 'max' => 45],
             [['NUM_SERIE', 'NUM_INVENTARIO', 'EMISION_INVENTARIO'], 'string', 'max' => 45],
             [['tipoequipo'], 'string', 'max' => 100],
@@ -105,6 +122,20 @@ class Equipo extends \yii\db\ActiveRecord
             'RAM2' => 'RAM 2',
             'RAM3' => 'RAM 3',
             'RAM4' => 'RAM 4',
+            'FUENTE_PODER' => 'Fuente de Poder',
+            'MONITOR_ID' => 'Monitor',
+            'CPU_ID' => 'ID Procesador',
+            'DD_ID' => 'ID Almacenamiento',
+            'DD2_ID' => 'ID Almacenamiento 2',
+            'DD3_ID' => 'ID Almacenamiento 3',
+            'DD4_ID' => 'ID Almacenamiento 4',
+            'RAM_ID' => 'ID Memoria RAM',
+            'RAM2_ID' => 'ID Memoria RAM 2',
+            'RAM3_ID' => 'ID Memoria RAM 3',
+            'RAM4_ID' => 'ID Memoria RAM 4',
+            'CPU_DESC' => 'Descripción CPU',
+            'DD_DESC' => 'Descripción Almacenamiento',
+            'RAM_DESC' => 'Descripción RAM',
             'MARCA' => 'Marca',
             'MODELO' => 'Modelo',
             'NUM_SERIE' => 'Número de Serie',

@@ -128,7 +128,8 @@ $this->title = 'Editar No Break';
                             <i class="fas fa-undo"></i> Restaurar Valores
                         </button>
                         <?= Html::submitButton('<i class="fas fa-save"></i> Actualizar No Break', [
-                            'class' => 'btn btn-danger'
+                            'class' => 'btn btn-danger',
+                            'id' => 'btn-guardar-nobreak'
                         ]) ?>
                     </div>
                     <?php ActiveForm::end(); ?>
@@ -137,6 +138,13 @@ $this->title = 'Editar No Break';
         </div>
     </div>
 </div>
+
+<!-- SweetAlert2 para confirmaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Sistema de confirmación personalizado -->
+<script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
+<!-- Configuraciones específicas de confirmación -->
+<script src="<?= Yii::getAlias('@web') ?>/js/edit-confirmations-config.js"></script>
 <script>
 // Contador de caracteres para la descripción
 document.addEventListener('DOMContentLoaded', function() {
