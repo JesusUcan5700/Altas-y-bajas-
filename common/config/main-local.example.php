@@ -19,7 +19,7 @@ return [
             'class' => \yii\symfonymailer\Mailer::class,
             'viewPath' => '@common/mail',
             // Cambiar a false cuando tengas las credenciales configuradas
-            'useFileTransport' => true,  // true = guarda emails en archivos (para desarrollo)
+            'useFileTransport' => false,  // true = guarda emails en archivos (para desarrollo)
             'transport' => [
                 'scheme' => 'smtps',
                 'host' => 'smtp.gmail.com',

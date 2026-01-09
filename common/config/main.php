@@ -17,8 +17,8 @@ return [
             'transport' => [
                 'scheme' => 'smtp',
                 'host' => 'smtp.gmail.com',
-                'username' => 'inventariosis995@gmail.com',
-                'password' => 'rqzvudfpgkwallso',  // Contraseña de aplicación sin espacios
+                'username' => 'inventarioapoyoinformatico@valladolid.tecnm.mx',
+                'password' => 'jissxviojhjymqih',  // Contraseña de aplicación sin espacios
                 'port' => 587,
                 'encryption' => 'tls',
                 'options' => [

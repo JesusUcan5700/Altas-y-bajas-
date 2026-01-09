@@ -12,13 +12,12 @@ return [
         'mailer' => [
             'class' => \yii\symfonymailer\Mailer::class,
             'viewPath' => '@common/mail',
-            // ⚠️ PASO FINAL: Obtén tu contraseña de aplicación y cambia useFileTransport a false
-            'useFileTransport' => false,  // ⬅️ CAMBIA A false cuando tengas la contraseña
+            'useFileTransport' => false,
             'transport' => [
                 'scheme' => 'smtps',
                 'host' => 'smtp.gmail.com',
-                'username' => 'juanucan921@gmail.com',
-                'password' => 'mdfm poxe efvd vevd',  // ⬅️ Reemplaza esto
+                'username' => 'inventarioapoyoinformatico@valladolid.tecnm.mx',
+                'password' => 'jissxviojhjymqih',
                 'port' => 465,
                 'encryption' => 'ssl',
             ],
