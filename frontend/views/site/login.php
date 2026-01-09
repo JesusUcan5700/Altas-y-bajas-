@@ -130,7 +130,7 @@ $this->registerJs("
                 <div class="card-body p-4">
                     <!-- Logo principal arriba del formulario -->
                     <div class="text-center mb-3">
-                        <?= Html::img('@web/../views/site/logo.jpg', [
+                        <?= Html::img('@web/imagenes/logo.png', [
                             'alt' => 'Logo Principal',
                             'class' => 'img-fluid rounded mb-2',
                             'style' => 'max-height: 80px; object-fit: contain;'
