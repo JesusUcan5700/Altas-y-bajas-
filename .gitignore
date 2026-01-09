@@ -1,0 +1,4 @@
+frontend/web/assets/*
+!frontend/web/assets/.gitignore
+backend/web/assets/*
+!backend/web/assets/.gitignore
