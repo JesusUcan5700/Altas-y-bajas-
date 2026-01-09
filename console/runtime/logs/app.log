@@ -1,0 +1,174 @@
+2025-08-05 03:36:31 [-][-][-][error][yii\console\UnknownCommandException] yii\base\InvalidRouteException: Unable to resolve the request: migrate/status in C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\base\Controller.php:155
+Stack trace:
+#0 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\console\Controller.php(180): yii\base\Controller->runAction('status', Array)
+#1 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\base\Module.php(555): yii\console\Controller->runAction('status', Array)
+#2 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\console\Application.php(180): yii\base\Module->runAction('migrate/status', Array)
+#3 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\console\Application.php(147): yii\console\Application->runAction('migrate/status', Array)
+#4 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\base\Application.php(387): yii\console\Application->handleRequest(Object(yii\console\Request))
+#5 C:\wamp64\www\altas_bajas\yii(23): yii\base\Application->run()
+#6 {main}
+
+Next yii\console\UnknownCommandException: Unknown command "migrate/status". in C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\console\Application.php:183
+Stack trace:
+#0 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\console\Application.php(147): yii\console\Application->runAction('migrate/status', Array)
+#1 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\base\Application.php(387): yii\console\Application->handleRequest(Object(yii\console\Request))
+#2 C:\wamp64\www\altas_bajas\yii(23): yii\base\Application->run()
+#3 {main}
+2025-08-05 03:36:30 [-][-][-][info][application] $_GET = []
+
+$_POST = []
+
+$_FILES = []
+
+$_COOKIE = []
+
+$_SERVER = [
+    'ALLUSERSPROFILE' => 'C:\\ProgramData'
+    'APPDATA' => 'C:\\Users\\crist\\AppData\\Roaming'
+    'CHROME_CRASHPAD_PIPE_NAME' => '\\\\.\\pipe\\crashpad_1744_FZUJQHLADPEXIFZC'
+    'CommonProgramFiles' => 'C:\\Program Files\\Common Files'
+    'CommonProgramFiles(x86)' => 'C:\\Program Files (x86)\\Common Files'
+    'CommonProgramW6432' => 'C:\\Program Files\\Common Files'
+    'COMPUTERNAME' => 'LAPTOPDECRIS'
+    'ComSpec' => 'C:\\WINDOWS\\system32\\cmd.exe'
+    'DriverData' => 'C:\\Windows\\System32\\Drivers\\DriverData'
+    'EFC_5272_1592913036' => '1'
+    'EFC_5272_2283032206' => '1'
+    'HOMEDRIVE' => 'C:'
+    'HOMEPATH' => '\\Users\\crist'
+    'LOCALAPPDATA' => 'C:\\Users\\crist\\AppData\\Local'
+    'LOGONSERVER' => '\\\\LAPTOPDECRIS'
+    'NUMBER_OF_PROCESSORS' => '4'
+    'OneDrive' => 'C:\\Users\\crist\\OneDrive'
+    'ORIGINAL_XDG_CURRENT_DESKTOP' => 'undefined'
+    'OS' => 'Windows_NT'
+    'Path' => 'C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\wamp64\\bin\\php\\php8.3.14;C:\\ProgramData\\ComposerSetup\\bin;C:\\Users\\crist\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\crist\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\crist\\AppData\\Roaming\\Composer\\vendor\\bin;c:\\Users\\crist\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand'
+    'PATHEXT' => '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL'
+    'PROCESSOR_ARCHITECTURE' => 'AMD64'
+    'PROCESSOR_IDENTIFIER' => 'Intel64 Family 6 Model 140 Stepping 1, GenuineIntel'
+    'PROCESSOR_LEVEL' => '6'
+    'PROCESSOR_REVISION' => '8c01'
+    'ProgramData' => 'C:\\ProgramData'
+    'ProgramFiles' => 'C:\\Program Files'
+    'ProgramFiles(x86)' => 'C:\\Program Files (x86)'
+    'ProgramW6432' => 'C:\\Program Files'
+    'PSModulePath' => 'C:\\Users\\crist\\OneDrive\\Documentos\\WindowsPowerShell\\Modules;C:\\Program Files\\WindowsPowerShell\\Modules;C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\Modules'
+    'PUBLIC' => 'C:\\Users\\Public'
+    'SESSIONNAME' => 'Console'
+    'SystemDrive' => 'C:'
+    'SystemRoot' => 'C:\\WINDOWS'
+    'TEMP' => 'C:\\Users\\crist\\AppData\\Local\\Temp'
+    'TMP' => 'C:\\Users\\crist\\AppData\\Local\\Temp'
+    'USERDOMAIN' => 'LAPTOPDECRIS'
+    'USERDOMAIN_ROAMINGPROFILE' => 'LAPTOPDECRIS'
+    'USERNAME' => 'crist'
+    'USERPROFILE' => 'C:\\Users\\crist'
+    'windir' => 'C:\\WINDOWS'
+    'GIT_PAGER' => 'cat'
+    'TERM_PROGRAM' => 'vscode'
+    'TERM_PROGRAM_VERSION' => '1.102.3'
+    'LANG' => 'en_US.UTF-8'
+    'COLORTERM' => 'truecolor'
+    'VSCODE_INJECTION' => '1'
+    'VSCODE_NONCE' => '386d360e-9e59-4f82-beea-8f86323acf3f'
+    'VSCODE_STABLE' => '1'
+    'PHP_SELF' => 'yii'
+    'SCRIPT_NAME' => 'yii'
+    'SCRIPT_FILENAME' => 'yii'
+    'PATH_TRANSLATED' => 'yii'
+    'DOCUMENT_ROOT' => ''
+    'REQUEST_TIME_FLOAT' => 1754364990.036
+    'REQUEST_TIME' => 1754364990
+    'argv' => [
+        0 => 'yii'
+        1 => 'migrate/status'
+    ]
+    'argc' => 2
+]
+2025-08-20 18:40:12 [-][-][-][error][yii\console\UnknownCommandException] yii\base\InvalidRouteException: Unable to resolve the request "db/show-columns". in C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\base\Module.php:564
+Stack trace:
+#0 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\console\Application.php(180): yii\base\Module->runAction('db/show-columns', Array)
+#1 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\console\Application.php(147): yii\console\Application->runAction('db/show-columns', Array)
+#2 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\base\Application.php(387): yii\console\Application->handleRequest(Object(yii\console\Request))
+#3 C:\wamp64\www\altas_bajas\yii(23): yii\base\Application->run()
+#4 {main}
+
+Next yii\console\UnknownCommandException: Unknown command "db/show-columns". in C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\console\Application.php:183
+Stack trace:
+#0 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\console\Application.php(147): yii\console\Application->runAction('db/show-columns', Array)
+#1 C:\wamp64\www\altas_bajas\vendor\yiisoft\yii2\base\Application.php(387): yii\console\Application->handleRequest(Object(yii\console\Request))
+#2 C:\wamp64\www\altas_bajas\yii(23): yii\base\Application->run()
+#3 {main}
+2025-08-20 18:40:12 [-][-][-][info][application] $_GET = []
+
+$_POST = []
+
+$_FILES = []
+
+$_COOKIE = []
+
+$_SERVER = [
+    'ALLUSERSPROFILE' => 'C:\\ProgramData'
+    'APPDATA' => 'C:\\Users\\crist\\AppData\\Roaming'
+    'CHROME_CRASHPAD_PIPE_NAME' => '\\\\.\\pipe\\crashpad_6620_LBFCTPHLWNESVVSD'
+    'CommonProgramFiles' => 'C:\\Program Files\\Common Files'
+    'CommonProgramFiles(x86)' => 'C:\\Program Files (x86)\\Common Files'
+    'CommonProgramW6432' => 'C:\\Program Files\\Common Files'
+    'COMPUTERNAME' => 'LAPTOPDECRIS'
+    'ComSpec' => 'C:\\WINDOWS\\system32\\cmd.exe'
+    'DriverData' => 'C:\\Windows\\System32\\Drivers\\DriverData'
+    'EFC_6632_1592913036' => '1'
+    'EFC_6632_2283032206' => '1'
+    'HOMEDRIVE' => 'C:'
+    'HOMEPATH' => '\\Users\\crist'
+    'LOCALAPPDATA' => 'C:\\Users\\crist\\AppData\\Local'
+    'LOGONSERVER' => '\\\\LAPTOPDECRIS'
+    'NUMBER_OF_PROCESSORS' => '4'
+    'OneDrive' => 'C:\\Users\\crist\\OneDrive'
+    'OneDriveConsumer' => 'C:\\Users\\crist\\OneDrive'
+    'ORIGINAL_XDG_CURRENT_DESKTOP' => 'undefined'
+    'OS' => 'Windows_NT'
+    'Path' => 'C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\wamp64\\bin\\php\\php8.3.14;C:\\ProgramData\\ComposerSetup\\bin;C:\\Users\\crist\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\crist\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\crist\\AppData\\Roaming\\Composer\\vendor\\bin;c:\\Users\\crist\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand'
+    'PATHEXT' => '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL'
+    'PROCESSOR_ARCHITECTURE' => 'AMD64'
+    'PROCESSOR_IDENTIFIER' => 'Intel64 Family 6 Model 140 Stepping 1, GenuineIntel'
+    'PROCESSOR_LEVEL' => '6'
+    'PROCESSOR_REVISION' => '8c01'
+    'ProgramData' => 'C:\\ProgramData'
+    'ProgramFiles' => 'C:\\Program Files'
+    'ProgramFiles(x86)' => 'C:\\Program Files (x86)'
+    'ProgramW6432' => 'C:\\Program Files'
+    'PSModulePath' => 'C:\\Users\\crist\\OneDrive\\Documentos\\WindowsPowerShell\\Modules;C:\\Program Files\\WindowsPowerShell\\Modules;C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\Modules'
+    'PUBLIC' => 'C:\\Users\\Public'
+    'SESSIONNAME' => 'Console'
+    'SystemDrive' => 'C:'
+    'SystemRoot' => 'C:\\WINDOWS'
+    'TEMP' => 'C:\\Users\\crist\\AppData\\Local\\Temp'
+    'TMP' => 'C:\\Users\\crist\\AppData\\Local\\Temp'
+    'USERDOMAIN' => 'LAPTOPDECRIS'
+    'USERDOMAIN_ROAMINGPROFILE' => 'LAPTOPDECRIS'
+    'USERNAME' => 'crist'
+    'USERPROFILE' => 'C:\\Users\\crist'
+    'windir' => 'C:\\WINDOWS'
+    'GIT_PAGER' => 'cat'
+    'TERM_PROGRAM' => 'vscode'
+    'TERM_PROGRAM_VERSION' => '1.103.1'
+    'LANG' => 'en_US.UTF-8'
+    'COLORTERM' => 'truecolor'
+    'VSCODE_INJECTION' => '1'
+    'VSCODE_NONCE' => 'b42e0e13-189e-4f69-8de3-16da8d96723e'
+    'VSCODE_STABLE' => '1'
+    'PHP_SELF' => 'yii'
+    'SCRIPT_NAME' => 'yii'
+    'SCRIPT_FILENAME' => 'yii'
+    'PATH_TRANSLATED' => 'yii'
+    'DOCUMENT_ROOT' => ''
+    'REQUEST_TIME_FLOAT' => 1755715212.4807
+    'REQUEST_TIME' => 1755715212
+    'argv' => [
+        0 => 'yii'
+        1 => 'db/show-columns'
+        2 => 'baterias'
+    ]
+    'argc' => 3
+]
