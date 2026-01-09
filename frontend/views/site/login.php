@@ -1,36 +1,6 @@
 <?php
 
-/** @var yii\web                                   <!-- Header reorganizado correctamente -->
-                    <div class="text-center mb-3">
-                        <!-- Título del sistema PRIMERO -->
-                        <p class="text-muted small mb-2">Sistema de inventario de altas y bajas de equipo de cómputo</p>
-                        
-                        <!-- Logo DESPUÉS del título del sistema -->
-                        <?= Html::img('@web/imagenes/logo.png', [
-                            'alt' => 'Logo Principal',
-                            'class' => 'img-fluid rounded mb-2',
-                            'style' => 'max-height: 80px; object-fit: contain;'
-                        ]) ?>
-                        
-                        <!-- Acción específica AL FINAL -->
-                        <h4 class="fw-bold text-dark mb-1">Iniciar Sesión</h4>
-                        <div class="border-top border-primary w-50 mx-auto mb-3" style="border-width: 2px !important;"></div>
-                    </div>eader reorganizado -->
-                    <div class="text-center mb-3">
-                        <!-- Título del sistema primero -->
-                        <h6 class="fw-bold text-primary mb-2">Sistema de inventario de altas y bajas de equipo de cómputo</h6>
-                        
-                        <!-- Logo después del título -->
-                        <?= Html::img('@web/../views/site/logo.jpg', [
-                            'alt' => 'Logo Principal',
-                            'class' => 'img-fluid rounded mb-2',
-                            'style' => 'max-height: 80px; object-fit: contain;'
-                        ]) ?>
-                        
-                        <!-- Acción específica al final -->
-                        <h4 class="fw-bold text-dark mb-1">Iniciar Sesión</h4>
-                        <div class="border-top border-primary w-50 mx-auto mb-3" style="border-width: 2px !important;"></div>
-                    </div> */
+/** @var yii\web\View $this */
 /** @var yii\bootstrap5\ActiveForm $form */
 /** @var \common\models\LoginForm $model */
 
