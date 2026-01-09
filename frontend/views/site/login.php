@@ -6,7 +6,7 @@
                         <p class="text-muted small mb-2">Sistema de inventario de altas y bajas de equipo de cómputo</p>
                         
                         <!-- Logo DESPUÉS del título del sistema -->
-                        <?= Html::img('@web/../views/site/logo.jpg', [
+                        <?= Html::img('@web/imagenes/logo.png', [
                             'alt' => 'Logo Principal',
                             'class' => 'img-fluid rounded mb-2',
                             'style' => 'max-height: 80px; object-fit: contain;'
