@@ -122,7 +122,12 @@ $this->registerCss("
                                 ) ?>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'ubicacion_detalle')->textInput(['placeholder' => 'Detalle de ubicación']) ?>
+                                <?= $form->field($model, 'ubicacion_detalle')->textInput([
+                                    'maxlength' => 255,
+                                    'placeholder' => 'DETALLE DE UBICACIÓN',
+                                    'style' => 'text-transform: uppercase;',
+                                    'oninput' => 'this.value = this.value.toUpperCase()'
+                                ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                             </div>
                         </div>
                         
@@ -163,3 +168,12 @@ $this->registerCss("
         </div>
     </div>
 </div>
+
+<?php
+// Registrar SweetAlert2
+$this->registerJsFile('https://cdn.jsdelivr.net/npm/sweetalert2@11', ['position' => \yii\web\View::POS_HEAD]);
+
+// Registrar el script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+$this->registerJs("inicializarValidacionDuplicados('Adaptador');", \yii\web\View::POS_READY);
+?>

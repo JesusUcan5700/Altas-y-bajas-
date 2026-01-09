@@ -5,8 +5,10 @@ use frontend\models\VideoVigilancia;
 
 /** @var yii\web\View $this */
 /** @var frontend\models\VideoVigilancia $model */
+/* @var $modoSimplificado boolean */
 
-$this->title = 'Editar Video Vigilancia';
+$modoSimplificado = isset($modoSimplificado) ? $modoSimplificado : false;
+$this->title = $modoSimplificado ? 'Agregar Video Vigilancia (Catálogo)' : 'Editar Video Vigilancia';
 
 // Registrar Font Awesome CDN
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
@@ -22,6 +24,7 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                 <div class="card-body">
                     
                     <!-- Información de Auditoría -->
+                    <?php if (!$modoSimplificado && !$model->isNewRecord): ?>
                     <div class="row mb-4">
                         <div class="col-12">
                             <div class="card bg-light">
@@ -47,10 +50,38 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                             </div>
                         </div>
                     </div>
+                    <?php endif; ?>
 
                     <?php $form = ActiveForm::begin(); ?>
 
-                    <div class="row">
+                    <?php if ($modoSimplificado): ?>
+                        <!-- MODO CATÁLOGO: Solo marca y modelo -->
+                        <div class="alert alert-info" role="alert">
+                            <h5><i class="fas fa-info-circle me-2"></i>Modo Catálogo</h5>
+                            Esta cámara de videovigilancia se guardará SOLO con marca y modelo para uso en catálogo.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <?= $form->field($model, 'MARCA')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <?= $form->field($model, 'MODELO')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver', 
+                                ['videovigilancia-catalogo-listar'], 
+                                ['class' => 'btn btn-secondary me-md-2']) ?>
+                            
+                            <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar en Catálogo', 
+                                ['class' => 'btn btn-danger']) ?>
+                        </div>
+                        
+                    <?php else: ?>
+                        <!-- MODO COMPLETO: Todos los campos -->
+                        <div class="row">
                         <!-- Información Básica -->
                         <div class="col-md-6">
                             <div class="card">
@@ -141,6 +172,7 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                             </div>
                         </div>
                     </div>
+                    <?php endif; ?>
 
                     <?php ActiveForm::end(); ?>
 

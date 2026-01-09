@@ -16,6 +16,7 @@ class FuentesDePoderController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
+                    'eliminar-multiple' => ['POST'],
                 ],
             ],
         ];
@@ -64,6 +65,23 @@ class FuentesDePoderController extends Controller
     public function actionDelete($id)
     {
         $this->findModel($id)->delete();
+        return $this->redirect(['index']);
+    }
+
+    public function actionEliminarMultiple()
+    {
+        $ids = Yii::$app->request->post('ids');
+        if (!empty($ids) && is_array($ids)) {
+            foreach ($ids as $id) {
+                $model = FuentesDePoder::findOne($id);
+                if ($model !== null) {
+                    $model->delete();
+                }
+            }
+            Yii::$app->session->setFlash('success', 'Las fuentes de poder seleccionadas han sido eliminadas.');
+        } else {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron fuentes de poder para eliminar.');
+        }
         return $this->redirect(['index']);
     }
 

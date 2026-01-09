@@ -61,10 +61,12 @@ $this->title = 'Editar No Break';
                                 ['prompt' => 'Selecciona edificio', 'class' => 'form-select']
                             ) ?>
                             <?= $form->field($model, 'ubicacion_detalle')->textInput([
-                                'maxlength' => true, 
-                                'placeholder' => 'Escriba la ubicación detallada',
-                                'class' => 'form-control'
-                            ]) ?>
+                                'maxlength' => 255, 
+                                'placeholder' => 'Ej: SALA DE SERVIDORES, OFICINA 301, ETC.',
+                                'class' => 'form-control',
+                                'style' => 'text-transform: uppercase;',
+                                'oninput' => 'this.value = this.value.toUpperCase()'
+                            ])->hint('Escriba la ubicación (se convertirá automáticamente a MAYÚSCULAS)') ?>
                         </div>
                     </div>
                     <div class="row">
@@ -172,3 +174,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<?php
+// Registrar el script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+$this->registerJs("inicializarValidacionDuplicados('Nobreak', " . $model->idNOBREAK . ");", \yii\web\View::POS_READY);
+?>

@@ -5,6 +5,9 @@
 $this->title = 'Gestión de Equipos de Cómputo';
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 
+// Registrar librería QRious para generar códigos QR
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js', ['position' => \yii\web\View::POS_HEAD]);
+
 // Cargar datos de Equipos de Cómputo
 try {
     $connection = Yii::$app->db;
@@ -139,13 +142,25 @@ $this->registerCss("
                                             <td>
                                                 <?php
                                                 $estado = strtolower($equipo['Estado'] ?? '');
-                                                $badgeClass = match($estado) {
-                                                    'activo' => 'bg-success',
-                                                    'reparación', 'reparacion' => 'bg-warning',
-                                                    'inactivo', 'dañado', 'danado' => 'bg-secondary',
-                                                    'baja' => 'bg-danger',
-                                                    default => 'bg-dark'
-                                                };
+                                                switch($estado) {
+                                                    case 'activo':
+                                                        $badgeClass = 'bg-success';
+                                                        break;
+                                                    case 'reparación':
+                                                    case 'reparacion':
+                                                        $badgeClass = 'bg-warning';
+                                                        break;
+                                                    case 'inactivo':
+                                                    case 'dañado':
+                                                    case 'danado':
+                                                        $badgeClass = 'bg-secondary';
+                                                        break;
+                                                    case 'baja':
+                                                        $badgeClass = 'bg-danger';
+                                                        break;
+                                                    default:
+                                                        $badgeClass = 'bg-dark';
+                                                }
                                                 ?>
                                                 <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($equipo['Estado'] ?? '-') ?></span>
                                             </td>
@@ -157,6 +172,9 @@ $this->registerCss("
                                                     <a href="<?= \yii\helpers\Url::to(['site/computo-editar', 'id' => $equipo['idEQUIPO']]) ?>" class="btn btn-sm btn-primary" title="Editar">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
+                                                    <button class="btn btn-sm btn-dark" onclick="descargarQR(<?= $equipo['idEQUIPO'] ?>, '<?= htmlspecialchars($equipo['MARCA'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($equipo['MODELO'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($equipo['NUM_SERIE'] ?? '', ENT_QUOTES) ?>')" title="Descargar QR">
+                                                        <i class="fas fa-qrcode"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -211,3 +229,94 @@ function verDetalles(id) {
 console.log('✅ Sistema de Equipos de Cómputo cargado con', equiposData.length, 'equipos');
 ");
 ?>
+
+<script>
+// Función para descargar QR
+function descargarQR(id, marca, modelo, serie) {
+    // Obtener datos de la fila
+    const rows = document.querySelectorAll('#tbody_equipos tr');
+    let fila;
+    for (let row of rows) {
+        const idCell = row.querySelector('td:first-child');
+        if (idCell && idCell.textContent.trim() == id) {
+            fila = row;
+            break;
+        }
+    }
+    
+    if (!fila) {
+        alert('No se encontró el equipo');
+        return;
+    }
+    
+    const celdas = fila.querySelectorAll('td');
+    const cpu = celdas[3].textContent.trim();
+    const ram = celdas[4].textContent.trim();
+    const dd = celdas[5].textContent.trim();
+    const inventario = celdas[7].textContent.trim();
+    const estado = celdas[8].textContent.trim();
+    
+    // Crear texto con todos los datos
+    var textoQR = 'EQUIPO DE COMPUTO' + '\n' +
+                  'ID: ' + id + '\n' +
+                  'Marca: ' + (marca || 'N/A') + '\n' +
+                  'Modelo: ' + (modelo || 'N/A') + '\n' +
+                  'CPU: ' + cpu + '\n' +
+                  'RAM: ' + ram + '\n' +
+                  'Disco Duro: ' + dd + '\n' +
+                  'No. Serie: ' + (serie || 'N/A') + '\n' +
+                  'No. Inventario: ' + inventario + '\n' +
+                  'Estado: ' + estado;
+    
+    // Crear canvas temporal
+    var canvas = document.createElement('canvas');
+    
+    // Generar QR con datos en texto
+    var qr = new QRious({
+        element: canvas,
+        value: textoQR,
+        size: 300,
+        level: 'H',
+        foreground: '#212529',
+        background: '#ffffff'
+    });
+    
+    // Crear un canvas más grande para agregar texto
+    var canvasFinal = document.createElement('canvas');
+    var ctx = canvasFinal.getContext('2d');
+    canvasFinal.width = 350;
+    canvasFinal.height = 420;
+    
+    // Fondo blanco
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasFinal.width, canvasFinal.height);
+    
+    // Borde azul
+    ctx.strokeStyle = '#007bff';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(5, 5, canvasFinal.width - 10, canvasFinal.height - 10);
+    
+    // Título
+    ctx.fillStyle = '#007bff';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('💻 Equipo de Cómputo', canvasFinal.width / 2, 30);
+    
+    // Dibujar el QR
+    ctx.drawImage(canvas, 25, 45, 300, 300);
+    
+    // Información del equipo
+    ctx.fillStyle = '#333333';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('ID: ' + id, canvasFinal.width / 2, 365);
+    ctx.fillText('Marca: ' + (marca || 'N/A') + ' | Modelo: ' + (modelo || 'N/A'), canvasFinal.width / 2, 382);
+    ctx.fillText('N° Serie: ' + (serie || 'N/A'), canvasFinal.width / 2, 399);
+    
+    // Descargar como imagen
+    var link = document.createElement('a');
+    link.download = 'QR_Equipo_' + id + '.png';
+    link.href = canvasFinal.toDataURL('image/png');
+    link.click();
+}
+</script>

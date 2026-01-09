@@ -5,11 +5,14 @@ use yii\widgets\ActiveForm;
 use frontend\models\Impresora;
 use yii\helpers\ArrayHelper;
 
+$this->title = 'Agregar Impresora';
 /** @var yii\web\View $this */
 /** @var frontend\models\Impresora $model */
 /** @var yii\widgets\ActiveForm $form */
+/* @var $modoSimplificado boolean */
 
-$this->title = 'Agregar Impresora';
+$modoSimplificado = isset($modoSimplificado) ? $modoSimplificado : false;
+$this->title = $modoSimplificado ? 'Agregar Impresora (Catálogo)' : 'Agregar Impresora';
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 
 // Agregar estilos
@@ -49,9 +52,15 @@ $this->registerCss("
             <div class="card form-card">
                 <div class="card-header form-header text-center">
                     <h3 class="mb-0">
-                        <i class="fas fa-print me-2"></i>Agregar Impresora
+                        <i class="fas fa-print me-2"></i><?= Html::encode($this->title) ?>
                     </h3>
-                    <p class="mb-0 mt-2">Registrar nueva impresora o multifuncional</p>
+                    <?php if ($modoSimplificado): ?>
+                        <small class="d-block mt-1">
+                            <i class="fas fa-info-circle me-1"></i>Modo catálogo: Solo se requieren marca y modelo
+                        </small>
+                    <?php else: ?>
+                        <p class="mb-0 mt-2">Registrar nueva impresora o multifuncional</p>
+                    <?php endif; ?>
                 </div>
                 <div class="card-body p-4">
                     
@@ -66,25 +75,60 @@ $this->registerCss("
                         ],
                     ]); ?>
                     
-                    <!-- Información Básica -->
-                    <div class="mb-4">
-                        <h5 class="text-info border-bottom pb-2 mb-3">
-                            <i class="fas fa-info-circle me-2"></i>Información Básica
-                        </h5>
+                    <?php if ($modoSimplificado): ?>
+                        <!-- MODO CATÁLOGO: Solo marca y modelo -->
+                        <div class="alert alert-info" role="alert">
+                            <h5><i class="fas fa-info-circle me-2"></i>Modo Catálogo</h5>
+                            Esta impresora se guardará SOLO con marca y modelo para uso en catálogo.
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <?= $form->field($model, 'MARCA')->textInput([
                                     'placeholder' => 'Ej: HP, Canon, Epson, Brother',
                                     'maxlength' => true
-                                ])->label('Marca <span class="required-field">*</span>') ?>
+                                ]) ?>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <?= $form->field($model, 'MODELO')->textInput([
                                     'placeholder' => 'Modelo de la impresora',
                                     'maxlength' => true
-                                ])->label('Modelo <span class="required-field">*</span>') ?>
+                                ]) ?>
                             </div>
                         </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver', 
+                                ['site/impresoras-catalogo-listar'], 
+                                ['class' => 'btn btn-secondary btn-form me-md-2']
+                            ) ?>
+                            <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar en Catálogo', [
+                                'class' => 'btn btn-info btn-form',
+                                'id' => 'submit-btn'
+                            ]) ?>
+                        </div>
+                        
+                    <?php else: ?>
+                        <!-- MODO COMPLETO: Todos los campos -->
+                        <!-- Información Básica -->
+                        <div class="mb-4">
+                            <h5 class="text-info border-bottom pb-2 mb-3">
+                                <i class="fas fa-info-circle me-2"></i>Información Básica
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <?= $form->field($model, 'MARCA')->textInput([
+                                        'placeholder' => 'Ej: HP, Canon, Epson, Brother',
+                                        'maxlength' => true
+                                    ])->label('Marca <span class="required-field">*</span>') ?>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <?= $form->field($model, 'MODELO')->textInput([
+                                        'placeholder' => 'Modelo de la impresora',
+                                        'maxlength' => true
+                                    ])->label('Modelo <span class="required-field">*</span>') ?>
+                                </div>
+                            </div>
                         
                         <div class="row">
                             <div class="col-md-4 mb-3">
@@ -149,29 +193,7 @@ $this->registerCss("
                         </h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'ubicacion_edificio')->dropDownList([
-                                    'A' => 'Edificio A',
-                                    'B' => 'Edificio B', 
-                                    'C' => 'Edificio C',
-                                    'D' => 'Edificio D',
-                                    'E' => 'Edificio E',
-                                    'F' => 'Edificio F',
-                                    'G' => 'Edificio G',
-                                    'H' => 'Edificio H',
-                                    'I' => 'Edificio I',
-                                    'J' => 'Edificio J',
-                                    'K' => 'Edificio K',
-                                    'L' => 'Edificio L',
-                                    'M' => 'Edificio M',
-                                    'N' => 'Edificio N',
-                                    'O' => 'Edificio O',
-                                    'P' => 'Edificio P',
-                                    'Q' => 'Edificio Q',
-                                    'R' => 'Edificio R',
-                                    'S' => 'Edificio S',
-                                    'T' => 'Edificio T',
-                                    'U' => 'Edificio U',
-                                ], ['prompt' => 'Seleccionar edificio']) ?>
+                                <?= $form->field($model, 'ubicacion_edificio')->dropDownList(frontend\models\Impresora::getUbicacionesEdificio(), ['prompt' => 'Selecciona Edificio']) ?>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <?= $form->field($model, 'ubicacion_detalle')->textInput([
@@ -205,6 +227,7 @@ $this->registerCss("
                             'id' => 'submit-btn'
                         ]) ?>
                     </div>
+                    <?php endif; ?>
                     
                     <?php ActiveForm::end(); ?>
                 </div>

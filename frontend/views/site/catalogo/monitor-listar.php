@@ -11,6 +11,9 @@ $this->title = 'Catálogo de Monitores';
 $this->params['breadcrumbs'][] = ['label' => 'Gestión', 'url' => ['gestion-categorias']];
 $this->params['breadcrumbs'][] = $this->title;
 
+// Registrar scripts de jsPDF para exportar a PDF
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', ['position' => \yii\web\View::POS_HEAD]);
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js', ['position' => \yii\web\View::POS_HEAD]);
 ?>
 
 <div class="container-fluid py-4">
@@ -28,6 +31,16 @@ $this->params['breadcrumbs'][] = $this->title;
                 </div>
                 
                 <div class="card-body">
+                    <!-- Aviso de protección y reutilización -->
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        <h5 class="alert-heading"><i class="fas fa-shield-alt me-2"></i>Items Protegidos y Reutilizables</h5>
+                        <p class="mb-0">
+                            <i class="fas fa-infinity me-1"></i> <strong>Reutilización infinita:</strong> Puedes usar estos monitores cuantas veces necesites sin que se agoten.<br>
+                            <i class="fas fa-lock me-1"></i> <strong>Protegidos contra eliminación:</strong> Los items del catálogo no se pueden borrar accidentalmente.
+                        </p>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    
                     <?php if ($error): ?>
                         <div class="alert alert-danger">
                             <strong>Error:</strong> <?= Html::encode($error) ?>
@@ -38,7 +51,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             <div class="alert alert-warning text-center" role="alert">
                                 <h4><i class="fas fa-exclamation-triangle me-2"></i>No hay monitores en el catálogo</h4>
                                 <p class="mb-3">Aún no has agregado monitores usando el formulario rápido.</p>
-                                <a href="<?= Url::to(['site/monitor', 'simple' => 1]) ?>" class="btn btn-primary">
+                                <a href="<?= Url::to(['site/monitores', 'simple' => 1]) ?>" class="btn btn-primary">
                                     <i class="fas fa-plus me-2"></i>Agregar Primer Monitor al Catálogo
                                 </a>
                             </div>
@@ -56,6 +69,9 @@ $this->params['breadcrumbs'][] = $this->title;
                                 <div class="col-md-6 text-end">
                                     <button type="button" class="btn btn-danger" id="btn-eliminar-seleccionados" onclick="eliminarSeleccionados()" disabled>
                                         <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="exportarPDF()">
+                                        <i class="fas fa-file-pdf me-2"></i>Exportar a PDF
                                     </button>
                                     <span id="contador-seleccionados" class="ms-3 text-muted"></span>
                                 </div>
@@ -140,7 +156,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Gestión', ['gestion-categorias'], ['class' => 'btn btn-secondary']) ?>
                         </div>
                         <div class="col-md-6 text-end">
-                            <?= Html::a('<i class="fas fa-plus me-2"></i>Agregar Nuevo al Catálogo', ['site/monitor', 'simple' => 1], ['class' => 'btn btn-primary me-2']) ?>
+                            <?= Html::a('<i class="fas fa-plus me-2"></i>Agregar Nuevo al Catálogo', ['site/monitores', 'simple' => 1], ['class' => 'btn btn-primary me-2']) ?>
                             <?= Html::a('<i class="fas fa-list me-2"></i>Ver Todos los Monitores', ['site/monitor-listar'], ['class' => 'btn btn-outline-primary']) ?>
                         </div>
                     </div>
@@ -306,5 +322,64 @@ function eliminarSeleccionados() {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+// Función para exportar a PDF
+function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    
+    // Título del documento
+    doc.setFontSize(18);
+    doc.setTextColor(0, 123, 255); // Color primary/azul
+    doc.text('Catálogo de Monitores', 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Monitores creados desde el formulario rápido (catálogo)', 14, 28);
+    doc.text('Fecha de exportación: ' + new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    }), 14, 35);
+    
+    // Obtener datos de las tarjetas
+    const tarjetas = document.querySelectorAll('.card.border-primary .card-body');
+    const datos = [];
+    
+    tarjetas.forEach(function(tarjeta) {
+        const marca = tarjeta.querySelector('.card-title')?.textContent?.trim() || '';
+        const modelo = tarjeta.querySelector('.card-text')?.textContent?.trim() || '';
+        const estado = tarjeta.querySelector('.badge.bg-primary')?.textContent?.trim() || '';
+        const inventario = tarjeta.querySelector('small.text-muted')?.textContent?.replace('', '').trim() || '';
+        const footer = tarjeta.closest('.card')?.querySelector('.card-footer small')?.textContent?.replace('Agregado:', '').trim() || '';
+        
+        if (marca) {
+            datos.push([marca.replace(/^[^\w]+/, '').toUpperCase(), modelo.toUpperCase(), estado.toUpperCase(), inventario.replace(/^[^\w]+/, '').toUpperCase(), footer.toUpperCase()]);
+        }
+    });
+    
+    // Generar tabla con autoTable
+    doc.autoTable({
+        startY: 42,
+        head: [['Marca', 'Modelo', 'Estado', 'No. Inventario', 'Fecha Agregado']],
+        body: datos,
+        styles: { fontSize: 10, cellPadding: 4 },
+        headStyles: { fillColor: [0, 123, 255], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        alternateRowStyles: { fillColor: [230, 242, 255] }
+    });
+    
+    // Pie de página
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Componentes', doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
+    
+    doc.save('catalogo_monitores_' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 </script>

@@ -195,35 +195,15 @@ $this->registerCss("
                         </h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'ubicacion_edificio')->dropDownList([
-                                    'A' => 'Edificio A',
-                                    'B' => 'Edificio B', 
-                                    'C' => 'Edificio C',
-                                    'D' => 'Edificio D',
-                                    'E' => 'Edificio E',
-                                    'F' => 'Edificio F',
-                                    'G' => 'Edificio G',
-                                    'H' => 'Edificio H',
-                                    'I' => 'Edificio I',
-                                    'J' => 'Edificio J',
-                                    'K' => 'Edificio K',
-                                    'L' => 'Edificio L',
-                                    'M' => 'Edificio M',
-                                    'N' => 'Edificio N',
-                                    'O' => 'Edificio O',
-                                    'P' => 'Edificio P',
-                                    'Q' => 'Edificio Q',
-                                    'R' => 'Edificio R',
-                                    'S' => 'Edificio S',
-                                    'T' => 'Edificio T',
-                                    'U' => 'Edificio U',
-                                ], ['prompt' => 'Seleccionar edificio']) ?>
+                                <?= $form->field($model, 'ubicacion_edificio')->dropDownList(frontend\models\Impresora::getUbicacionesEdificio(), ['prompt' => 'Selecciona Edificio']) ?>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <?= $form->field($model, 'ubicacion_detalle')->textInput([
-                                    'placeholder' => 'Piso, oficina, área específica',
-                                    'maxlength' => true
-                                ]) ?>
+                                    'placeholder' => 'PISO, OFICINA, ÁREA ESPECÍFICA',
+                                    'maxlength' => 255,
+                                    'style' => 'text-transform: uppercase;',
+                                    'oninput' => 'this.value = this.value.toUpperCase()'
+                                ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                             </div>
                         </div>
                     </div>
@@ -284,3 +264,9 @@ $this->registerJs($script);
 
 <!-- SweetAlert2 para notificaciones -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<?php
+// Registrar el script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+$this->registerJs("inicializarValidacionDuplicados('Impresora', " . $model->idImpresora . ");", \yii\web\View::POS_READY);
+?>

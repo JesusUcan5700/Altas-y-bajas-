@@ -92,8 +92,8 @@ class Monitor extends ActiveRecord
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
             [['ultimo_editor'], 'string', 'max' => 100],
-            [['NUMERO_SERIE'], 'unique'],
-            [['NUMERO_INVENTARIO'], 'unique'],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro monitor.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro monitor.'],
             [['ESTADO'], 'in', 'range' => [
                 self::ESTADO_ACTIVO, 
                 self::ESTADO_INACTIVO, 

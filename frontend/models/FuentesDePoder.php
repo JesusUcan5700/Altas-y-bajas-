@@ -70,6 +70,8 @@ class FuentesDePoder extends \yii\db\ActiveRecord
             [['DESCRIPCION', 'ultimo_editor'], 'string', 'max' => 100],
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otra fuente de poder.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otra fuente de poder.'],
         ];
     }
 
@@ -98,5 +100,25 @@ class FuentesDePoder extends \yii\db\ActiveRecord
     public function getUltimoEditor()
     {
         return $this->hasOne(User::class, ['username' => 'ultimo_editor']);
+    }
+
+    public static function getEdificios()
+    {
+        $edificios = [];
+        foreach (range('A', 'U') as $letra) {
+            $edificios["Edificio $letra"] = "Edificio $letra";
+        }
+        return $edificios;
+    }
+
+    public static function getEstados()
+    {
+        return [
+            'Activo' => 'Activo',
+            'Inactivo(Sin Asignar)' => 'Inactivo(Sin Asignar)',
+            'dañado(Proceso de baja)' => 'dañado(Proceso de baja)',
+            'En Mantenimiento' => 'En Mantenimiento',
+            'BAJA' => 'BAJA',
+        ];
     }
 }

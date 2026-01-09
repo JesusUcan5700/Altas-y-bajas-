@@ -104,7 +104,7 @@ class Conectividad extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['TIPO', 'MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'CANTIDAD_PUERTOS', 'DESCRIPCION'], 'required'],
+            [['TIPO', 'MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'CANTIDAD_PUERTOS'], 'required'],
             [['fecha'], 'date', 'format' => 'yyyy-MM-dd'],
             [['TIPO', 'MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'CANTIDAD_PUERTOS', 'DESCRIPCION'], 'string', 'max' => 45],
             [['Estado'], 'string', 'max' => 100],
@@ -121,7 +121,8 @@ class Conectividad extends \yii\db\ActiveRecord
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
             [['ultimo_editor'], 'string', 'max' => 100],
-            [['NUMERO_SERIE'], 'unique'],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro equipo de conectividad.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro equipo de conectividad.'],
             [['NUMERO_INVENTARIO'], 'unique'],
             [['Estado'], 'default', 'value' => self::ESTADO_ACTIVO],
             [['fecha'], 'default', 'value' => date('Y-m-d')],

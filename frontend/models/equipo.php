@@ -94,8 +94,8 @@ class Equipo extends \yii\db\ActiveRecord
             [['ultimo_editor'], 'string', 'max' => 100],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['EMISION_INVENTARIO'], 'date', 'format' => 'yyyy-MM-dd'],
-            [['NUM_SERIE'], 'unique'],
-            [['NUM_INVENTARIO'], 'unique'],
+            [['NUM_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro equipo.'],
+            [['NUM_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro equipo.'],
             [['Estado'], 'string'],
             [['Estado'], 'in', 'range' => array_keys(self::getEstados())],
             [['Estado'], 'default', 'value' => self::ESTADO_ACTIVO],
@@ -204,7 +204,7 @@ class Equipo extends \yii\db\ActiveRecord
     public static function getTipos()
     {
         return [
-            self::TIPO_PC => 'PC',
+            self::TIPO_PC => 'PC ESCRITORIO',
             self::TIPO_LAPTOP => 'Laptop',
             self::TIPO_SERVIDOR => 'Servidor',
             self::TIPO_OTRO => 'Otro',

@@ -106,6 +106,10 @@ class Almacenamiento extends \yii\db\ActiveRecord
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
             
             [['INTERFAZ', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'DESCRIPCION', 'ESTADO', 'ubicacion_edificio', 'ubicacion_detalle', 'ultimo_editor'], 'safe'],
+            
+            // Validaciones de unicidad
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro dispositivo de almacenamiento.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro dispositivo de almacenamiento.'],
         ];
     }
 

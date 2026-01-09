@@ -41,7 +41,6 @@ class Procesador extends \yii\db\ActiveRecord
 
     const MARCA_INTEL = 'Intel';
     const MARCA_AMD = 'AMD';
-    const MARCA_ARM = 'ARM';
 
     /**
      * {@inheritdoc}
@@ -115,8 +114,8 @@ class Procesador extends \yii\db\ActiveRecord
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
             [['ultimo_editor'], 'string', 'max' => 100],
-            [['NUMERO_SERIE'], 'unique', 'except' => 'simplificado'],
-            [['NUMERO_INVENTARIO'], 'unique', 'except' => 'simplificado'],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro procesador.', 'except' => 'simplificado'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro procesador.', 'except' => 'simplificado'],
             [['FRECUENCIA_BASE'], 'match', 'pattern' => '/^[\d\.]+\s?(GHz|MHz)$/i', 'message' => 'Formato: 3.2 GHz o 2800 MHz', 'except' => 'simplificado'],
             [['ubicacion_edificio'], 'in', 'range' => ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U'], 'except' => 'simplificado'],
             
@@ -186,7 +185,6 @@ class Procesador extends \yii\db\ActiveRecord
         return [
             self::MARCA_INTEL => 'Intel',
             self::MARCA_AMD => 'AMD',
-            self::MARCA_ARM => 'ARM',
         ];
     }
 

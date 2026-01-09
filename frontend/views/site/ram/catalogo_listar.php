@@ -8,6 +8,10 @@ use yii\helpers\Html;
 $this->title = 'Catálogo RAM';
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 $this->registerMetaTag(['name' => 'csrf-token', 'content' => Yii::$app->request->getCsrfToken()]);
+
+// Registrar scripts de jsPDF para exportar a PDF
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', ['position' => \yii\web\View::POS_HEAD]);
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js', ['position' => \yii\web\View::POS_HEAD]);
 ?>
 
 <style>
@@ -134,6 +138,9 @@ $this->registerMetaTag(['name' => 'csrf-token', 'content' => Yii::$app->request-
                             <div class="col-md-12">
                                 <button type="button" class="btn btn-danger" id="eliminarSeleccionados" disabled>
                                     <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="exportarPDF()">
+                                    <i class="fas fa-file-pdf me-2"></i>Exportar a PDF
                                 </button>
                                 <span id="contadorSeleccionados" class="ms-3 text-muted">0 elementos seleccionados</span>
                             </div>
@@ -296,5 +303,65 @@ function confirmarEliminarRam(id, nombre) {
     if (confirm('¿Está seguro que desea eliminar el módulo RAM "' + nombre + '"?\\n\\nEsta acción no se puede deshacer.')) {
         eliminarRams(id);
     }
+}
+
+// Función para exportar a PDF
+function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    
+    // Título del documento
+    doc.setFontSize(18);
+    doc.setTextColor(255, 193, 7); // Color warning/amarillo
+    doc.text('Catálogo de Memoria RAM', 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Gestión de módulos RAM del catálogo con reutilización infinita', 14, 28);
+    doc.text('Fecha de exportación: ' + new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    }), 14, 35);
+    
+    // Obtener datos de la tabla
+    const tabla = document.querySelector('table.table-hover');
+    const filas = tabla.querySelectorAll('tbody tr');
+    const datos = [];
+    
+    filas.forEach(function(fila) {
+        const celdas = fila.querySelectorAll('td');
+        if (celdas.length >= 4) {
+            datos.push([
+                celdas[1].textContent.trim().toUpperCase(), // ID
+                celdas[2].textContent.trim().toUpperCase(), // Marca
+                celdas[3].textContent.trim().toUpperCase()  // Modelo
+            ]);
+        }
+    });
+    
+    // Generar tabla con autoTable
+    doc.autoTable({
+        startY: 42,
+        head: [['ID', 'Marca', 'Modelo']],
+        body: datos,
+        styles: { fontSize: 10, cellPadding: 4 },
+        headStyles: { fillColor: [255, 193, 7], textColor: 0, fontStyle: 'bold', halign: 'center' },
+        alternateRowStyles: { fillColor: [255, 249, 230] },
+        columnStyles: { 0: { halign: 'center', cellWidth: 30 }, 1: { cellWidth: 80 }, 2: { cellWidth: 'auto' } }
+    });
+    
+    // Pie de página
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Componentes', doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
+    
+    doc.save('catalogo_ram_' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 </script>

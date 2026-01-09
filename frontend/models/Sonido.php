@@ -135,6 +135,10 @@ class Sonido extends \yii\db\ActiveRecord
             
             // Otros campos opcionales
             [['POTENCIA', 'CONEXIONES', 'DESCRIPCION', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
+            
+            // Validaciones de unicidad
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro equipo de sonido.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro equipo de sonido.'],
         ];
     }
 

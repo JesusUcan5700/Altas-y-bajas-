@@ -111,6 +111,8 @@ class Bateria extends \yii\db\ActiveRecord
                 self::ESTADO_MANTENIMIENTO,
                 self::ESTADO_BAJA
             ]],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otra batería.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otra batería.'],
         ];
     }
 
@@ -418,18 +420,11 @@ class Bateria extends \yii\db\ActiveRecord
      */
     public static function getEdificios()
     {
-        return [
-            'Edificio A' => 'Edificio A',
-            'Edificio B' => 'Edificio B',
-            'Edificio C' => 'Edificio C',
-            'Edificio Principal' => 'Edificio Principal',
-            'Anexo 1' => 'Anexo 1',
-            'Anexo 2' => 'Anexo 2',
-            'Laboratorio' => 'Laboratorio',
-            'Almacén' => 'Almacén',
-            'Oficina Central' => 'Oficina Central',
-            'Otro' => 'Otro',
-        ];
+        $edificios = [];
+        foreach (range('A', 'U') as $letra) {
+            $edificios["Edificio $letra"] = "Edificio $letra";
+        }
+        return $edificios;
     }
 
 }

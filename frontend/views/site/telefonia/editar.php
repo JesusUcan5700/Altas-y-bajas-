@@ -130,10 +130,12 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                             ) ?>
 
                             <?= $form->field($model, 'ubicacion_detalle')->textInput([
-                                'maxlength' => true,
+                                'maxlength' => 255,
                                 'class' => 'form-control',
-                                'placeholder' => 'Ej: Piso 2, Oficina 201'
-                            ]) ?>
+                                'placeholder' => 'EJ: PISO 2, OFICINA 201',
+                                'style' => 'text-transform: uppercase;',
+                                'oninput' => 'this.value = this.value.toUpperCase()'
+                            ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
 
                             <?= $form->field($model, 'fecha')->input('date', [
                                 'class' => 'form-control'

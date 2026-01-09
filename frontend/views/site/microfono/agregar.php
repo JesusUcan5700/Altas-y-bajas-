@@ -122,3 +122,9 @@ $this->registerCss("
         </div>
     </div>
 </div>
+
+<?php
+// Registrar el script de validación de duplicados (cuando el formulario esté completo)
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+$this->registerJs("inicializarValidacionDuplicados('Microfono');", \yii\web\View::POS_READY);
+?>

@@ -65,6 +65,8 @@ class Adaptador extends \yii\db\ActiveRecord
                 self::ESTADO_MANTENIMIENTO,
                 self::ESTADO_BAJA
             ]],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro adaptador.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro adaptador.'],
         ];
     }
 

@@ -80,8 +80,7 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                         <div class="col-md-6 mb-3">
                             <?= $form->field($model, 'MARCA')->dropDownList([
                                 'Intel' => 'Intel',
-                                'AMD' => 'AMD',
-                                'ARM' => 'ARM'
+                                'AMD' => 'AMD'
                             ], ['prompt' => 'Selecciona Marca']) ?>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -127,12 +126,17 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <?= $form->field($model, 'ubicacion_edificio')->dropDownList(
-                                    array_combine(range('A', 'U'), range('A', 'U')),
+                                    frontend\models\Procesador::getUbicacionesEdificio(),
                                     ['prompt' => 'Selecciona Edificio']
                                 ) ?>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'ubicacion_detalle')->textInput(['maxlength' => true, 'placeholder' => 'Detalles específicos de ubicación']) ?>
+                                <?= $form->field($model, 'ubicacion_detalle')->textInput([
+                                    'maxlength' => 255,
+                                    'placeholder' => 'DETALLES ESPECÍFICOS DE UBICACIÓN',
+                                    'style' => 'text-transform: uppercase;',
+                                    'oninput' => 'this.value = this.value.toUpperCase()'
+                                ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                             </div>
                         </div>
 

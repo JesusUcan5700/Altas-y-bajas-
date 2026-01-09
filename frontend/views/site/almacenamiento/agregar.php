@@ -270,9 +270,11 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                         </div>
                                         <div class="col-md-6">
                                             <?= $form->field($model, 'ubicacion_detalle')->textInput([
-                                                'maxlength' => true,
-                                                'placeholder' => 'Ej: Sala 101, Oficina TI, Laboratorio'
-                                            ]) ?>
+                                                'maxlength' => 255,
+                                                'placeholder' => 'EJ: SALA 101, OFICINA TI, LABORATORIO',
+                                                'style' => 'text-transform: uppercase;',
+                                                'oninput' => 'this.value = this.value.toUpperCase()'
+                                            ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                                         </div>
                                     </div>
 
@@ -479,4 +481,13 @@ if (localStorage.getItem('returnToEquipo')) {
         }
     });
 <?php endif; ?>
+
+<?php
+// Registrar SweetAlert2
+$this->registerJsFile('https://cdn.jsdelivr.net/npm/sweetalert2@11', ['position' => \yii\web\View::POS_HEAD]);
+
+// Registrar el script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+$this->registerJs("inicializarValidacionDuplicados('Almacenamiento');", \yii\web\View::POS_READY);
+?>
 </script>

@@ -6,6 +6,9 @@
 
 $this->title = 'Gestión de Adaptadores';
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', ['position' => \yii\web\View::POS_END]);
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js', ['position' => \yii\web\View::POS_END]);
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js', ['position' => \yii\web\View::POS_END]);
 
 // Agregar estilos
 $this->registerCss("
@@ -67,9 +70,12 @@ $this->registerCss("
                             <?php endif; ?>
                         </div>
                         <div class="col-md-6 text-end">
-                            <a href="<?= \yii\helpers\Url::to(['site/gestion-categorias']) ?>" class="btn btn-secondary btn-equipment">
+                            <a href="<?= \yii\helpers\Url::to(['site/gestion-categorias']) ?>" class="btn btn-secondary btn-equipment me-2">
                                 <i class="fas fa-arrow-left me-2"></i>Volver a Gestión
                             </a>
+                            <button type="button" class="btn btn-primary btn-equipment" onclick="exportarPDF()">
+                                <i class="fas fa-file-pdf me-2"></i>Exportar a PDF
+                            </button>
                         </div>
                     </div>
 
@@ -105,19 +111,28 @@ $this->registerCss("
 
                     <!-- Buscador -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-search"></i></span>
                                 <input type="text" class="form-control" id="buscar_adaptador" placeholder="Buscar por marca, modelo, tipo...">
                             </div>
                         </div>
+                        <div class="col-md-8 text-end">
+                            <button type="button" id="btnEliminarSeleccionados" class="btn btn-danger me-2" onclick="eliminarSeleccionados()">
+                                <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
+                            </button>
+                            <button type="button" id="btnDescargarQR" class="btn btn-danger me-2" onclick="descargarQRSeleccionados()">
+                                <i class="fas fa-qrcode me-2"></i>Descargar QR
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Tabla de Adaptadores -->
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                        <table class="table table-striped table-hover" id="tablaAdaptadores">
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -136,19 +151,20 @@ $this->registerCss("
                             <tbody id="tbody_adaptador">
                                 <?php if (empty($adaptadores) && !$error): ?>
                                     <tr>
-                                        <td colspan="13" class="text-center text-muted">
+                                        <td colspan="14" class="text-center text-muted">
                                             <i class="fas fa-info-circle"></i> No hay adaptadores registrados
                                         </td>
                                     </tr>
                                 <?php elseif ($error): ?>
                                     <tr>
-                                        <td colspan="13" class="text-center text-danger">
+                                        <td colspan="14" class="text-center text-danger">
                                             <i class="fas fa-exclamation-triangle"></i> Error al cargar los datos
                                         </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($adaptadores as $adaptador): ?>
-                                        <tr>
+                                        <tr data-id="<?= $adaptador->idAdaptador ?>" data-marca="<?= htmlspecialchars($adaptador->MARCA ?? '') ?>" data-modelo="<?= htmlspecialchars($adaptador->MODELO ?? '') ?>" data-serie="<?= htmlspecialchars($adaptador->NUMERO_SERIE ?? '') ?>">
+                                            <td><input type="checkbox" class="equipo-checkbox" value="<?= $adaptador->idAdaptador ?>" onchange="actualizarSeleccion()"></td>
                                             <td><strong><?= htmlspecialchars($adaptador->idAdaptador) ?></strong></td>
                                             <td><?= htmlspecialchars($adaptador->MARCA ?? '-') ?></td>
                                             <td><?= htmlspecialchars($adaptador->MODELO ?? '-') ?></td>
@@ -206,9 +222,9 @@ $this->registerCss("
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <button class="btn btn-sm btn-info" onclick="verDetalles(<?= $adaptador->idAdaptador ?>)" title="Ver detalles">
+                                                    <a href="<?= \yii\helpers\Url::to(['site/adaptador-ver', 'id' => $adaptador->idAdaptador]) ?>" class="btn btn-sm btn-info" title="Ver">
                                                         <i class="fas fa-eye"></i>
-                                                    </button>
+                                                    </a>
                                                     <a href="<?= \yii\helpers\Url::to(['site/adaptador-editar', 'id' => $adaptador->idAdaptador]) ?>" class="btn btn-sm btn-warning" title="Editar">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
@@ -389,44 +405,240 @@ console.log('✅ Sistema de Adaptadores cargado con', adaptadorData.length, 'equ
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Manejar selección de todos los checkboxes
-    const seleccionarTodos = document.getElementById('seleccionarTodos');
-    const checkboxes = document.querySelectorAll('.equipo-checkbox');
-    
-    if (seleccionarTodos) {
-        seleccionarTodos.addEventListener('change', function() {
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-            });
-        });
+var baseUrl = '<?= \yii\helpers\Url::to(['site/adaptador-ver'], true) ?>';
+
+function toggleSelectAll(checkbox) {
+    var checkboxes = document.querySelectorAll('.equipo-checkbox');
+    checkboxes.forEach(function(cb) {
+        cb.checked = checkbox.checked;
+    });
+}
+
+function eliminarSeleccionados() {
+    var seleccionados = document.querySelectorAll('.equipo-checkbox:checked');
+    if (seleccionados.length === 0) {
+        alert('Seleccione al menos un adaptador');
+        return;
     }
     
-    // Manejar envío del formulario
-    const form = document.getElementById('formCambioMasivo');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const equiposSeleccionados = document.querySelectorAll('.equipo-checkbox:checked');
-            
-            if (equiposSeleccionados.length === 0) {
-                alert('⚠️ Debes seleccionar al menos un adaptador.');
-                return;
-            }
-            
-            if (confirm(`¿Estás seguro de cambiar ${equiposSeleccionados.length} adaptador(es) al estado "BAJA"?`)) {
-                // Deshabilitar el botón para evitar doble envío
-                const btnCambiar = document.getElementById('btnCambiarEstado');
-                if (btnCambiar) {
-                    btnCambiar.disabled = true;
-                    btnCambiar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
-                }
-                
-                this.submit();
-            }
-        });
+    if (!confirm('¿Está seguro de eliminar ' + seleccionados.length + ' adaptador(es)?')) {
+        return;
     }
+    
+    var ids = [];
+    seleccionados.forEach(function(cb) {
+        ids.push(cb.value);
+    });
+    
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '<?= \yii\helpers\Url::to(['site/adaptador-eliminar-multiple']) ?>';
+    
+    var csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '<?= Yii::$app->request->csrfParam ?>';
+    csrfInput.value = '<?= Yii::$app->request->csrfToken ?>';
+    form.appendChild(csrfInput);
+    
+    ids.forEach(function(id) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'ids[]';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function descargarQRSeleccionados() {
+    var seleccionados = document.querySelectorAll('.equipo-checkbox:checked');
+    if (seleccionados.length === 0) {
+        alert('Seleccione al menos un adaptador');
+        return;
+    }
+    
+    var equipos = [];
+    seleccionados.forEach(function(cb) {
+        var row = cb.closest('tr');
+        var celdas = row.querySelectorAll('td');
+        equipos.push({
+            id: cb.value,
+            marca: row.dataset.marca || 'N/A',
+            modelo: row.dataset.modelo || 'N/A',
+            tipo: celdas[4] ? celdas[4].textContent.trim() : 'N/A',
+            voltaje: celdas[5] ? celdas[5].textContent.trim() : 'N/A',
+            amperaje: celdas[6] ? celdas[6].textContent.trim() : 'N/A',
+            potencia: celdas[7] ? celdas[7].textContent.trim() : 'N/A',
+            serie: celdas[8] ? celdas[8].textContent.trim() : 'N/A',
+            estado: celdas[9] ? celdas[9].textContent.trim() : 'N/A',
+            emision: celdas[10] ? celdas[10].textContent.trim() : 'N/A'
+        });
+    });
+    
+    crearPDF(equipos);
+}
+
+function crearPDF(equipos) {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF();
+    var fecha = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    var qrSize = 40;
+    var marco = 55;
+    var startY = 35;
+    var marginX = 15;
+    var spacingX = 65;
+    var spacingY = 60;
+    var itemsPerPage = 9;
+    var cols = 3;
+    var col = 0;
+    var row = 0;
+
+    equipos.forEach(function(equipo, index) {
+        if (index > 0 && index % itemsPerPage === 0) {
+            doc.addPage();
+            col = 0;
+            row = 0;
+        }
+
+        var x = marginX + (col * spacingX);
+        var y = startY + (row * spacingY);
+
+        // Marco compacto rojo
+        doc.setDrawColor(220, 53, 69);
+        doc.setLineWidth(0.8);
+        doc.rect(x, y, marco, marco);
+
+        // Fecha de impresión arriba del QR, dentro del marco
+        doc.setFontSize(8);
+        doc.setTextColor(220, 53, 69);
+        doc.text('Impreso: ' + fecha, x + marco/2, y + 6, {align: 'center'});
+
+        // Generar QR solo con datos esenciales en texto plano
+        var textoQR = 'ADAPTADOR\n' +
+            'ID: ' + equipo.id + '\n' +
+            'Marca: ' + equipo.marca + '\n' +
+            'Modelo: ' + equipo.modelo + '\n' +
+            'Tipo: ' + equipo.tipo + '\n' +
+            'Voltaje: ' + equipo.voltaje + '\n' +
+            'Amperaje: ' + equipo.amperaje + '\n' +
+            'Potencia: ' + equipo.potencia + '\n' +
+            'Serie: ' + equipo.serie;
+
+        var canvas = document.createElement('canvas');
+        var qr = new QRious({
+            element: canvas,
+            value: textoQR,
+            size: 200
+        });
+        var imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', x + 7.5, y + 10, qrSize, qrSize);
+
+        // No texto debajo del QR
+
+        col++;
+        if (col >= cols) {
+            col = 0;
+            row++;
+        }
+    });
+
+    // Número de página
+    var pageCount = doc.internal.getNumberOfPages();
+    for (var i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text('Página ' + i + ' de ' + pageCount, 105, 290, {align: 'center'});
+    }
+
+    doc.save('QR_Adaptadores_' + Date.now() + '.pdf');
+}
+
+// Búsqueda
+document.getElementById('buscar_adaptador').addEventListener('input', function() {
+    var filtro = this.value.toLowerCase();
+    var filas = document.querySelectorAll('#tbody_adaptador tr');
+    filas.forEach(function(fila) {
+        var texto = fila.textContent.toLowerCase();
+        fila.style.display = texto.includes(filtro) ? '' : 'none';
+    });
 });
+
+function exportarPDF() {
+    try {
+        var jsPDF = window.jspdf.jsPDF;
+        var doc = new jsPDF('landscape');
+        
+        doc.setFontSize(18);
+        doc.setTextColor(220, 53, 69);
+        doc.text('Gestión de Adaptadores', 14, 20);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('Adaptadores de Corriente y Cargadores', 14, 28);
+        doc.text('Fecha de exportación: ' + new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), 14, 35);
+        
+        var tabla = document.getElementById('tablaAdaptadores');
+        if (!tabla) {
+            alert('Error: No se encontró la tabla de adaptadores');
+            return;
+        }
+        var filas = tabla.querySelectorAll('tbody tr');
+        var datos = [];
+        
+        filas.forEach(function(fila) {
+            if (fila.style.display !== 'none') {
+                var celdas = fila.querySelectorAll('td');
+                if (celdas.length >= 13) {
+                    datos.push([
+                        celdas[1].textContent.trim().toUpperCase(),
+                        celdas[2].textContent.trim().toUpperCase(),
+                        celdas[3].textContent.trim().toUpperCase(),
+                        celdas[4].textContent.trim().toUpperCase(),
+                        celdas[5].textContent.trim().toUpperCase(),
+                        celdas[6].textContent.trim().toUpperCase(),
+                        celdas[7].textContent.trim().toUpperCase(),
+                        celdas[8].textContent.trim().toUpperCase(),
+                        celdas[9].textContent.trim().toUpperCase(),
+                        celdas[11].textContent.trim().toUpperCase(),
+                        celdas[12].textContent.trim().toUpperCase()
+                    ]);
+                }
+            }
+        });
+        
+        if (datos.length === 0) {
+            alert('No hay datos para exportar');
+            return;
+        }
+        
+        doc.autoTable({
+            startY: 42,
+            head: [['ID', 'Marca', 'Modelo', 'Tipo', 'Voltaje', 'Amperaje', 'Potencia', 'N° Serie', 'Estado', 'Tiempo Activo', 'Último Editor']],
+            body: datos,
+            styles: { fontSize: 7, cellPadding: 2 },
+            headStyles: { fillColor: [220, 53, 69], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            alternateRowStyles: { fillColor: [255, 240, 240] }
+        });
+    
+    var pageCount = doc.internal.getNumberOfPages();
+    for (var i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Componentes', doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
+    
+    doc.save('adaptadores_' + new Date().toISOString().slice(0,10) + '.pdf');
+    } catch (error) {
+        console.error('Error al exportar PDF:', error);
+        alert('Error al exportar: ' + error.message);
+    }
+}
 </script>

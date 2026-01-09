@@ -92,7 +92,12 @@ $this->registerJs("
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'ubicacion_detalle')->textInput(['maxlength' => true]) ?>
+                                <?= $form->field($model, 'ubicacion_detalle')->textInput([
+                                    'maxlength' => 255,
+                                    'placeholder' => 'DETALLE DE UBICACIÓN',
+                                    'style' => 'text-transform: uppercase;',
+                                    'oninput' => 'this.value = this.value.toUpperCase()'
+                                ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <?= $form->field($model, 'FECHA')->input('date') ?>

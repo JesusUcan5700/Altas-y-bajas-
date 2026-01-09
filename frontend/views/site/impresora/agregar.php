@@ -115,13 +115,19 @@ $this->registerCss("
                         </h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'NUMERO_SERIE')->textInput([
+                                <?= $form->field($model, 'NUMERO_SERIE', [
+                                    'enableClientValidation' => false,
+                                    'enableAjaxValidation' => false
+                                ])->textInput([
                                     'placeholder' => 'Serie del fabricante',
                                     'maxlength' => true
                                 ])->label('Número de Serie <span class="required-field">*</span>') ?>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'NUMERO_INVENTARIO')->textInput([
+                                <?= $form->field($model, 'NUMERO_INVENTARIO', [
+                                    'enableClientValidation' => false,
+                                    'enableAjaxValidation' => false
+                                ])->textInput([
                                     'placeholder' => 'Código interno de inventario',
                                     'maxlength' => true
                                 ])->label('Número de Inventario <span class="required-field">*</span>') ?>
@@ -175,9 +181,11 @@ $this->registerCss("
                             </div>
                             <div class="col-md-6 mb-3">
                                 <?= $form->field($model, 'ubicacion_detalle')->textInput([
-                                    'placeholder' => 'Piso, oficina, área específica',
-                                    'maxlength' => true
-                                ]) ?>
+                                    'placeholder' => 'PISO, OFICINA, ÁREA ESPECÍFICA',
+                                    'maxlength' => 255,
+                                    'style' => 'text-transform: uppercase;',
+                                    'oninput' => 'this.value = this.value.toUpperCase()'
+                                ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                             </div>
                         </div>
                     </div>
@@ -217,6 +225,12 @@ $this->registerCss("
         </div>
     </div>
 </div>
+
+<?php
+// Registrar el script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+$this->registerJs("inicializarValidacionDuplicados('Impresora');", \yii\web\View::POS_READY);
+?>
 
 <!-- JavaScript para validación del formulario -->
 <?php

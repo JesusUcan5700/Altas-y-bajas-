@@ -95,7 +95,12 @@ $this->params['breadcrumbs'][] = $this->title;
                             <?= $form->field($model, 'ubicacion_edificio')->dropDownList(frontend\models\Procesador::getUbicacionesEdificio(), ['prompt' => 'Selecciona Edificio']) ?>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <?= $form->field($model, 'ubicacion_detalle')->textInput(['maxlength' => true]) ?>
+                            <?= $form->field($model, 'ubicacion_detalle')->textInput([
+                                'maxlength' => 255,
+                                'placeholder' => 'DETALLE DE UBICACIÓN',
+                                'style' => 'text-transform: uppercase;',
+                                'oninput' => 'this.value = this.value.toUpperCase()'
+                            ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                         </div>
                     </div>
                     <div class="row">

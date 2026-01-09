@@ -177,12 +177,18 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                             <div class="form-section">
                                 <h5><i class="fas fa-clipboard-list me-2"></i>Información de Inventario</h5>
                                 
-                                <?= $form->field($model, 'NUM_SERIE')->textInput([
+                                <?= $form->field($model, 'NUM_SERIE', [
+                                    'enableClientValidation' => false,
+                                    'enableAjaxValidation' => false
+                                ])->textInput([
                                     'maxlength' => true,
                                     'placeholder' => 'Número de serie del fabricante'
                                 ])->label('Número de Serie <span class="required-field">*</span>') ?>
 
-                                <?= $form->field($model, 'NUM_INVENTARIO')->textInput([
+                                <?= $form->field($model, 'NUM_INVENTARIO', [
+                                    'enableClientValidation' => false,
+                                    'enableAjaxValidation' => false
+                                ])->textInput([
                                     'maxlength' => true,
                                     'placeholder' => 'Código de inventario interno'
                                 ])->label('Número de Inventario <span class="required-field">*</span>') ?>
@@ -218,9 +224,26 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                     </div>
                                     <div class="col-md-6">
                                         <?= $form->field($model, 'ubicacion_detalle')->textInput([
-                                            'maxlength' => true,
-                                            'placeholder' => 'Ej: Piso 2, Oficina 201, Laboratorio'
-                                        ]) ?>
+                                            'maxlength' => 255,
+                                            'placeholder' => 'EJ: PISO 2, OFICINA 201, LABORATORIO',
+                                            'style' => 'text-transform: uppercase;',
+                                            'oninput' => 'this.value = this.value.toUpperCase()'
+                                        ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <?= $form->field($model, 'centro_costo')->dropDownList(
+                                            [
+                                                '' => 'Selecciona Centro de Costo',
+                                                'CC1' => 'CC1',
+                                                'CC2' => 'CC2',
+                                                'CC3' => 'CC3',
+                                                'CC4' => 'CC4',
+                                            ],
+                                            ['class' => 'form-select']
+                                        )->label('Centro de Costo') ?>
                                     </div>
                                 </div>
 
@@ -256,6 +279,42 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
         </div>
     </div>
 </div>
+
+<?php
+// Registrar SweetAlert2
+$this->registerJsFile('https://cdn.jsdelivr.net/npm/sweetalert2@11', ['position' => \yii\web\View::POS_HEAD]);
+
+// Registrar el script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+
+// Registrar script de diagnóstico (TEMPORAL - para depuración)
+$this->registerJsFile('@web/js/diagnostico-validacion.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+
+// Script de inicialización
+$initScript = <<<JS
+console.log('[Equipo Agregar] Inicializando validación de duplicados');
+console.log('[Equipo Agregar] jQuery disponible:', typeof jQuery !== 'undefined');
+console.log('[Equipo Agregar] SweetAlert2 disponible:', typeof Swal !== 'undefined');
+
+// Inicializar validación
+if (typeof inicializarValidacionDuplicados === 'function') {
+    inicializarValidacionDuplicados('Equipo');
+    console.log('[Equipo Agregar] Validación inicializada correctamente');
+    
+    // Ejecutar diagnóstico automático
+    setTimeout(function() {
+        if (typeof diagnosticoValidacion === 'function') {
+            console.log('\\n>>> Ejecutando diagnóstico automático <<<');
+            diagnosticoValidacion();
+        }
+    }, 1000);
+} else {
+    console.error('[Equipo Agregar] Función inicializarValidacionDuplicados NO encontrada!');
+}
+JS;
+
+$this->registerJs($initScript, \yii\web\View::POS_READY);
+?>
 
 <script>
 let dd2Enabled = false;

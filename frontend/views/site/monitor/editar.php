@@ -94,7 +94,12 @@ $this->registerJs("
                                 <?= $form->field($model, 'ubicacion_edificio')->dropDownList(frontend\models\Monitor::getEdificios(), ['prompt' => 'Selecciona Edificio']) ?>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'ubicacion_detalle')->textInput(['maxlength' => true]) ?>
+                                <?= $form->field($model, 'ubicacion_detalle')->textInput([
+                                    'maxlength' => 255,
+                                    'placeholder' => 'DETALLE DE UBICACIÓN',
+                                    'style' => 'text-transform: uppercase;',
+                                    'oninput' => 'this.value = this.value.toUpperCase()'
+                                ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                             </div>
                         </div>
                         <div class="row">
@@ -136,3 +141,9 @@ $this->registerJs("
 <script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
 <!-- Configuraciones específicas de confirmación -->
 <script src="<?= Yii::getAlias('@web') ?>/js/edit-confirmations-config.js"></script>
+
+<?php
+// Registrar el script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+$this->registerJs("inicializarValidacionDuplicados('Monitor', " . $model->idMonitor . ");", \yii\web\View::POS_READY);
+?>

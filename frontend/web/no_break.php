@@ -120,8 +120,8 @@
                                     
                                     <div class="mb-3">
                                         <label for="ubicacion_detalle" class="form-label">Ubicación - Detalle</label>
-                                        <input type="text" class="form-control" id="ubicacion_detalle" name="ubicacion_detalle" maxlength="255" placeholder="Ej: Sala de Servidores, Piso 3, Oficina 301, etc.">
-                                        <div class="form-text">Descripción específica de la ubicación dentro del edificio</div>
+                                        <input type="text" class="form-control" id="ubicacion_detalle" name="ubicacion_detalle" maxlength="255" placeholder="Ej: SALA DE SERVIDORES, PISO 3, OFICINA 301, ETC." style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                                        <div class="form-text">Descripción específica de la ubicación dentro del edificio (se escribirá en MAYÚSCULAS)</div>
                                     </div>
                                 </div>
                             </div>

@@ -18,6 +18,8 @@ use frontend\models\FuentesDePoder;
 use frontend\models\Microfono;
 use frontend\models\Bateria;
 use frontend\models\Adaptador;
+use frontend\models\PiezaReciclaje;
+use frontend\models\HistorialPiezaReciclaje;
 use Yii;
 use Exception;
 use yii\base\InvalidArgumentException;
@@ -47,10 +49,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'signup', 'login'],
+                'only' => ['logout', 'signup', 'login', 'request-password-reset', 'reset-password'],
                 'rules' => [
                     [
-                        'actions' => ['login', 'signup'],
+                        'actions' => ['login', 'signup', 'request-password-reset', 'reset-password'],
                         'allow' => true,
                         'roles' => ['?'],
                     ],
@@ -74,8 +76,8 @@ class SiteController extends Controller
 
     public function beforeAction($action)
     {
-        // Deshabilitar CSRF para acciones de eliminación
-        if (in_array($action->id, ['equipo-eliminar', 'equipo-eliminar-multiple', 'ram-eliminar', 'ram-eliminar-multiple', 'eliminar-ram', 'eliminar-ram-masivo', 'procesador-eliminar', 'procesador-eliminar-multiple', 'eliminar-procesador', 'eliminar-procesadores-masivo', 'almacenamiento-eliminar', 'almacenamiento-eliminar-multiple', 'eliminar-almacenamiento', 'eliminar-almacenamiento-masivo', 'fuente-eliminar', 'fuente-eliminar-multiple', 'monitor-eliminar', 'monitor-eliminar-multiple', 'eliminar-monitor', 'eliminar-monitores-masivo'])) {
+        // Deshabilitar CSRF para acciones de eliminación y reciclaje
+        if (in_array($action->id, ['equipo-eliminar', 'equipo-eliminar-multiple', 'ram-eliminar', 'ram-eliminar-multiple', 'eliminar-ram', 'eliminar-ram-masivo', 'procesador-eliminar', 'procesador-eliminar-multiple', 'eliminar-procesador', 'eliminar-procesadores-masivo', 'almacenamiento-eliminar', 'almacenamiento-eliminar-multiple', 'eliminar-almacenamiento', 'eliminar-almacenamiento-masivo', 'fuente-eliminar', 'fuente-eliminar-multiple', 'monitor-eliminar', 'monitor-eliminar-multiple', 'eliminar-monitor', 'eliminar-monitores-masivo', 'registrar-pieza-reciclaje', 'actualizar-pieza-reciclaje', 'eliminar-pieza-reciclaje', 'inventario-piezas-reciclaje', 'detalle-pieza-reciclaje', 'estadisticas-reciclaje', 'opciones-pieza-reciclaje', 'catalogo-piezas-existentes', 'obtener-dispositivos-baja', 'detalle-dispositivo-baja'])) {
             $this->enableCsrfValidation = false;
         }
         return parent::beforeAction($action);
@@ -167,6 +169,54 @@ class SiteController extends Controller
             'model' => $model,
         ]);
     }
+
+    /**
+     * Requests password reset.
+     *
+     * @return mixed
+     */
+    public function actionRequestPasswordReset()
+    {
+        $model = new PasswordResetRequestForm();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            if ($model->sendEmail()) {
+                Yii::$app->session->setFlash('success', 'Revisa tu email para instrucciones de recuperación de contraseña.');
+                return $this->goHome();
+            } else {
+                Yii::$app->session->setFlash('error', 'Lo sentimos, no pudimos enviar el email de recuperación.');
+            }
+        }
+
+        return $this->render('requestPasswordResetToken', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Resets password.
+     *
+     * @param string $token
+     * @return mixed
+     */
+    public function actionResetPassword($token)
+    {
+        try {
+            $model = new ResetPasswordForm($token);
+        } catch (\Exception $e) {
+            Yii::$app->session->setFlash('error', 'Token de recuperación inválido o expirado.');
+            return $this->goHome();
+        }
+
+        if ($model->load(Yii::$app->request->post()) && $model->validate() && $model->resetPassword()) {
+            Yii::$app->session->setFlash('success', 'Nueva contraseña guardada exitosamente.');
+            return $this->redirect(['login']);
+        }
+
+        return $this->render('resetPassword', [
+            'model' => $model,
+        ]);
+    }
+
 
     public function actionEditar()
     {
@@ -401,7 +451,7 @@ class SiteController extends Controller
     public function actionNobreakListar()
     {
         try {
-            $nobreaks = Nobreak::find()->orderBy('idNOBREAK ASC')->all();
+            $nobreaks = Nobreak::find()->where(['!=', 'Estado', 'BAJA'])->orderBy('idNOBREAK ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $nobreaks = [];
@@ -412,6 +462,55 @@ class SiteController extends Controller
             'nobreaks' => $nobreaks,
             'error' => $error
         ]);
+    }
+
+    public function actionNobreakVer($id = null)
+    {
+        if ($id === null) {
+            Yii::$app->session->setFlash('error', 'ID de No Break no especificado.');
+            return $this->redirect(['site/nobreak-listar']);
+        }
+
+        $model = Nobreak::findOne($id);
+        if ($model === null) {
+            Yii::$app->session->setFlash('error', 'No Break no encontrado.');
+            return $this->redirect(['site/nobreak-listar']);
+        }
+
+        return $this->render('nobreak/ver', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionNobreakEliminarMultiple()
+    {
+        $ids = Yii::$app->request->post('ids');
+        if (!empty($ids) && is_array($ids)) {
+            $eliminados = 0;
+            $catalogoEncontrado = false;
+            foreach ($ids as $id) {
+                $model = Nobreak::findOne($id);
+                if ($model !== null) {
+                    // PROTECCIÓN: No permitir eliminar items del catálogo
+                    if (!empty($model->ubicacion_detalle) && stripos($model->ubicacion_detalle, 'Catálogo') !== false) {
+                        $catalogoEncontrado = true;
+                        continue;
+                    }
+                    if ($model->delete()) {
+                        $eliminados++;
+                    }
+                }
+            }
+            if ($catalogoEncontrado) {
+                Yii::$app->session->setFlash('warning', 'Se omitieron items del catálogo. Los items del catálogo no se pueden eliminar.');
+            }
+            if ($eliminados > 0) {
+                Yii::$app->session->setFlash('success', "Se eliminaron $eliminados No Break(s).");
+            }
+        } else {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron No Break para eliminar.');
+        }
+        return $this->redirect(['site/nobreak-listar']);
     }
     
     public function actionNobreakEditar($id = null)
@@ -618,7 +717,7 @@ class SiteController extends Controller
     public function actionEquipoListar()
     {
         try {
-            $equipos = Equipo::find()->orderBy('idEQUIPO ASC')->all();
+            $equipos = Equipo::find()->where(['!=', 'Estado', 'BAJA'])->orderBy('idEQUIPO ASC')->all();
             
             // Obtener información del último equipo modificado usando campos de auditoría
             $ultimaModificacion = null;
@@ -691,6 +790,27 @@ class SiteController extends Controller
         ]);
     }
     
+    /**
+     * Vista de solo lectura de un equipo (para QR)
+     */
+    public function actionEquipoVer($id = null)
+    {
+        if ($id === null) {
+            Yii::$app->session->setFlash('error', 'ID de Equipo no especificado.');
+            return $this->redirect(['site/equipo-listar']);
+        }
+
+        $model = Equipo::findOne($id);
+        if ($model === null) {
+            Yii::$app->session->setFlash('error', 'Equipo no encontrado.');
+            return $this->redirect(['site/equipo-listar']);
+        }
+
+        return $this->render('equipo/ver', [
+            'model' => $model,
+        ]);
+    }
+    
     public function actionEquipoEditar($id = null)
     {
         if ($id === null) {
@@ -706,25 +826,31 @@ class SiteController extends Controller
 
         if ($model->load(Yii::$app->request->post())) {
             // Procesar campos DD2, DD3, DD4 si no están marcados
-            if (empty($model->DD2) || $model->DD2 === '') {
+            if (empty($model->DD2) || $model->DD2 === '' || $model->DD2 === 'NO') {
                 $model->DD2 = 'NO';
+                $model->DD2_ID = null;
             }
-            if (empty($model->DD3) || $model->DD3 === '') {
+            if (empty($model->DD3) || $model->DD3 === '' || $model->DD3 === 'NO') {
                 $model->DD3 = 'NO';
+                $model->DD3_ID = null;
             }
-            if (empty($model->DD4) || $model->DD4 === '') {
+            if (empty($model->DD4) || $model->DD4 === '' || $model->DD4 === 'NO') {
                 $model->DD4 = 'NO';
+                $model->DD4_ID = null;
             }
             
             // Procesar campos RAM2, RAM3, RAM4 si no están marcados
-            if (empty($model->RAM2) || $model->RAM2 === '') {
+            if (empty($model->RAM2) || $model->RAM2 === '' || $model->RAM2 === 'NO') {
                 $model->RAM2 = 'NO';
+                $model->RAM2_ID = null;
             }
-            if (empty($model->RAM3) || $model->RAM3 === '') {
+            if (empty($model->RAM3) || $model->RAM3 === '' || $model->RAM3 === 'NO') {
                 $model->RAM3 = 'NO';
+                $model->RAM3_ID = null;
             }
-            if (empty($model->RAM4) || $model->RAM4 === '') {
+            if (empty($model->RAM4) || $model->RAM4 === '' || $model->RAM4 === 'NO') {
                 $model->RAM4 = 'NO';
+                $model->RAM4_ID = null;
             }
             
             if ($model->save()) {
@@ -743,8 +869,16 @@ class SiteController extends Controller
             }
         }
 
+        // Obtener catálogos de componentes
+        $almacenamiento = \frontend\models\Almacenamiento::find()->all();
+        $memoriaRam = \frontend\models\Ram::find()->all();
+        $procesadores = \frontend\models\Procesador::find()->all();
+
         return $this->render('equipo/editar', [
             'model' => $model,
+            'almacenamiento' => $almacenamiento,
+            'memoriaRam' => $memoriaRam,
+            'procesadores' => $procesadores,
         ]);
     }
     
@@ -833,7 +967,7 @@ class SiteController extends Controller
     public function actionImpresoraListar()
     {
         try {
-            $impresoras = Impresora::find()->orderBy('idIMPRESORA ASC')->all();
+            $impresoras = Impresora::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idIMPRESORA ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $impresoras = [];
@@ -844,6 +978,55 @@ class SiteController extends Controller
             'impresoras' => $impresoras,
             'error' => $error
         ]);
+    }
+
+    public function actionImpresoraVer($id = null)
+    {
+        if ($id === null) {
+            Yii::$app->session->setFlash('error', 'ID de Impresora no especificado.');
+            return $this->redirect(['site/impresora-listar']);
+        }
+
+        $model = Impresora::findOne($id);
+        if ($model === null) {
+            Yii::$app->session->setFlash('error', 'Impresora no encontrada.');
+            return $this->redirect(['site/impresora-listar']);
+        }
+
+        return $this->render('impresora/ver', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionImpresoraEliminarMultiple()
+    {
+        $ids = Yii::$app->request->post('ids');
+        if (!empty($ids) && is_array($ids)) {
+            $eliminados = 0;
+            $catalogoEncontrado = false;
+            foreach ($ids as $id) {
+                $model = Impresora::findOne($id);
+                if ($model !== null) {
+                    // PROTECCIÓN: No permitir eliminar items del catálogo
+                    if (!empty($model->ubicacion_detalle) && stripos($model->ubicacion_detalle, 'Catálogo') !== false) {
+                        $catalogoEncontrado = true;
+                        continue;
+                    }
+                    if ($model->delete()) {
+                        $eliminados++;
+                    }
+                }
+            }
+            if ($catalogoEncontrado) {
+                Yii::$app->session->setFlash('warning', 'Se omitieron items del catálogo. Los items del catálogo no se pueden eliminar.');
+            }
+            if ($eliminados > 0) {
+                Yii::$app->session->setFlash('success', "Las impresoras seleccionadas han sido eliminadas ($eliminados).");
+            }
+        } else {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron impresoras para eliminar.');
+        }
+        return $this->redirect(['site/impresora-listar']);
     }
     
     public function actionImpresoraEditar($id = null)
@@ -908,7 +1091,7 @@ class SiteController extends Controller
     public function actionMonitorListar()
     {
         try {
-                        $monitores = Monitor::find()->orderBy('idMonitor ASC')->all();
+                        $monitores = Monitor::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idMonitor ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $monitores = [];
@@ -919,6 +1102,41 @@ class SiteController extends Controller
             'monitores' => $monitores,
             'error' => $error
         ]);
+    }
+
+    public function actionMonitorVer($id = null)
+    {
+        if ($id === null) {
+            Yii::$app->session->setFlash('error', 'ID de Monitor no especificado.');
+            return $this->redirect(['site/monitor-listar']);
+        }
+
+        $model = Monitor::findOne($id);
+        if ($model === null) {
+            Yii::$app->session->setFlash('error', 'Monitor no encontrado.');
+            return $this->redirect(['site/monitor-listar']);
+        }
+
+        return $this->render('monitor/ver', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionMonitorEliminarMultiple()
+    {
+        $ids = Yii::$app->request->post('ids');
+        if (!empty($ids) && is_array($ids)) {
+            foreach ($ids as $id) {
+                $model = Monitor::findOne($id);
+                if ($model !== null) {
+                    $model->delete();
+                }
+            }
+            Yii::$app->session->setFlash('success', 'Los monitores seleccionados han sido eliminados.');
+        } else {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron monitores para eliminar.');
+        }
+        return $this->redirect(['site/monitor-listar']);
     }
     
     public function actionMonitorEditar($id = null)
@@ -961,7 +1179,7 @@ class SiteController extends Controller
     public function actionMicrofonoListar()
     {
         try {
-            $microfonos = Microfono::find()->orderBy('idMicrofono ASC')->all();
+            $microfonos = Microfono::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idMicrofono ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $microfonos = [];
@@ -1009,14 +1227,36 @@ class SiteController extends Controller
     public function actionAdaptadores()
     {
         $model = new Adaptador();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Adaptador agregado exitosamente.');
-            return $this->refresh();
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                $model->TIPO = $model->TIPO ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->fecha = date('Y-m-d');
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Adaptador agregado exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['adaptadores-catalogo-listar']);
+                }
+                return $this->refresh();
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
         }
         
         return $this->render('adaptadores', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
@@ -1039,7 +1279,7 @@ class SiteController extends Controller
     public function actionAdaptadoresListar()
     {
         try {
-            $adaptadores = Adaptador::find()->orderBy('idAdaptador ASC')->all();
+            $adaptadores = Adaptador::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idAdaptador ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $adaptadores = [];
@@ -1052,6 +1292,50 @@ class SiteController extends Controller
         ]);
     }
     
+    public function actionAdaptadorVer($id)
+    {
+        $model = Adaptador::findOne(['idAdaptador' => $id]);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('El adaptador no existe.');
+        }
+        return $this->render('adaptador/ver', ['model' => $model]);
+    }
+
+    public function actionAdaptadorEliminarMultiple()
+    {
+        $request = Yii::$app->request;
+        if (!$request->isPost) {
+            return $this->redirect(['site/adaptadores-listar']);
+        }
+        $ids = $request->post('ids');
+        if (!$ids || !is_array($ids)) {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron adaptadores');
+            return $this->redirect(['site/adaptadores-listar']);
+        }
+        $eliminados = 0;
+        $catalogoEncontrado = false;
+        foreach ($ids as $id) {
+            $model = Adaptador::findOne(['idAdaptador' => $id]);
+            if ($model) {
+                // PROTECCIÓN: No permitir eliminar items del catálogo
+                if (!empty($model->ubicacion_detalle) && stripos($model->ubicacion_detalle, 'Catálogo') !== false) {
+                    $catalogoEncontrado = true;
+                    continue;
+                }
+                if ($model->delete()) {
+                    $eliminados++;
+                }
+            }
+        }
+        if ($catalogoEncontrado) {
+            Yii::$app->session->setFlash('warning', 'Se omitieron items del catálogo. Los items del catálogo no se pueden eliminar.');
+        }
+        if ($eliminados > 0) {
+            Yii::$app->session->setFlash('success', "Se eliminaron $eliminados adaptador(es)");
+        }
+        return $this->redirect(['site/adaptadores-listar']);
+    }
+
     public function actionAdaptadorEditar($id = null)
     {
         if ($id === null) {
@@ -1091,21 +1375,44 @@ class SiteController extends Controller
     public function actionBaterias()
     {
         $model = new Bateria();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Batería agregada exitosamente.');
-            return $this->refresh();
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                $model->TIPO = $model->TIPO ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->fecha = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Batería agregada exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['baterias-catalogo-listar']);
+                }
+                return $this->refresh();
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
         }
         
         return $this->render('baterias', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
     public function actionBateriasListar()
     {
         try {
-            $baterias = Bateria::find()->orderBy('idBateria ASC')->all();
+            $baterias = Bateria::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idBateria ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $baterias = [];
@@ -1118,6 +1425,57 @@ class SiteController extends Controller
         ]);
     }
     
+    public function actionBateriaVer($id)
+    {
+        $model = Bateria::findOne(['idBateria' => $id]);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('La batería no existe.');
+        }
+        return $this->render('bateria/ver', ['model' => $model]);
+    }
+
+    public function actionBateriaEliminarMultiple()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $request = Yii::$app->request;
+        
+        if (!$request->isPost) {
+            return ['success' => false, 'message' => 'Método no permitido'];
+        }
+        
+        // Obtener datos JSON del body
+        $rawBody = $request->getRawBody();
+        $data = json_decode($rawBody, true);
+        $ids = $data['ids'] ?? $request->post('ids');
+        
+        if (!$ids || !is_array($ids)) {
+            return ['success' => false, 'message' => 'No se seleccionaron baterías'];
+        }
+        
+        $eliminados = 0;
+        $catalogoEncontrado = false;
+        foreach ($ids as $id) {
+            $model = Bateria::findOne(['idBateria' => $id]);
+            if ($model) {
+                // PROTECCIÓN: No permitir eliminar items del catálogo
+                if (!empty($model->ubicacion_detalle) && stripos($model->ubicacion_detalle, 'Catálogo') !== false) {
+                    $catalogoEncontrado = true;
+                    continue;
+                }
+                if ($model->delete()) {
+                    $eliminados++;
+                }
+            }
+        }
+        
+        $mensaje = "Se eliminaron $eliminados batería(s)";
+        if ($catalogoEncontrado) {
+            $mensaje .= '. Se omitieron items del catálogo (no se pueden eliminar)';
+        }
+        
+        return ['success' => true, 'message' => $mensaje];
+    }
+
     public function actionBateriaEditar($id = null)
     {
         if (!$id) {
@@ -1155,14 +1513,38 @@ class SiteController extends Controller
     public function actionDispositivosDeAlmacenamiento()
     {
         $model = new Almacenamiento();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Dispositivo de almacenamiento agregado exitosamente.');
-            return $this->refresh();
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                $model->TIPO = $model->TIPO ?: 'N/A';
+                $model->CAPACIDAD = $model->CAPACIDAD ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->fecha = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Dispositivo de almacenamiento agregado exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['site/almacenamiento-catalogo-listar']);
+                }
+                return $this->refresh();
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
         }
         
         return $this->render('dispositivos-de-almacenamiento', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
@@ -1224,7 +1606,17 @@ class SiteController extends Controller
     public function actionAlmacenamientoListar()
     {
         try {
-            $almacenamientos = Almacenamiento::find()->orderBy('idAlmacenamiento ASC')->all();
+            // Excluir los equipos que están en el catálogo y los dados de baja
+            $almacenamientos = Almacenamiento::find()
+                ->where(['!=', 'ESTADO', 'BAJA'])
+                ->andWhere([
+                    'or',
+                    ['not like', 'ubicacion_detalle', 'Catálogo'],
+                    ['ubicacion_detalle' => null],
+                    ['ubicacion_detalle' => '']
+                ])
+                ->orderBy('idAlmacenamiento ASC')
+                ->all();
             $error = null;
         } catch (Exception $e) {
             $almacenamientos = [];
@@ -1237,6 +1629,37 @@ class SiteController extends Controller
         ]);
     }
     
+    public function actionAlmacenamientoVer($id)
+    {
+        $model = Almacenamiento::findOne(['idAlmacenamiento' => $id]);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('El dispositivo de almacenamiento no existe.');
+        }
+        return $this->render('almacenamiento/ver', ['model' => $model]);
+    }
+
+    public function actionAlmacenamientoEliminarMultiple()
+    {
+        $request = Yii::$app->request;
+        if (!$request->isPost) {
+            return $this->redirect(['site/almacenamiento-listar']);
+        }
+        $ids = $request->post('ids');
+        if (!$ids || !is_array($ids)) {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron dispositivos');
+            return $this->redirect(['site/almacenamiento-listar']);
+        }
+        $eliminados = 0;
+        foreach ($ids as $id) {
+            $model = Almacenamiento::findOne(['idAlmacenamiento' => $id]);
+            if ($model && $model->delete()) {
+                $eliminados++;
+            }
+        }
+        Yii::$app->session->setFlash('success', "Se eliminaron $eliminados dispositivo(s)");
+        return $this->redirect(['site/almacenamiento-listar']);
+    }
+
     public function actionAlmacenamientoEditar($id = null)
     {
         if (!$id) {
@@ -1268,8 +1691,7 @@ class SiteController extends Controller
         $model = new Ram();
         
         // Verificar si viene desde el formulario de equipo (modo simplificado)
-        $modoSimplificado = Yii::$app->request->get('simple', false) || 
-                           (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'computo') !== false);
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
         if ($model->load(Yii::$app->request->post())) {
             if ($modoSimplificado) {
@@ -1282,10 +1704,18 @@ class SiteController extends Controller
                 if (isset($postData['MODELO'])) $model->MODELO = $postData['MODELO'];
                 if (isset($postData['CAPACIDAD'])) $model->CAPACIDAD = $postData['CAPACIDAD'];
                 
+                // Establecer ubicacion_detalle como Catálogo automáticamente
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                
                 // NO asignar otros campos - dejar que se manejen automáticamente o se queden vacíos
                 
                 if ($model->save()) {
                     Yii::$app->session->setFlash('success', 'Memoria RAM agregada al catálogo exitosamente.');
+                    
+                    if ($modoSimplificado) {
+                        return $this->redirect(['ram-catalogo-listar']);
+                    }
                     
                     // Manejar redirección si viene del formulario de equipos
                     if (Yii::$app->request->get('redirect') === 'computo') {
@@ -1318,7 +1748,7 @@ class SiteController extends Controller
     public function actionRamListar()
     {
         try {
-            $rams = Ram::find()->orderBy('idRAM ASC')->all();
+            $rams = Ram::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idRAM ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $rams = [];
@@ -1331,6 +1761,37 @@ class SiteController extends Controller
         ]);
     }
     
+    public function actionRamVer($id)
+    {
+        $model = Ram::findOne(['idRAM' => $id]);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('La memoria RAM no existe.');
+        }
+        return $this->render('ram/ver', ['model' => $model]);
+    }
+
+    public function actionRamEliminarMultiple()
+    {
+        $request = Yii::$app->request;
+        if (!$request->isPost) {
+            return $this->redirect(['site/ram-listar']);
+        }
+        $ids = $request->post('ids');
+        if (!$ids || !is_array($ids)) {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron memorias RAM');
+            return $this->redirect(['site/ram-listar']);
+        }
+        $eliminados = 0;
+        foreach ($ids as $id) {
+            $model = Ram::findOne(['idRAM' => $id]);
+            if ($model && $model->delete()) {
+                $eliminados++;
+            }
+        }
+        Yii::$app->session->setFlash('success', "Se eliminaron $eliminados memoria(s) RAM");
+        return $this->redirect(['site/ram-listar']);
+    }
+
     public function actionRamEditar($id = null)
     {
         if (!$id) {
@@ -1389,7 +1850,7 @@ class SiteController extends Controller
             $error = $e->getMessage();
         }
 
-        return $this->render('ram/catalogo_listar', [
+        return $this->render('catalogo/ram-listar', [
             'rams' => $rams,
             'error' => $error
         ]);
@@ -1419,6 +1880,12 @@ class SiteController extends Controller
                 return $this->redirect(['ram-catalogo-listar']);
             }
             
+            // PROTECCIÓN: No permitir eliminar items del catálogo
+            if (!empty($ram->ubicacion_detalle) && stripos($ram->ubicacion_detalle, 'Catálogo') !== false) {
+                Yii::$app->session->setFlash('error', 'No se pueden eliminar items del catálogo. Los items del catálogo son reutilizables infinitamente.');
+                return $this->redirect(['ram-catalogo-listar']);
+            }
+            
             $marca = $ram->MARCA ?? 'Sin marca';
             $modelo = $ram->MODELO ?? 'Sin modelo';
             
@@ -1431,60 +1898,6 @@ class SiteController extends Controller
 
         } catch (Exception $e) {
             Yii::$app->session->setFlash('error', 'Error al eliminar: ' . $e->getMessage());
-        }
-        
-        return $this->redirect(['ram-catalogo-listar']);
-    }
-
-    public function actionRamEliminarMultiple()
-    {
-        $request = Yii::$app->request;
-        
-        if (!$request->isPost) {
-            Yii::$app->session->setFlash('error', 'Método no permitido');
-            return $this->redirect(['ram-catalogo-listar']);
-        }
-
-        $ids = $request->post('ids');
-        
-        if (!$ids || !is_array($ids) || empty($ids)) {
-            Yii::$app->session->setFlash('error', 'No se seleccionaron módulos RAM para eliminar');
-            return $this->redirect(['ram-catalogo-listar']);
-        }
-
-        try {
-            $eliminados = 0;
-            $errores = [];
-
-            foreach ($ids as $id) {
-                if (empty($id)) continue;
-                
-                $ram = Ram::findOne(['idRAM' => $id]);
-                
-                if (!$ram) {
-                    $errores[] = "Módulo RAM con ID $id no encontrado";
-                    continue;
-                }
-
-                if ($ram->delete()) {
-                    $eliminados++;
-                } else {
-                    $errores[] = "Error al eliminar módulo RAM ID $id";
-                }
-            }
-
-            if ($eliminados > 0) {
-                $message = "Se eliminaron $eliminados módulos RAM exitosamente";
-                if (count($errores) > 0) {
-                    $message .= ". Algunos errores: " . implode(', ', $errores);
-                }
-                Yii::$app->session->setFlash('success', $message);
-            } else {
-                Yii::$app->session->setFlash('error', 'No se pudo eliminar ningún módulo RAM. ' . implode(', ', $errores));
-            }
-
-        } catch (Exception $e) {
-            Yii::$app->session->setFlash('error', 'Error al procesar eliminación: ' . $e->getMessage());
         }
         
         return $this->redirect(['ram-catalogo-listar']);
@@ -1644,6 +2057,12 @@ class SiteController extends Controller
             
             if (!$procesador) {
                 Yii::$app->session->setFlash('error', "Procesador con ID $id no encontrado");
+                return $this->redirect(['site/catalogo-listar']);
+            }
+            
+            // PROTECCIÓN: No permitir eliminar items del catálogo
+            if (!empty($procesador->ubicacion_detalle) && stripos($procesador->ubicacion_detalle, 'Catálogo') !== false) {
+                Yii::$app->session->setFlash('error', 'No se pueden eliminar items del catálogo. Los items del catálogo son reutilizables infinitamente.');
                 return $this->redirect(['site/catalogo-listar']);
             }
             
@@ -1875,6 +2294,12 @@ class SiteController extends Controller
                 return $this->redirect(['site/almacenamiento-catalogo-listar']);
             }
             
+            // PROTECCIÓN: No permitir eliminar items del catálogo
+            if (!empty($almacenamiento->ubicacion_detalle) && stripos($almacenamiento->ubicacion_detalle, 'Catálogo') !== false) {
+                Yii::$app->session->setFlash('error', 'No se pueden eliminar items del catálogo. Los items del catálogo son reutilizables infinitamente.');
+                return $this->redirect(['site/almacenamiento-catalogo-listar']);
+            }
+            
             $marca = $almacenamiento->MARCA ?? 'Sin marca';
             $modelo = $almacenamiento->MODELO ?? 'Sin modelo';
             
@@ -1887,60 +2312,6 @@ class SiteController extends Controller
 
         } catch (Exception $e) {
             Yii::$app->session->setFlash('error', 'Error al eliminar: ' . $e->getMessage());
-        }
-        
-        return $this->redirect(['site/almacenamiento-catalogo-listar']);
-    }
-
-    public function actionAlmacenamientoEliminarMultiple()
-    {
-        $request = Yii::$app->request;
-        
-        if (!$request->isPost) {
-            Yii::$app->session->setFlash('error', 'Método no permitido');
-            return $this->redirect(['site/almacenamiento-catalogo-listar']);
-        }
-
-        $ids = $request->post('ids');
-        
-        if (!$ids || !is_array($ids) || empty($ids)) {
-            Yii::$app->session->setFlash('error', 'No se seleccionaron dispositivos para eliminar');
-            return $this->redirect(['site/almacenamiento-catalogo-listar']);
-        }
-
-        try {
-            $eliminados = 0;
-            $errores = [];
-
-            foreach ($ids as $id) {
-                if (empty($id)) continue;
-                
-                $almacenamiento = Almacenamiento::findOne(['idAlmacenamiento' => $id]);
-                
-                if (!$almacenamiento) {
-                    $errores[] = "Dispositivo con ID $id no encontrado";
-                    continue;
-                }
-
-                if ($almacenamiento->delete()) {
-                    $eliminados++;
-                } else {
-                    $errores[] = "Error al eliminar dispositivo ID $id";
-                }
-            }
-
-            if ($eliminados > 0) {
-                $message = "Se eliminaron $eliminados dispositivos exitosamente";
-                if (count($errores) > 0) {
-                    $message .= ". Algunos errores: " . implode(', ', $errores);
-                }
-                Yii::$app->session->setFlash('success', $message);
-            } else {
-                Yii::$app->session->setFlash('error', 'No se pudo eliminar ningún dispositivo. ' . implode(', ', $errores));
-            }
-
-        } catch (Exception $e) {
-            Yii::$app->session->setFlash('error', 'Error al procesar eliminación: ' . $e->getMessage());
         }
         
         return $this->redirect(['site/almacenamiento-catalogo-listar']);
@@ -2122,6 +2493,204 @@ class SiteController extends Controller
         ]);
     }
     
+    // ==================== ACCIONES PARA CATÁLOGO NO BREAK ====================
+    public function actionNobreakCatalogoListar()
+    {
+        try {
+            // Obtener solo No Break de catálogo
+            $nobreaks = Nobreak::find()
+                ->where(['!=', 'Estado', 'BAJA'])
+                ->andWhere(['like', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('Estado ASC, MARCA ASC, MODELO ASC')
+                ->all();
+            $error = null;
+        } catch (Exception $e) {
+            $nobreaks = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->render('catalogo/nobreak-listar', [
+            'nobreaks' => $nobreaks,
+            'error' => $error
+        ]);
+    }
+    
+    // ==================== ACCIONES PARA CATÁLOGO BATERÍAS ====================
+    public function actionBateriasCatalogoListar()
+    {
+        try {
+            // Obtener solo baterías de catálogo
+            $baterias = Bateria::find()
+                ->where(['!=', 'ESTADO', 'BAJA'])
+                ->andWhere(['like', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('ESTADO ASC, MARCA ASC, MODELO ASC')
+                ->all();
+            $error = null;
+        } catch (Exception $e) {
+            $baterias = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->render('catalogo/baterias-listar', [
+            'baterias' => $baterias,
+            'error' => $error
+        ]);
+    }
+    
+    // ==================== ACCIONES PARA CATÁLOGO EQUIPO DE SONIDO ====================
+    public function actionSonidoCatalogoListar()
+    {
+        try {
+            // Obtener solo equipos de sonido de catálogo
+            $sonidos = Sonido::find()
+                ->where(['!=', 'ESTADO', 'BAJA'])
+                ->andWhere(['like', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('ESTADO ASC, MARCA ASC, MODELO ASC')
+                ->all();
+            $error = null;
+        } catch (Exception $e) {
+            $sonidos = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->render('catalogo/sonido-listar', [
+            'sonidos' => $sonidos,
+            'error' => $error
+        ]);
+    }
+    
+    // ==================== ACCIONES PARA CATÁLOGO CONECTIVIDAD ====================
+    public function actionConectividadCatalogoListar()
+    {
+        try {
+            // Obtener solo equipos de conectividad de catálogo
+            $conectividades = Conectividad::find()
+                ->where(['!=', 'Estado', 'BAJA'])
+                ->andWhere(['like', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('Estado ASC, MARCA ASC, MODELO ASC')
+                ->all();
+            $error = null;
+        } catch (Exception $e) {
+            $conectividades = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->render('catalogo/conectividad-listar', [
+            'conectividades' => $conectividades,
+            'error' => $error
+        ]);
+    }
+    
+    // ==================== ACCIONES PARA CATÁLOGO TELEFONÍA ====================
+    public function actionTelefoniaCatalogoListar()
+    {
+        try {
+            // Obtener solo equipos de telefonía de catálogo
+            $telefonias = Telefonia::find()
+                ->where(['!=', 'ESTADO', 'BAJA'])
+                ->andWhere(['like', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('ESTADO ASC, MARCA ASC, MODELO ASC')
+                ->all();
+            $error = null;
+        } catch (Exception $e) {
+            $telefonias = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->render('catalogo/telefonia-listar', [
+            'telefonias' => $telefonias,
+            'error' => $error
+        ]);
+    }
+    
+    // ==================== ACCIONES PARA CATÁLOGO VIDEO VIGILANCIA ====================
+    public function actionVideovigilanciaCatalogoListar()
+    {
+        try {
+            // Obtener solo equipos de video vigilancia de catálogo
+            $videovigilancias = VideoVigilancia::find()
+                ->where(['!=', 'ESTADO', 'BAJA'])
+                ->andWhere(['like', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('ESTADO ASC, MARCA ASC, MODELO ASC')
+                ->all();
+            $error = null;
+        } catch (Exception $e) {
+            $videovigilancias = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->render('catalogo/videovigilancia-listar', [
+            'videovigilancias' => $videovigilancias,
+            'error' => $error
+        ]);
+    }
+    
+    // ==================== ACCIONES PARA CATÁLOGO IMPRESORAS ====================
+    public function actionImpresorasCatalogoListar()
+    {
+        try {
+            // Obtener solo impresoras de catálogo
+            $impresoras = Impresora::find()
+                ->where(['!=', 'Estado', 'BAJA'])
+                ->andWhere(['like', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('Estado ASC, MARCA ASC, MODELO ASC')
+                ->all();
+            $error = null;
+        } catch (Exception $e) {
+            $impresoras = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->render('catalogo/impresoras-listar', [
+            'impresoras' => $impresoras,
+            'error' => $error
+        ]);
+    }
+    
+    // ==================== ACCIONES PARA CATÁLOGO ADAPTADORES ====================
+    public function actionAdaptadoresCatalogoListar()
+    {
+        try {
+            // Obtener solo adaptadores de catálogo
+            $adaptadores = Adaptador::find()
+                ->where(['!=', 'ESTADO', 'BAJA'])
+                ->andWhere(['like', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('ESTADO ASC, MARCA ASC, MODELO ASC')
+                ->all();
+            $error = null;
+        } catch (Exception $e) {
+            $adaptadores = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->render('catalogo/adaptadores-listar', [
+            'adaptadores' => $adaptadores,
+            'error' => $error
+        ]);
+    }
+    
+    // ==================== ACCIONES PARA CATÁLOGO EQUIPOS DE CÓMPUTO ====================
+    public function actionEquiposCatalogoListar()
+    {
+        try {
+            // Obtener solo equipos de cómputo de catálogo
+            $equipos = Equipo::find()
+                ->where(['!=', 'Estado', 'BAJA'])
+                ->andWhere(['like', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('Estado ASC, MARCA ASC, MODELO ASC')
+                ->all();
+            $error = null;
+        } catch (Exception $e) {
+            $equipos = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->render('catalogo/equipos-listar', [
+            'equipos' => $equipos,
+            'error' => $error
+        ]);
+    }
+    
     // ==================== ACCIONES DE ELIMINACIÓN PARA FUENTES DE PODER ====================
     public function actionFuenteEliminar()
     {
@@ -2144,6 +2713,12 @@ class SiteController extends Controller
             
             if (!$fuente) {
                 Yii::$app->session->setFlash('error', "Fuente de poder con ID $id no encontrada");
+                return $this->redirect(['site/fuentes-catalogo-listar']);
+            }
+            
+            // PROTECCIÓN: No permitir eliminar items del catálogo
+            if (!empty($fuente->ubicacion_detalle) && stripos($fuente->ubicacion_detalle, 'Catálogo') !== false) {
+                Yii::$app->session->setFlash('error', 'No se pueden eliminar items del catálogo. Los items del catálogo son reutilizables infinitamente.');
                 return $this->redirect(['site/fuentes-catalogo-listar']);
             }
             
@@ -2243,6 +2818,12 @@ class SiteController extends Controller
                 return $this->redirect(['site/monitor-catalogo-listar']);
             }
             
+            // PROTECCIÓN: No permitir eliminar items del catálogo
+            if (!empty($monitor->ubicacion_detalle) && stripos($monitor->ubicacion_detalle, 'Catálogo') !== false) {
+                Yii::$app->session->setFlash('error', 'No se pueden eliminar items del catálogo. Los items del catálogo son reutilizables infinitamente.');
+                return $this->redirect(['site/monitor-catalogo-listar']);
+            }
+            
             $marca = $monitor->MARCA ?? 'Sin marca';
             $modelo = $monitor->MODELO ?? 'Sin modelo';
             
@@ -2255,60 +2836,6 @@ class SiteController extends Controller
 
         } catch (Exception $e) {
             Yii::$app->session->setFlash('error', 'Error al eliminar: ' . $e->getMessage());
-        }
-        
-        return $this->redirect(['site/monitor-catalogo-listar']);
-    }
-
-    public function actionMonitorEliminarMultiple()
-    {
-        $request = Yii::$app->request;
-        
-        if (!$request->isPost) {
-            Yii::$app->session->setFlash('error', 'Método no permitido');
-            return $this->redirect(['site/monitor-catalogo-listar']);
-        }
-
-        $ids = $request->post('ids');
-        
-        if (!$ids || !is_array($ids) || empty($ids)) {
-            Yii::$app->session->setFlash('error', 'No se seleccionaron monitores para eliminar');
-            return $this->redirect(['site/monitor-catalogo-listar']);
-        }
-
-        try {
-            $eliminados = 0;
-            $errores = [];
-
-            foreach ($ids as $id) {
-                if (empty($id)) continue;
-                
-                $monitor = Monitor::findOne(['idMonitor' => $id]);
-                
-                if (!$monitor) {
-                    $errores[] = "Monitor con ID $id no encontrado";
-                    continue;
-                }
-
-                if ($monitor->delete()) {
-                    $eliminados++;
-                } else {
-                    $errores[] = "Error al eliminar monitor ID $id";
-                }
-            }
-
-            if ($eliminados > 0) {
-                $message = "Se eliminaron $eliminados monitores exitosamente";
-                if (count($errores) > 0) {
-                    $message .= ". Algunos errores: " . implode(', ', $errores);
-                }
-                Yii::$app->session->setFlash('success', $message);
-            } else {
-                Yii::$app->session->setFlash('error', 'No se pudo eliminar ningún monitor. ' . implode(', ', $errores));
-            }
-
-        } catch (Exception $e) {
-            Yii::$app->session->setFlash('error', 'Error al procesar eliminación: ' . $e->getMessage());
         }
         
         return $this->redirect(['site/monitor-catalogo-listar']);
@@ -2450,21 +2977,44 @@ class SiteController extends Controller
     public function actionEquipoDeSonido()
     {
         $model = new Sonido();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Equipo de sonido agregado exitosamente.');
-            return $this->refresh();
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                $model->TIPO = $model->TIPO ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->fecha = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Equipo de sonido agregado exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['sonido-catalogo-listar']);
+                }
+                return $this->refresh();
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
         }
         
         return $this->render('equipo-de-sonido', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
     public function actionSonidoListar()
     {
         try {
-            $sonidos = Sonido::find()->orderBy('idSonido ASC')->all();
+            $sonidos = Sonido::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idSonido ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $sonidos = [];
@@ -2477,6 +3027,57 @@ class SiteController extends Controller
         ]);
     }
     
+    public function actionSonidoVer($id)
+    {
+        $model = Sonido::findOne(['idSonido' => $id]);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('El equipo de sonido no existe.');
+        }
+        return $this->render('sonido/ver', ['model' => $model]);
+    }
+
+    public function actionSonidoEliminarMultiple()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $request = Yii::$app->request;
+        
+        if (!$request->isPost) {
+            return ['success' => false, 'message' => 'Método no permitido'];
+        }
+        
+        // Obtener datos JSON del body
+        $rawBody = $request->getRawBody();
+        $data = json_decode($rawBody, true);
+        $ids = $data['ids'] ?? $request->post('ids');
+        
+        if (!$ids || !is_array($ids)) {
+            return ['success' => false, 'message' => 'No se seleccionaron equipos de sonido'];
+        }
+        
+        $eliminados = 0;
+        $catalogoEncontrado = false;
+        foreach ($ids as $id) {
+            $model = Sonido::findOne(['idSonido' => $id]);
+            if ($model) {
+                // PROTECCIÓN: No permitir eliminar items del catálogo
+                if (!empty($model->ubicacion_detalle) && stripos($model->ubicacion_detalle, 'Catálogo') !== false) {
+                    $catalogoEncontrado = true;
+                    continue;
+                }
+                if ($model->delete()) {
+                    $eliminados++;
+                }
+            }
+        }
+        
+        $mensaje = "Se eliminaron $eliminados equipo(s) de sonido";
+        if ($catalogoEncontrado) {
+            $mensaje .= '. Se omitieron items del catálogo (no se pueden eliminar)';
+        }
+        
+        return ['success' => true, 'message' => $mensaje];
+    }
+
     public function actionSonidoEditar($id = null)
     {
         if (!$id) {
@@ -2540,10 +3141,10 @@ class SiteController extends Controller
                 if (isset($postData['MODELO'])) $model->MODELO = $postData['MODELO'];
                 
                 // CATÁLOGO: Solo guardar marca y modelo, sin datos adicionales
-                $model->Estado = 'Inactivo(Sin Asignar)';
+                $model->Estado = 'Activo';
                 $model->fecha = date('Y-m-d');
                 $model->ubicacion_edificio = 'A';
-                $model->ubicacion_detalle = 'Catálogo - Solo marca y modelo';
+                $model->ubicacion_detalle = 'Catálogo';
                 $model->DESCRIPCION = 'Entrada de catálogo';
                 
                 // Campos técnicos con valores mínimos para catálogo (evitar NULL)
@@ -2576,7 +3177,7 @@ class SiteController extends Controller
     public function actionProcesadorListar()
     {
         try {
-            $procesadores = Procesador::find()->orderBy('idProcesador ASC')->all();
+            $procesadores = Procesador::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idProcesador ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $procesadores = [];
@@ -2587,6 +3188,15 @@ class SiteController extends Controller
             'procesadores' => $procesadores,
             'error' => $error
         ]);
+    }
+
+    public function actionProcesadorVer($id)
+    {
+        $model = Procesador::findOne(['idProcesador' => $id]);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('El procesador no existe.');
+        }
+        return $this->render('procesador/ver', ['model' => $model]);
     }
 
     public function actionCatalogoListar()
@@ -2697,13 +3307,38 @@ class SiteController extends Controller
     public function actionFuentesDePoder()
     {
         $model = new FuentesDePoder();
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Fuente de poder agregada exitosamente.');
-            return $this->redirect(['fuentes-de-poder']);
+        $modoSimplificado = Yii::$app->request->get('simple', false);
+        
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                $model->POTENCIA_WATTS = $model->POTENCIA_WATTS ?: 'N/A';
+                $model->TIPO = $model->TIPO ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->fecha = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Fuente de poder agregada exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['site/fuentes-catalogo-listar']);
+                }
+                return $this->redirect(['fuentes-de-poder']);
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
         }
 
         return $this->render('fuentes-de-poder', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
@@ -2711,21 +3346,44 @@ class SiteController extends Controller
     public function actionConectividad()
     {
         $model = new Conectividad();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Equipo de conectividad agregado exitosamente.');
-            return $this->refresh();
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->Estado = 'Activo';
+                $model->TIPO = $model->TIPO ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->fecha = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Equipo de conectividad agregado exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['conectividad-catalogo-listar']);
+                }
+                return $this->refresh();
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
         }
         
         return $this->render('conectividad', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
     public function actionConectividadListar()
     {
         try {
-            $conectividades = Conectividad::find()->orderBy('idCONECTIVIDAD ASC')->all();
+            $conectividades = Conectividad::find()->where(['!=', 'Estado', 'BAJA'])->orderBy('idCONECTIVIDAD ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $conectividades = [];
@@ -2738,6 +3396,57 @@ class SiteController extends Controller
         ]);
     }
     
+    public function actionConectividadVer($id)
+    {
+        $model = Conectividad::findOne(['idCONECTIVIDAD' => $id]);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('El equipo de conectividad no existe.');
+        }
+        return $this->render('conectividad/ver', ['model' => $model]);
+    }
+
+    public function actionConectividadEliminarMultiple()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $request = Yii::$app->request;
+        
+        if (!$request->isPost) {
+            return ['success' => false, 'message' => 'Método no permitido'];
+        }
+        
+        // Obtener datos JSON del body
+        $rawBody = $request->getRawBody();
+        $data = json_decode($rawBody, true);
+        $ids = $data['ids'] ?? $request->post('ids');
+        
+        if (!$ids || !is_array($ids)) {
+            return ['success' => false, 'message' => 'No se seleccionaron equipos de conectividad'];
+        }
+        
+        $eliminados = 0;
+        $catalogoEncontrado = false;
+        foreach ($ids as $id) {
+            $model = Conectividad::findOne(['idCONECTIVIDAD' => $id]);
+            if ($model) {
+                // PROTECCIÓN: No permitir eliminar items del catálogo
+                if (!empty($model->ubicacion_detalle) && stripos($model->ubicacion_detalle, 'Catálogo') !== false) {
+                    $catalogoEncontrado = true;
+                    continue;
+                }
+                if ($model->delete()) {
+                    $eliminados++;
+                }
+            }
+        }
+        
+        $mensaje = "Se eliminaron $eliminados equipo(s) de conectividad";
+        if ($catalogoEncontrado) {
+            $mensaje .= '. Se omitieron items del catálogo (no se pueden eliminar)';
+        }
+        
+        return ['success' => true, 'message' => $mensaje];
+    }
+
     public function actionConectividadEditar($id = null)
     {
         if (!$id) {
@@ -2783,21 +3492,44 @@ class SiteController extends Controller
     public function actionTelefonia()
     {
         $model = new Telefonia();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Equipo de telefonía agregado exitosamente.');
-            return $this->refresh();
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                $model->TIPO = $model->TIPO ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->fecha = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Equipo de telefonía agregado exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['telefonia-catalogo-listar']);
+                }
+                return $this->refresh();
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
         }
         
         return $this->render('telefonia', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
     public function actionTelefoniaListar()
     {
         try {
-            $telefonias = Telefonia::find()->orderBy('idTELEFONIA ASC')->all();
+            $telefonias = Telefonia::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idTELEFONIA ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $telefonias = [];
@@ -2810,6 +3542,50 @@ class SiteController extends Controller
         ]);
     }
     
+    public function actionTelefoniaVer($id)
+    {
+        $model = Telefonia::findOne(['idTELEFONIA' => $id]);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('El equipo de telefonía no existe.');
+        }
+        return $this->render('telefonia/ver', ['model' => $model]);
+    }
+
+    public function actionTelefoniaEliminarMultiple()
+    {
+        $request = Yii::$app->request;
+        if (!$request->isPost) {
+            return $this->redirect(['site/telefonia-listar']);
+        }
+        $ids = $request->post('ids');
+        if (!$ids || !is_array($ids)) {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron equipos de telefonía');
+            return $this->redirect(['site/telefonia-listar']);
+        }
+        $eliminados = 0;
+        $catalogoEncontrado = false;
+        foreach ($ids as $id) {
+            $model = Telefonia::findOne(['idTELEFONIA' => $id]);
+            if ($model) {
+                // PROTECCIÓN: No permitir eliminar items del catálogo
+                if (!empty($model->ubicacion_detalle) && stripos($model->ubicacion_detalle, 'Catálogo') !== false) {
+                    $catalogoEncontrado = true;
+                    continue;
+                }
+                if ($model->delete()) {
+                    $eliminados++;
+                }
+            }
+        }
+        if ($catalogoEncontrado) {
+            Yii::$app->session->setFlash('warning', 'Se omitieron items del catálogo. Los items del catálogo no se pueden eliminar.');
+        }
+        if ($eliminados > 0) {
+            Yii::$app->session->setFlash('success', "Se eliminaron $eliminados equipo(s) de telefonía");
+        }
+        return $this->redirect(['site/telefonia-listar']);
+    }
+
     public function actionTelefoniaEditar($id = null)
     {
         if (!$id) {
@@ -2869,7 +3645,7 @@ class SiteController extends Controller
     public function actionVideovigilanciaListar()
     {
         try {
-            $camaras = VideoVigilancia::find()->orderBy('idVIDEO_VIGILANCIA ASC')->all();
+            $camaras = VideoVigilancia::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idVIDEO_VIGILANCIA ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $camaras = [];
@@ -2882,6 +3658,88 @@ class SiteController extends Controller
         ]);
     }
     
+    public function actionVideovigilanciaVer($id)
+    {
+        $model = VideoVigilancia::findOne(['idVIDEO_VIGILANCIA' => $id]);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('El equipo de video vigilancia no existe.');
+        }
+        return $this->render('videovigilancia/ver', ['model' => $model]);
+    }
+
+    public function actionVideovigilanciaEliminarMultiple()
+    {
+        $request = Yii::$app->request;
+        if (!$request->isPost) {
+            return $this->redirect(['site/videovigilancia-listar']);
+        }
+        $ids = $request->post('ids');
+        if (!$ids || !is_array($ids)) {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron equipos de video vigilancia');
+            return $this->redirect(['site/videovigilancia-listar']);
+        }
+        $eliminados = 0;
+        $catalogoEncontrado = false;
+        foreach ($ids as $id) {
+            $model = VideoVigilancia::findOne(['idVIDEO_VIGILANCIA' => $id]);
+            if ($model) {
+                // PROTECCIÓN: No permitir eliminar items del catálogo
+                if (!empty($model->ubicacion_detalle) && stripos($model->ubicacion_detalle, 'Catálogo') !== false) {
+                    $catalogoEncontrado = true;
+                    continue;
+                }
+                if ($model->delete()) {
+                    $eliminados++;
+                }
+            }
+        }
+        if ($catalogoEncontrado) {
+            Yii::$app->session->setFlash('warning', 'Se omitieron items del catálogo. Los items del catálogo no se pueden eliminar.');
+        }
+        if ($eliminados > 0) {
+            Yii::$app->session->setFlash('success', "Se eliminaron $eliminados equipo(s) de video vigilancia");
+        }
+        return $this->redirect(['site/videovigilancia-listar']);
+    }
+
+    public function actionVideovigilancia()
+    {
+        $model = new VideoVigilancia();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
+        
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                $model->TIPO = $model->TIPO ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->RESOLUCION = $model->RESOLUCION ?: 'N/A';
+                $model->fecha = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Cámara de videovigilancia agregada exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['videovigilancia-catalogo-listar']);
+                }
+                return $this->redirect(['videovigilancia-listar']);
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
+        }
+        
+        return $this->render('videovigilancia/editar', [
+            'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
+        ]);
+    }
+
     public function actionVideovigilanciaEditar($id = null)
     {
         if (!$id) {
@@ -2927,14 +3785,38 @@ class SiteController extends Controller
     public function actionMonitores()
     {
         $model = new Monitor();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Monitor agregado exitosamente.');
-            return $this->refresh();
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                $model->PULGADAS = $model->PULGADAS ?: 'N/A';
+                $model->RESOLUCION = $model->RESOLUCION ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->fecha = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Monitor agregado exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['site/monitor-catalogo-listar']);
+                }
+                return $this->refresh();
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
         }
         
         return $this->render('monitores', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
@@ -2955,14 +3837,40 @@ class SiteController extends Controller
     public function actionNoBreak()
     {
         $model = new Nobreak();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'No Break agregado exitosamente.');
-            return $this->refresh();
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer escenario y valores por defecto
+            if ($modoSimplificado) {
+                $model->scenario = 'catalogo';
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->Estado = 'Activo';
+                // Valores por defecto para campos no requeridos en catálogo
+                $timestamp = time() . rand(100, 999);
+                $model->CAPACIDAD = $model->CAPACIDAD ?: 'N/A';
+                $model->NUMERO_SERIE = 'CAT-' . $timestamp;
+                $model->NUMERO_INVENTARIO = 'CAT-' . $timestamp;
+                $model->DESCRIPCION = 'Item de catálogo';
+                $model->EMISION_INVENTARIO = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'No Break agregado exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['nobreak-catalogo-listar']);
+                }
+                return $this->refresh();
+            } else {
+                // Mostrar errores de validación
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error al guardar: ' . print_r($errors, true));
+            }
         }
         
         return $this->render('no-break', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
@@ -3294,14 +4202,39 @@ class SiteController extends Controller
     public function actionImpresora()
     {
         $model = new Impresora();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
         
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Impresora agregada exitosamente.');
-            return $this->refresh();
+        if ($model->load(Yii::$app->request->post())) {
+            // Si es modo catálogo, establecer valores por defecto
+            if ($modoSimplificado) {
+                $timestamp = time() . rand(100, 999);
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                $model->TIPO = $model->TIPO ?: 'N/A';
+                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
+                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                $model->TONER_MODELO = $model->TONER_MODELO ?: 'N/A';
+                $model->TIPO_IMPRESION = $model->TIPO_IMPRESION ?: 'N/A';
+                $model->fecha = date('Y-m-d');
+                $model->ubicacion_edificio = 'Catálogo';
+            }
+            
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Impresora agregada exitosamente.');
+                if ($modoSimplificado) {
+                    return $this->redirect(['impresoras-catalogo-listar']);
+                }
+                return $this->refresh();
+            } else {
+                $errors = $model->getErrors();
+                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+            }
         }
         
         return $this->render('impresora', [
             'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
         ]);
     }
     
@@ -3655,13 +4588,14 @@ class SiteController extends Controller
         try {
             $db = Yii::$app->db;
             if ($filtro === 'inactivo_sin_asignar') {
-                $sql = "SELECT * FROM `{$tabla}` WHERE `{$campoEstado}` = :est";
+                $sql = "SELECT * FROM `{$tabla}` WHERE `{$campoEstado}` = :est AND `{$campoEstado}` != 'BAJA'";
                 $rows = $db->createCommand($sql)->bindValue(':est', 'Inactivo(Sin Asignar)')->queryAll();
             } elseif ($filtro === 'activo') {
-                $sql = "SELECT * FROM `{$tabla}` WHERE `{$campoEstado}` = :est";
+                $sql = "SELECT * FROM `{$tabla}` WHERE `{$campoEstado}` = :est AND `{$campoEstado}` != 'BAJA'";
                 $rows = $db->createCommand($sql)->bindValue(':est', 'Activo')->queryAll();
             } else {
-                $sql = "SELECT * FROM `{$tabla}` LIMIT 500"; // fallback / límite
+                // Para "ambos" o cualquier otro filtro, excluir BAJA
+                $sql = "SELECT * FROM `{$tabla}` WHERE `{$campoEstado}` != 'BAJA' LIMIT 500";
                 $rows = $db->createCommand($sql)->queryAll();
             }
 
@@ -4122,6 +5056,1342 @@ class SiteController extends Controller
             }
         } else {
             return $this->asJson(['success' => false, 'message' => 'No hay equipos para probar']);
+        }
+    }
+
+    // =====================================================
+    // ACCIONES PARA RECICLAJE DE PIEZAS
+    // =====================================================
+
+    /**
+     * Registra una nueva pieza en el inventario de reciclaje
+     * Recibe datos via POST y devuelve JSON
+     */
+    public function actionRegistrarPiezaReciclaje()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        if (!Yii::$app->request->isPost) {
+            return [
+                'success' => false,
+                'message' => 'Método no permitido'
+            ];
+        }
+
+        try {
+            $data = Yii::$app->request->post();
+            
+            // Validar datos requeridos
+            if (empty($data['tipo_pieza']) || empty($data['marca'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Tipo de pieza y marca son requeridos'
+                ];
+            }
+            
+            $pieza = new PiezaReciclaje();
+            $pieza->tipo_pieza = trim($data['tipo_pieza']);
+            $pieza->marca = trim($data['marca']);
+            $pieza->modelo = !empty($data['modelo']) ? trim($data['modelo']) : null;
+            $pieza->especificaciones = !empty($data['especificaciones']) ? trim($data['especificaciones']) : null;
+            $pieza->numero_serie = !empty($data['numero_serie']) ? trim($data['numero_serie']) : null;
+            $pieza->numero_inventario = !empty($data['numero_inventario']) ? trim($data['numero_inventario']) : null;
+            $pieza->estado_pieza = !empty($data['estado_pieza']) ? trim($data['estado_pieza']) : PiezaReciclaje::ESTADO_DISPONIBLE;
+            $pieza->condicion = !empty($data['condicion']) ? trim($data['condicion']) : PiezaReciclaje::CONDICION_BUENO;
+            $pieza->equipo_origen = !empty($data['equipo_origen']) ? trim($data['equipo_origen']) : null;
+            $pieza->equipo_origen_descripcion = !empty($data['equipo_origen_descripcion']) ? trim($data['equipo_origen_descripcion']) : null;
+            $pieza->componente_defectuoso = !empty($data['componente_defectuoso']) ? trim($data['componente_defectuoso']) : null;
+            $pieza->motivo_recuperacion = !empty($data['motivo_recuperacion']) ? trim($data['motivo_recuperacion']) : null;
+            $pieza->ubicacion_almacen = !empty($data['ubicacion_almacen']) ? trim($data['ubicacion_almacen']) : null;
+            $pieza->observaciones = !empty($data['observaciones']) ? trim($data['observaciones']) : null;
+            $pieza->fecha_recuperacion = !empty($data['fecha_recuperacion']) ? $data['fecha_recuperacion'] : date('Y-m-d');
+            
+            if ($pieza->save()) {
+                return [
+                    'success' => true,
+                    'message' => 'Pieza registrada exitosamente',
+                    'data' => [
+                        'id' => $pieza->id,
+                        'tipo_pieza' => $pieza->tipo_pieza,
+                        'marca' => $pieza->marca,
+                        'modelo' => $pieza->modelo,
+                        'estado_pieza' => $pieza->estado_pieza
+                    ]
+                ];
+            } else {
+                $erroresTexto = [];
+                foreach ($pieza->errors as $campo => $errores) {
+                    $erroresTexto[] = $campo . ': ' . implode(', ', $errores);
+                }
+                return [
+                    'success' => false,
+                    'message' => 'Error de validación: ' . implode('; ', $erroresTexto),
+                    'errors' => $pieza->errors
+                ];
+            }
+        } catch (Exception $e) {
+            Yii::error('Error en registrarPiezaReciclaje: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error del servidor: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obtiene el inventario completo de piezas de reciclaje
+     * Retorna JSON con todas las piezas y estadísticas
+     */
+    public function actionInventarioPiezasReciclaje()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            $piezas = PiezaReciclaje::find()
+                ->orderBy(['fecha_creacion' => SORT_DESC])
+                ->all();
+            
+            $inventario = [];
+            foreach ($piezas as $pieza) {
+                $inventario[] = [
+                    'id' => $pieza->id,
+                    'tipo' => $pieza->tipo_pieza,
+                    'descripcion' => $pieza->marca . ' ' . ($pieza->modelo ?? ''),
+                    'especificaciones' => $pieza->especificaciones ?? 'N/A',
+                    'estado' => $pieza->estado_pieza,
+                    'condicion' => $pieza->condicion,
+                    'numero_serie' => $pieza->numero_serie ?? 'N/A',
+                    'numero_inventario' => $pieza->numero_inventario ?? 'N/A',
+                    'equipo_origen' => $pieza->equipo_origen ?? 'N/A',
+                    'equipo_origen_descripcion' => $pieza->equipo_origen_descripcion ?? '',
+                    'componente_defectuoso' => $pieza->componente_defectuoso ?? 'N/A',
+                    'ubicacion_almacen' => $pieza->ubicacion_almacen ?? 'Sin asignar',
+                    'fecha_registro' => $pieza->fecha_recuperacion,
+                    'categoria' => $this->categorizarTipoPieza($pieza->tipo_pieza)
+                ];
+            }
+            
+            // Obtener estadísticas
+            $estadisticas = PiezaReciclaje::getEstadisticas();
+            
+            // Contar por categoría
+            $conteosCategorias = [
+                'memoria' => PiezaReciclaje::find()->where(['tipo_pieza' => PiezaReciclaje::TIPO_RAM])->count(),
+                'procesador' => PiezaReciclaje::find()->where(['tipo_pieza' => PiezaReciclaje::TIPO_PROCESADOR])->count(),
+                'almacenamiento' => PiezaReciclaje::find()->where(['like', 'tipo_pieza', 'Disco'])->orWhere(['tipo_pieza' => PiezaReciclaje::TIPO_SSD])->count(),
+                'monitor' => PiezaReciclaje::find()->where(['tipo_pieza' => PiezaReciclaje::TIPO_MONITOR])->count(),
+                'fuente' => PiezaReciclaje::find()->where(['tipo_pieza' => PiezaReciclaje::TIPO_FUENTE])->count(),
+            ];
+            
+            return [
+                'success' => true,
+                'data' => $inventario,
+                'total' => count($inventario),
+                'estadisticas' => $estadisticas,
+                'conteos' => $conteosCategorias,
+                'message' => 'Inventario obtenido correctamente'
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error al obtener el inventario: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Categoriza el tipo de pieza para filtros
+     */
+    private function categorizarTipoPieza($tipo)
+    {
+        $categorias = [
+            'Memoria RAM' => 'memoria',
+            'Procesador' => 'procesador',
+            'Disco Duro' => 'almacenamiento',
+            'SSD' => 'almacenamiento',
+            'Monitor' => 'monitor',
+            'Fuente de Poder' => 'fuente',
+            'Tarjeta de Video' => 'componente',
+            'Tarjeta Madre' => 'componente',
+        ];
+        return $categorias[$tipo] ?? 'otro';
+    }
+
+    /**
+     * Actualiza una pieza de reciclaje
+     */
+    public function actionActualizarPiezaReciclaje()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        if (!Yii::$app->request->isPost) {
+            return ['success' => false, 'message' => 'Método no permitido'];
+        }
+
+        try {
+            $data = Yii::$app->request->post();
+            $id = $data['id'] ?? null;
+            
+            if (!$id) {
+                return ['success' => false, 'message' => 'ID de pieza no proporcionado'];
+            }
+            
+            $pieza = PiezaReciclaje::findOne($id);
+            
+            if (!$pieza) {
+                return ['success' => false, 'message' => 'Pieza no encontrada'];
+            }
+            
+            // Guardar estado anterior para historial
+            $estadoAnterior = $pieza->estado_pieza;
+            
+            // Actualizar campos
+            if (isset($data['tipo_pieza'])) $pieza->tipo_pieza = $data['tipo_pieza'];
+            if (isset($data['marca'])) $pieza->marca = $data['marca'];
+            if (isset($data['modelo'])) $pieza->modelo = $data['modelo'];
+            if (isset($data['especificaciones'])) $pieza->especificaciones = $data['especificaciones'];
+            if (isset($data['numero_serie'])) $pieza->numero_serie = $data['numero_serie'];
+            if (isset($data['numero_inventario'])) $pieza->numero_inventario = $data['numero_inventario'];
+            if (isset($data['estado_pieza'])) $pieza->estado_pieza = $data['estado_pieza'];
+            if (isset($data['condicion'])) $pieza->condicion = $data['condicion'];
+            if (isset($data['equipo_origen'])) $pieza->equipo_origen = $data['equipo_origen'];
+            if (isset($data['equipo_origen_descripcion'])) $pieza->equipo_origen_descripcion = $data['equipo_origen_descripcion'];
+            if (isset($data['componente_defectuoso'])) $pieza->componente_defectuoso = $data['componente_defectuoso'];
+            if (isset($data['motivo_recuperacion'])) $pieza->motivo_recuperacion = $data['motivo_recuperacion'];
+            if (isset($data['ubicacion_almacen'])) $pieza->ubicacion_almacen = $data['ubicacion_almacen'];
+            if (isset($data['observaciones'])) $pieza->observaciones = $data['observaciones'];
+            if (isset($data['asignado_a'])) $pieza->asignado_a = $data['asignado_a'];
+            
+            if ($pieza->save()) {
+                return [
+                    'success' => true,
+                    'message' => 'Pieza actualizada exitosamente',
+                    'data' => $pieza->attributes
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Error al actualizar la pieza',
+                    'errors' => $pieza->errors
+                ];
+            }
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Elimina una pieza de reciclaje
+     */
+    public function actionEliminarPiezaReciclaje()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        if (!Yii::$app->request->isPost) {
+            return ['success' => false, 'message' => 'Método no permitido'];
+        }
+
+        try {
+            $id = Yii::$app->request->post('id');
+            
+            if (!$id) {
+                return ['success' => false, 'message' => 'ID de pieza no proporcionado'];
+            }
+            
+            $pieza = PiezaReciclaje::findOne($id);
+            
+            if (!$pieza) {
+                return ['success' => false, 'message' => 'Pieza no encontrada'];
+            }
+            
+            if ($pieza->delete()) {
+                return [
+                    'success' => true,
+                    'message' => 'Pieza eliminada exitosamente'
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Error al eliminar la pieza'
+                ];
+            }
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obtiene los detalles de una pieza específica
+     */
+    public function actionDetallePiezaReciclaje($id)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            $pieza = PiezaReciclaje::findOne($id);
+            
+            if (!$pieza) {
+                return ['success' => false, 'message' => 'Pieza no encontrada'];
+            }
+            
+            // Obtener historial
+            $historial = HistorialPiezaReciclaje::find()
+                ->where(['pieza_id' => $id])
+                ->orderBy(['fecha_movimiento' => SORT_DESC])
+                ->all();
+            
+            $historialData = [];
+            foreach ($historial as $h) {
+                $historialData[] = [
+                    'accion' => $h->accion,
+                    'estado_anterior' => $h->estado_anterior,
+                    'estado_nuevo' => $h->estado_nuevo,
+                    'equipo_destino' => $h->equipo_destino,
+                    'observaciones' => $h->observaciones,
+                    'usuario' => $h->usuario,
+                    'fecha' => $h->fecha_movimiento
+                ];
+            }
+            
+            return [
+                'success' => true,
+                'data' => $pieza->attributes,
+                'historial' => $historialData
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obtiene las estadísticas del módulo de reciclaje
+     */
+    public function actionEstadisticasReciclaje()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            $estadisticas = PiezaReciclaje::getEstadisticas();
+            
+            // Piezas por tipo
+            $porTipo = [];
+            foreach (PiezaReciclaje::getTiposPieza() as $tipo => $label) {
+                $count = PiezaReciclaje::find()->where(['tipo_pieza' => $tipo])->count();
+                if ($count > 0) {
+                    $porTipo[$tipo] = $count;
+                }
+            }
+            
+            // Piezas por condición
+            $porCondicion = [];
+            foreach (PiezaReciclaje::getCondiciones() as $condicion => $label) {
+                $count = PiezaReciclaje::find()->where(['condicion' => $condicion])->count();
+                if ($count > 0) {
+                    $porCondicion[$condicion] = $count;
+                }
+            }
+            
+            return [
+                'success' => true,
+                'estadisticas' => $estadisticas,
+                'porTipo' => $porTipo,
+                'porCondicion' => $porCondicion
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obtiene las opciones para los selectores del formulario
+     */
+    public function actionOpcionesPiezaReciclaje()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        return [
+            'success' => true,
+            'tiposPieza' => PiezaReciclaje::getTiposPieza(),
+            'estados' => PiezaReciclaje::getEstados(),
+            'condiciones' => PiezaReciclaje::getCondiciones()
+        ];
+    }
+
+    /**
+     * Obtiene datos del catálogo existente para preselección
+     * según el tipo de pieza seleccionado
+     */
+    public function actionObtenerCatalogoPiezas($tipo = null)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            $catalogo = [];
+            
+            switch ($tipo) {
+                case 'Memoria RAM':
+                    $items = Ram::find()
+                        ->select(['MARCA', 'MODELO', 'CAPACIDAD', 'TIPO_DDR', 'numero_serie', 'numero_inventario'])
+                        ->distinct()
+                        ->all();
+                    foreach ($items as $item) {
+                        $catalogo[] = [
+                            'marca' => $item->MARCA,
+                            'modelo' => $item->MODELO,
+                            'especificaciones' => $item->CAPACIDAD . ' ' . $item->TIPO_DDR,
+                            'numero_serie' => $item->numero_serie,
+                            'numero_inventario' => $item->numero_inventario,
+                            'descripcion' => $item->MARCA . ' ' . $item->MODELO . ' - ' . $item->CAPACIDAD . ' ' . $item->TIPO_DDR
+                        ];
+                    }
+                    break;
+                    
+                case 'Procesador':
+                    $items = Procesador::find()
+                        ->select(['MARCA', 'MODELO', 'FRECUENCIA_BASE', 'NUCLEOS', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])
+                        ->distinct()
+                        ->all();
+                    foreach ($items as $item) {
+                        $catalogo[] = [
+                            'marca' => $item->MARCA,
+                            'modelo' => $item->MODELO,
+                            'especificaciones' => $item->FRECUENCIA_BASE . ' - ' . $item->NUCLEOS . ' núcleos',
+                            'numero_serie' => $item->NUMERO_SERIE,
+                            'numero_inventario' => $item->NUMERO_INVENTARIO,
+                            'descripcion' => $item->MARCA . ' ' . $item->MODELO . ' - ' . $item->FRECUENCIA_BASE
+                        ];
+                    }
+                    break;
+                    
+                case 'Disco Duro':
+                case 'SSD':
+                    $items = Almacenamiento::find()
+                        ->select(['MARCA', 'MODELO', 'CAPACIDAD', 'TIPO', 'INTERFAZ', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])
+                        ->distinct()
+                        ->all();
+                    foreach ($items as $item) {
+                        $catalogo[] = [
+                            'marca' => $item->MARCA,
+                            'modelo' => $item->MODELO,
+                            'especificaciones' => $item->CAPACIDAD . ' ' . $item->TIPO . ' ' . $item->INTERFAZ,
+                            'numero_serie' => $item->NUMERO_SERIE,
+                            'numero_inventario' => $item->NUMERO_INVENTARIO,
+                            'descripcion' => $item->MARCA . ' ' . $item->MODELO . ' - ' . $item->CAPACIDAD . ' ' . $item->TIPO
+                        ];
+                    }
+                    break;
+                    
+                case 'Fuente de Poder':
+                    $items = FuentesDePoder::find()
+                        ->select(['MARCA', 'MODELO', 'POTENCIA', 'TIPO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])
+                        ->distinct()
+                        ->all();
+                    foreach ($items as $item) {
+                        $catalogo[] = [
+                            'marca' => $item->MARCA,
+                            'modelo' => $item->MODELO,
+                            'especificaciones' => ($item->POTENCIA ?? '') . ' ' . ($item->TIPO ?? ''),
+                            'numero_serie' => $item->NUMERO_SERIE,
+                            'numero_inventario' => $item->NUMERO_INVENTARIO,
+                            'descripcion' => $item->MARCA . ' ' . $item->MODELO . ' - ' . ($item->POTENCIA ?? '')
+                        ];
+                    }
+                    break;
+                    
+                case 'Monitor':
+                    $items = Monitor::find()
+                        ->select(['MARCA', 'MODELO', 'TAMANIO', 'RESOLUCION', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])
+                        ->distinct()
+                        ->all();
+                    foreach ($items as $item) {
+                        $catalogo[] = [
+                            'marca' => $item->MARCA,
+                            'modelo' => $item->MODELO,
+                            'especificaciones' => ($item->TAMANIO ?? '') . ' - ' . ($item->RESOLUCION ?? ''),
+                            'numero_serie' => $item->NUMERO_SERIE,
+                            'numero_inventario' => $item->NUMERO_INVENTARIO,
+                            'descripcion' => $item->MARCA . ' ' . $item->MODELO . ' - ' . ($item->TAMANIO ?? '')
+                        ];
+                    }
+                    break;
+                    
+                default:
+                    // Para tipos sin catálogo específico, devolver lista vacía
+                    break;
+            }
+            
+            // Obtener marcas únicas para sugerencias
+            $marcasUnicas = array_values(array_unique(array_column($catalogo, 'marca')));
+            $modelosUnicos = array_values(array_unique(array_column($catalogo, 'modelo')));
+            
+            return [
+                'success' => true,
+                'catalogo' => $catalogo,
+                'marcas' => $marcasUnicas,
+                'modelos' => $modelosUnicos,
+                'total' => count($catalogo)
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error al obtener el catálogo: ' . $e->getMessage(),
+                'catalogo' => [],
+                'marcas' => [],
+                'modelos' => []
+            ];
+        }
+    }
+
+    /**
+     * Obtiene los equipos dados de baja o inactivos para seleccionar como origen
+     */
+    public function actionObtenerEquiposOrigen()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            $equipos = [];
+            
+            // Equipos de cómputo inactivos o dados de baja
+            $equiposComputo = Equipo::find()
+                ->where(['like', 'Estado', 'Inactivo'])
+                ->orWhere(['like', 'Estado', 'Baja'])
+                ->orWhere(['like', 'Estado', 'Dañado'])
+                ->all();
+                
+            foreach ($equiposComputo as $eq) {
+                $equipos[] = [
+                    'id' => 'EQ-' . $eq->idEQUIPO,
+                    'tipo' => 'Equipo de Cómputo',
+                    'descripcion' => $eq->MARCA . ' ' . $eq->MODELO . ' - ' . $eq->tipoequipo,
+                    'numero_serie' => $eq->NUM_SERIE,
+                    'numero_inventario' => $eq->NUM_INVENTARIO,
+                    'estado' => $eq->Estado
+                ];
+            }
+            
+            // NoBreaks inactivos
+            $nobreaks = Nobreak::find()
+                ->where(['like', 'Estado', 'Inactivo'])
+                ->orWhere(['like', 'Estado', 'Baja'])
+                ->orWhere(['like', 'Estado', 'Dañado'])
+                ->all();
+                
+            foreach ($nobreaks as $nb) {
+                $equipos[] = [
+                    'id' => 'NB-' . $nb->idNOBREAK,
+                    'tipo' => 'NoBreak/UPS',
+                    'descripcion' => $nb->MARCA . ' ' . $nb->MODELO . ' - ' . $nb->CAPACIDAD,
+                    'numero_serie' => $nb->NUMERO_SERIE,
+                    'numero_inventario' => $nb->NUMERO_INVENTARIO,
+                    'estado' => $nb->Estado
+                ];
+            }
+            
+            // Impresoras inactivas
+            $impresoras = Impresora::find()
+                ->where(['like', 'Estado', 'Inactivo'])
+                ->orWhere(['like', 'Estado', 'Baja'])
+                ->orWhere(['like', 'Estado', 'Dañado'])
+                ->all();
+                
+            foreach ($impresoras as $imp) {
+                $equipos[] = [
+                    'id' => 'IMP-' . $imp->idIMPRESORA,
+                    'tipo' => 'Impresora',
+                    'descripcion' => $imp->MARCA . ' ' . $imp->MODELO,
+                    'numero_serie' => $imp->NUMERO_SERIE,
+                    'numero_inventario' => $imp->NUMERO_INVENTARIO,
+                    'estado' => $imp->Estado
+                ];
+            }
+            
+            return [
+                'success' => true,
+                'equipos' => $equipos,
+                'total' => count($equipos)
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'equipos' => []
+            ];
+        }
+    }
+
+    /**
+     * Obtiene componentes del catálogo existente para sugerencias en reciclaje
+     * Agrupa por tipo de pieza y devuelve marcas, modelos y especificaciones
+     */
+    public function actionCatalogoPiezasExistentes($tipo = null)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            $catalogo = [];
+            
+            // Memoria RAM
+            if (!$tipo || $tipo === 'Memoria RAM') {
+                $rams = Ram::find()->select(['MARCA', 'MODELO', 'CAPACIDAD', 'TIPO_DDR', 'numero_serie', 'numero_inventario'])->distinct()->all();
+                $catalogo['Memoria RAM'] = [];
+                foreach ($rams as $ram) {
+                    $catalogo['Memoria RAM'][] = [
+                        'marca' => $ram->MARCA,
+                        'modelo' => $ram->MODELO,
+                        'especificaciones' => $ram->CAPACIDAD . ' ' . $ram->TIPO_DDR,
+                        'numero_serie' => $ram->numero_serie,
+                        'numero_inventario' => $ram->numero_inventario
+                    ];
+                }
+            }
+            
+            // Procesadores
+            if (!$tipo || $tipo === 'Procesador') {
+                $procesadores = Procesador::find()->select(['MARCA', 'MODELO', 'FRECUENCIA_BASE', 'NUCLEOS', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Procesador'] = [];
+                foreach ($procesadores as $proc) {
+                    $catalogo['Procesador'][] = [
+                        'marca' => $proc->MARCA,
+                        'modelo' => $proc->MODELO,
+                        'especificaciones' => $proc->FRECUENCIA_BASE . ' - ' . $proc->NUCLEOS . ' núcleos',
+                        'numero_serie' => $proc->NUMERO_SERIE,
+                        'numero_inventario' => $proc->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // Almacenamiento (Disco Duro / SSD)
+            if (!$tipo || $tipo === 'Disco Duro' || $tipo === 'SSD') {
+                $almacenamientos = Almacenamiento::find()->select(['MARCA', 'MODELO', 'TIPO', 'CAPACIDAD', 'INTERFAZ', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Disco Duro'] = [];
+                $catalogo['SSD'] = [];
+                foreach ($almacenamientos as $alm) {
+                    $item = [
+                        'marca' => $alm->MARCA,
+                        'modelo' => $alm->MODELO,
+                        'especificaciones' => $alm->CAPACIDAD . ' ' . $alm->INTERFAZ,
+                        'numero_serie' => $alm->NUMERO_SERIE,
+                        'numero_inventario' => $alm->NUMERO_INVENTARIO
+                    ];
+                    if (stripos($alm->TIPO, 'SSD') !== false) {
+                        $catalogo['SSD'][] = $item;
+                    } else {
+                        $catalogo['Disco Duro'][] = $item;
+                    }
+                }
+            }
+            
+            // Fuentes de Poder
+            if (!$tipo || $tipo === 'Fuente de Poder') {
+                $fuentes = FuentesDePoder::find()->select(['MARCA', 'MODELO', 'POTENCIA', 'VOLTAJE', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Fuente de Poder'] = [];
+                foreach ($fuentes as $fuente) {
+                    $catalogo['Fuente de Poder'][] = [
+                        'marca' => $fuente->MARCA,
+                        'modelo' => $fuente->MODELO,
+                        'especificaciones' => ($fuente->POTENCIA ?? '') . ' ' . ($fuente->VOLTAJE ?? ''),
+                        'numero_serie' => $fuente->NUMERO_SERIE,
+                        'numero_inventario' => $fuente->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // Monitores
+            if (!$tipo || $tipo === 'Monitor') {
+                $monitores = Monitor::find()->select(['MARCA', 'MODELO', 'TAMANIO', 'RESOLUCION', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Monitor'] = [];
+                foreach ($monitores as $mon) {
+                    $catalogo['Monitor'][] = [
+                        'marca' => $mon->MARCA,
+                        'modelo' => $mon->MODELO,
+                        'especificaciones' => ($mon->TAMANIO ?? '') . ' ' . ($mon->RESOLUCION ?? ''),
+                        'numero_serie' => $mon->NUMERO_SERIE,
+                        'numero_inventario' => $mon->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // Baterías
+            if (!$tipo || $tipo === 'Batería' || $tipo === 'Bateria') {
+                $baterias = Bateria::find()->select(['MARCA', 'MODELO', 'TIPO', 'VOLTAJE', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Batería'] = [];
+                foreach ($baterias as $bat) {
+                    $catalogo['Batería'][] = [
+                        'marca' => $bat->MARCA,
+                        'modelo' => $bat->MODELO,
+                        'especificaciones' => ($bat->VOLTAJE ?? '') . ' ' . ($bat->CAPACIDAD ?? ''),
+                        'numero_serie' => $bat->NUMERO_SERIE,
+                        'numero_inventario' => $bat->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // NoBreak/UPS
+            if (!$tipo || $tipo === 'NoBreak' || $tipo === 'UPS') {
+                $nobreaks = Nobreak::find()->select(['MARCA', 'MODELO', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['NoBreak'] = [];
+                foreach ($nobreaks as $nb) {
+                    $catalogo['NoBreak'][] = [
+                        'marca' => $nb->MARCA,
+                        'modelo' => $nb->MODELO,
+                        'especificaciones' => $nb->CAPACIDAD ?? '',
+                        'numero_serie' => $nb->NUMERO_SERIE,
+                        'numero_inventario' => $nb->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // Conectividad
+            if (!$tipo || $tipo === 'Conectividad' || $tipo === 'Cable/Adaptador') {
+                $conectividad = Conectividad::find()->select(['MARCA', 'MODELO', 'TIPO', 'CANTIDAD_PUERTOS', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Conectividad'] = [];
+                foreach ($conectividad as $con) {
+                    $catalogo['Conectividad'][] = [
+                        'marca' => $con->MARCA,
+                        'modelo' => $con->MODELO,
+                        'especificaciones' => ($con->TIPO ?? '') . ' - ' . ($con->CANTIDAD_PUERTOS ?? '') . ' puertos',
+                        'numero_serie' => $con->NUMERO_SERIE,
+                        'numero_inventario' => $con->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // Adaptadores
+            if (!$tipo || $tipo === 'Adaptador' || $tipo === 'Cable/Adaptador') {
+                $adaptadores = Adaptador::find()->select(['MARCA', 'MODELO', 'TIPO', 'VOLTAJE', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Adaptador'] = [];
+                foreach ($adaptadores as $adp) {
+                    $catalogo['Adaptador'][] = [
+                        'marca' => $adp->MARCA,
+                        'modelo' => $adp->MODELO,
+                        'especificaciones' => ($adp->TIPO ?? '') . ' ' . ($adp->VOLTAJE ?? ''),
+                        'numero_serie' => $adp->NUMERO_SERIE,
+                        'numero_inventario' => $adp->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // Equipo de Sonido
+            if (!$tipo || $tipo === 'Equipo de Sonido' || $tipo === 'Bocinas') {
+                $sonido = Sonido::find()->select(['MARCA', 'MODELO', 'TIPO', 'POTENCIA', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Equipo de Sonido'] = [];
+                foreach ($sonido as $son) {
+                    $catalogo['Equipo de Sonido'][] = [
+                        'marca' => $son->MARCA,
+                        'modelo' => $son->MODELO,
+                        'especificaciones' => ($son->TIPO ?? '') . ' ' . ($son->POTENCIA ?? ''),
+                        'numero_serie' => $son->NUMERO_SERIE,
+                        'numero_inventario' => $son->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // Micrófonos
+            if (!$tipo || $tipo === 'Micrófono') {
+                $microfonos = Microfono::find()->select(['MARCA', 'MODELO', 'TIPO', 'CONECTIVIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Micrófono'] = [];
+                foreach ($microfonos as $mic) {
+                    $catalogo['Micrófono'][] = [
+                        'marca' => $mic->MARCA,
+                        'modelo' => $mic->MODELO,
+                        'especificaciones' => ($mic->TIPO ?? '') . ' - ' . ($mic->CONECTIVIDAD ?? ''),
+                        'numero_serie' => $mic->NUMERO_SERIE,
+                        'numero_inventario' => $mic->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // Telefonía
+            if (!$tipo || $tipo === 'Teléfono') {
+                $telefonos = Telefonia::find()->select(['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Teléfono'] = [];
+                foreach ($telefonos as $tel) {
+                    $catalogo['Teléfono'][] = [
+                        'marca' => $tel->MARCA,
+                        'modelo' => $tel->MODELO,
+                        'especificaciones' => '',
+                        'numero_serie' => $tel->NUMERO_SERIE,
+                        'numero_inventario' => $tel->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            // Video Vigilancia
+            if (!$tipo || $tipo === 'Cámara' || $tipo === 'Video Vigilancia') {
+                $camaras = VideoVigilancia::find()->select(['MARCA', 'MODELO', 'tipo_camara', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'])->distinct()->all();
+                $catalogo['Cámara'] = [];
+                foreach ($camaras as $cam) {
+                    $catalogo['Cámara'][] = [
+                        'marca' => $cam->MARCA,
+                        'modelo' => $cam->MODELO,
+                        'especificaciones' => $cam->tipo_camara ?? '',
+                        'numero_serie' => $cam->NUMERO_SERIE,
+                        'numero_inventario' => $cam->NUMERO_INVENTARIO
+                    ];
+                }
+            }
+            
+            return [
+                'success' => true,
+                'catalogo' => $catalogo,
+                'message' => 'Catálogo cargado correctamente'
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'catalogo' => []
+            ];
+        }
+    }
+
+    /**
+     * Verifica si un número de serie o inventario ya existe en el sistema
+     */
+    public function actionVerificarDuplicado()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        $tipo = Yii::$app->request->post('tipo'); // 'serie' o 'inventario'
+        $valor = Yii::$app->request->post('valor');
+        $modelo = Yii::$app->request->post('modelo'); // 'Nobreak', 'Equipo', etc.
+        $id = Yii::$app->request->post('id'); // ID del registro actual (para edición)
+        
+        if (empty($tipo) || empty($valor) || empty($modelo)) {
+            return ['existe' => false, 'mensaje' => ''];
+        }
+        
+        // Mapeo de modelos
+        $modelos = [
+            'Nobreak' => Nobreak::class,
+            'Equipo' => Equipo::class,
+            'Monitor' => Monitor::class,
+            'Impresora' => Impresora::class,
+            'Conectividad' => Conectividad::class,
+            'Telefonia' => Telefonia::class,
+            'VideoVigilancia' => VideoVigilancia::class,
+            'Ram' => Ram::class,
+            'Almacenamiento' => Almacenamiento::class,
+            'Sonido' => Sonido::class,
+            'Adaptador' => Adaptador::class,
+            'Microfono' => Microfono::class,
+            'Bateria' => Bateria::class,
+            'Procesador' => Procesador::class,
+            'FuentesDePoder' => FuentesDePoder::class,
+        ];
+        
+        if (!isset($modelos[$modelo])) {
+            return ['existe' => false, 'mensaje' => ''];
+        }
+        
+        $modelClass = $modelos[$modelo];
+        
+        // Determinar el nombre del campo según el tipo y modelo
+        if ($tipo === 'serie') {
+            // Mapeo específico de campos para cada modelo
+            if ($modelo === 'Equipo') {
+                $campo = 'NUM_SERIE';
+            } elseif (in_array($modelo, ['Ram', 'Almacenamiento', 'Procesador', 'Microfono', 'FuentesDePoder'])) {
+                $campo = 'numero_serie';
+            } else {
+                $campo = 'NUMERO_SERIE';
+            }
+        } else {
+            // Campo de inventario
+            if ($modelo === 'Equipo') {
+                $campo = 'NUM_INVENTARIO';
+            } elseif (in_array($modelo, ['Ram', 'Almacenamiento', 'Procesador', 'Microfono', 'FuentesDePoder'])) {
+                $campo = 'numero_inventario';
+            } else {
+                $campo = 'NUMERO_INVENTARIO';
+            }
+        }
+        
+        // Verificar si existe
+        $query = $modelClass::find()->where([$campo => $valor]);
+        
+        // Si estamos editando, excluir el registro actual
+        if (!empty($id)) {
+            $primaryKey = $modelClass::primaryKey()[0];
+            $query->andWhere(['!=', $primaryKey, $id]);
+        }
+        
+        $existe = $query->exists();
+        
+        if ($existe) {
+            $nombreModelo = $this->getNombreModelo($modelo);
+            $registro = $query->one();
+            
+            // Obtener información del dispositivo duplicado
+            $infoDispositivo = $this->obtenerInfoDispositivo($modelo, $registro);
+            
+            $mensaje = $tipo === 'serie' 
+                ? "⚠️ Este número de serie ya está registrado en otro {$nombreModelo}."
+                : "⚠️ Este número de inventario ya está registrado en otro {$nombreModelo}.";
+            
+            return [
+                'existe' => true, 
+                'mensaje' => $mensaje,
+                'dispositivo' => $infoDispositivo
+            ];
+        }
+        
+        return ['existe' => false, 'mensaje' => '', 'dispositivo' => ''];
+    }
+    
+    /**
+     * Obtiene el nombre amigable del modelo
+     */
+    private function getNombreModelo($modelo)
+    {
+        $nombres = [
+            'Nobreak' => 'No Break / UPS',
+            'Equipo' => 'equipo de cómputo',
+            'Monitor' => 'monitor',
+            'Impresora' => 'impresora',
+            'Conectividad' => 'dispositivo de conectividad',
+            'Telefonia' => 'dispositivo de telefonía',
+            'VideoVigilancia' => 'cámara de videovigilancia',
+            'Ram' => 'memoria RAM',
+            'Almacenamiento' => 'dispositivo de almacenamiento',
+            'Sonido' => 'equipo de sonido',
+            'Adaptador' => 'adaptador',
+            'Microfono' => 'micrófono',
+            'Bateria' => 'batería',
+            'Procesador' => 'procesador',
+            'FuentesDePoder' => 'fuente de poder',
+        ];
+        
+        return $nombres[$modelo] ?? 'equipo';
+    }
+    
+    /**
+     * Obtiene información descriptiva del dispositivo duplicado
+     */
+    private function obtenerInfoDispositivo($modelo, $registro)
+    {
+        if (!$registro) {
+            return 'Dispositivo no identificado';
+        }
+        
+        switch ($modelo) {
+            case 'Equipo':
+                return sprintf(
+                    '%s - %s (Serie: %s, Inventario: %s)',
+                    $registro->MARCA ?? 'Sin marca',
+                    $registro->MODELO ?? 'Sin modelo',
+                    $registro->NUM_SERIE ?? 'N/A',
+                    $registro->NUM_INVENTARIO ?? 'N/A'
+                );
+                
+            case 'Nobreak':
+            case 'Monitor':
+            case 'Impresora':
+            case 'Conectividad':
+            case 'Telefonia':
+            case 'VideoVigilancia':
+            case 'Sonido':
+            case 'Adaptador':
+            case 'Microfono':
+            case 'Bateria':
+            case 'FuentesDePoder':
+                return sprintf(
+                    '%s - %s (Serie: %s, Inventario: %s)',
+                    $registro->MARCA ?? 'Sin marca',
+                    $registro->MODELO ?? 'Sin modelo',
+                    $registro->NUMERO_SERIE ?? 'N/A',
+                    $registro->NUMERO_INVENTARIO ?? 'N/A'
+                );
+                
+            case 'Procesador':
+            case 'Ram':
+            case 'Almacenamiento':
+                return sprintf(
+                    '%s - %s (Serie: %s, Inventario: %s)',
+                    $registro->marca ?? 'Sin marca',
+                    $registro->modelo ?? 'Sin modelo',
+                    $registro->numero_serie ?? 'N/A',
+                    $registro->numero_inventario ?? 'N/A'
+                );
+                
+            default:
+                return 'Dispositivo registrado en el sistema';
+        }
+    }
+
+    /**
+     * Obtiene todos los dispositivos con status BAJA de todas las categorías
+     */
+    public function actionObtenerDispositivosBaja()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            $dispositivos = [];
+            $contadores = [
+                'equipo' => 0,
+                'monitor' => 0,
+                'impresora' => 0,
+                'telefonia' => 0,
+                'videovigilancia' => 0,
+                'conectividad' => 0,
+                'bateria' => 0,
+                'nobreak' => 0
+            ];
+            
+            // 1. Equipos de Cómputo
+            $equipos = Equipo::find()->where(['Estado' => 'BAJA'])->all();
+            foreach ($equipos as $eq) {
+                $dispositivos[] = [
+                    'id' => $eq->idEQUIPO,
+                    'categoria' => 'Equipo',
+                    'descripcion' => $eq->tipoequipo ?? 'Equipo de Cómputo',
+                    'marca' => $eq->MARCA ?? 'N/A',
+                    'modelo' => $eq->MODELO ?? 'N/A',
+                    'numero_serie' => $eq->NUM_SERIE ?? 'N/A',
+                    'fecha_baja' => $eq->FECHA_BAJA ?? date('Y-m-d'),
+                    'detalles' => $eq->descripcion ?? 'Sin detalles',
+                ];
+                $contadores['equipo']++;
+            }
+            
+            // 2. Monitores
+            $monitores = Monitor::find()->where(['Estado' => 'BAJA'])->all();
+            foreach ($monitores as $mon) {
+                $dispositivos[] = [
+                    'id' => $mon->idMONITOR,
+                    'categoria' => 'Monitor',
+                    'descripcion' => ($mon->PULGADAS ?? 'N/A') . '" - ' . ($mon->TIPO ?? 'Monitor'),
+                    'marca' => $mon->MARCA ?? 'N/A',
+                    'modelo' => $mon->MODELO ?? 'N/A',
+                    'numero_serie' => $mon->NUMERO_SERIE ?? 'N/A',
+                    'fecha_baja' => $mon->FECHA_BAJA ?? date('Y-m-d'),
+                    'detalles' => $mon->DESCRIPCION ?? 'Sin detalles',
+                ];
+                $contadores['monitor']++;
+            }
+            
+            // 3. Impresoras
+            $impresoras = Impresora::find()->where(['Estado' => 'BAJA'])->all();
+            foreach ($impresoras as $imp) {
+                $dispositivos[] = [
+                    'id' => $imp->idIMPRESORA,
+                    'categoria' => 'Impresora',
+                    'descripcion' => ($imp->TIPO ?? 'Impresora'),
+                    'marca' => $imp->MARCA ?? 'N/A',
+                    'modelo' => $imp->MODELO ?? 'N/A',
+                    'numero_serie' => $imp->NUMERO_SERIE ?? 'N/A',
+                    'fecha_baja' => $imp->FECHA_BAJA ?? date('Y-m-d'),
+                    'detalles' => $imp->DESCRIPCION ?? 'Sin detalles',
+                ];
+                $contadores['impresora']++;
+            }
+            
+            // 4. Telefonía
+            $telefonos = Telefonia::find()->where(['Estado' => 'BAJA'])->all();
+            foreach ($telefonos as $tel) {
+                $dispositivos[] = [
+                    'id' => $tel->idTELEFONIA,
+                    'categoria' => 'Telefonia',
+                    'descripcion' => ($tel->TIPO ?? 'Teléfono'),
+                    'marca' => $tel->MARCA ?? 'N/A',
+                    'modelo' => $tel->MODELO ?? 'N/A',
+                    'numero_serie' => $tel->NUMERO_SERIE ?? 'N/A',
+                    'fecha_baja' => $tel->FECHA_BAJA ?? date('Y-m-d'),
+                    'detalles' => $tel->DESCRIPCION ?? 'Sin detalles',
+                ];
+                $contadores['telefonia']++;
+            }
+            
+            // 5. Video Vigilancia
+            $camaras = VideoVigilancia::find()->where(['Estado' => 'BAJA'])->all();
+            foreach ($camaras as $cam) {
+                $dispositivos[] = [
+                    'id' => $cam->idVIDEOVIGILANCIA,
+                    'categoria' => 'VideoVigilancia',
+                    'descripcion' => ($cam->TIPO ?? 'Cámara'),
+                    'marca' => $cam->MARCA ?? 'N/A',
+                    'modelo' => $cam->MODELO ?? 'N/A',
+                    'numero_serie' => $cam->NUMERO_SERIE ?? 'N/A',
+                    'fecha_baja' => $cam->FECHA_BAJA ?? date('Y-m-d'),
+                    'detalles' => $cam->DESCRIPCION ?? 'Sin detalles',
+                ];
+                $contadores['videovigilancia']++;
+            }
+            
+            // 6. Conectividad
+            $conectividad = Conectividad::find()->where(['Estado' => 'BAJA'])->all();
+            foreach ($conectividad as $con) {
+                $dispositivos[] = [
+                    'id' => $con->idCONECTIVIDAD,
+                    'categoria' => 'Conectividad',
+                    'descripcion' => ($con->TIPO ?? 'Dispositivo de Red'),
+                    'marca' => $con->MARCA ?? 'N/A',
+                    'modelo' => $con->MODELO ?? 'N/A',
+                    'numero_serie' => $con->NUMERO_SERIE ?? 'N/A',
+                    'fecha_baja' => $con->FECHA_BAJA ?? date('Y-m-d'),
+                    'detalles' => $con->DESCRIPCION ?? 'Sin detalles',
+                ];
+                $contadores['conectividad']++;
+            }
+            
+            // 7. Baterías
+            $baterias = Bateria::find()->where(['Estado' => 'BAJA'])->all();
+            foreach ($baterias as $bat) {
+                $dispositivos[] = [
+                    'id' => $bat->idBATERIA,
+                    'categoria' => 'Bateria',
+                    'descripcion' => ($bat->TIPO ?? 'Batería') . ' - ' . ($bat->CAPACIDAD ?? 'N/A'),
+                    'marca' => $bat->MARCA ?? 'N/A',
+                    'modelo' => $bat->MODELO ?? 'N/A',
+                    'numero_serie' => $bat->NUMERO_SERIE ?? 'N/A',
+                    'fecha_baja' => $bat->FECHA_BAJA ?? date('Y-m-d'),
+                    'detalles' => $bat->DESCRIPCION ?? 'Sin detalles',
+                ];
+                $contadores['bateria']++;
+            }
+            
+            // 8. No Break
+            $nobreaks = Nobreak::find()->where(['Estado' => 'BAJA'])->all();
+            foreach ($nobreaks as $nb) {
+                $dispositivos[] = [
+                    'id' => $nb->idNOBREAK,
+                    'categoria' => 'NoBreak',
+                    'descripcion' => 'No Break - ' . ($nb->CAPACIDAD ?? 'N/A'),
+                    'marca' => $nb->MARCA ?? 'N/A',
+                    'modelo' => $nb->MODELO ?? 'N/A',
+                    'numero_serie' => $nb->NUMERO_SERIE ?? 'N/A',
+                    'fecha_baja' => $nb->FECHA_BAJA ?? date('Y-m-d'),
+                    'detalles' => $nb->DESCRIPCION ?? 'Sin detalles',
+                ];
+                $contadores['nobreak']++;
+            }
+            
+            // Ordenar por fecha de baja descendente
+            usort($dispositivos, function($a, $b) {
+                return strtotime($b['fecha_baja']) - strtotime($a['fecha_baja']);
+            });
+            
+            return [
+                'success' => true,
+                'data' => $dispositivos,
+                'total' => count($dispositivos),
+                'contadores' => $contadores,
+                'message' => 'Dispositivos dados de baja obtenidos correctamente'
+            ];
+            
+        } catch (Exception $e) {
+            Yii::error("Error obteniendo dispositivos de baja: " . $e->getMessage());
+            return [
+                'success' => false,
+                'data' => [],
+                'message' => 'Error al obtener dispositivos: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obtiene los detalles de un dispositivo dado de baja específico
+     */
+    public function actionDetalleDispositivoBaja()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        $categoria = Yii::$app->request->get('categoria');
+        $id = Yii::$app->request->get('id');
+        
+        if (!$categoria || !$id) {
+            return [
+                'success' => false,
+                'message' => 'Parámetros incompletos'
+            ];
+        }
+        
+        try {
+            $dispositivo = null;
+            $data = [];
+            
+            switch (strtolower($categoria)) {
+                case 'equipo':
+                    $dispositivo = Equipo::findOne($id);
+                    if ($dispositivo) {
+                        $data = [
+                            'categoria' => 'Equipo de Cómputo',
+                            'marca' => $dispositivo->MARCA,
+                            'modelo' => $dispositivo->MODELO,
+                            'numero_serie' => $dispositivo->NUM_SERIE,
+                            'descripcion' => $dispositivo->tipoequipo,
+                            'especificaciones' => "Procesador: {$dispositivo->PROCESADOR}, RAM: {$dispositivo->RAM}, Almacenamiento: {$dispositivo->DISCO_DURO}",
+                            'fecha_baja' => $dispositivo->FECHA_BAJA,
+                            'motivo_baja' => $dispositivo->MOTIVO_BAJA ?? 'No especificado',
+                            'responsable' => $dispositivo->NOMBRE_USUARIO ?? 'N/A',
+                            'observaciones' => $dispositivo->OBSERVACIONES ?? ''
+                        ];
+                    }
+                    break;
+                    
+                case 'monitor':
+                    $dispositivo = Monitor::findOne($id);
+                    if ($dispositivo) {
+                        $data = [
+                            'categoria' => 'Monitor',
+                            'marca' => $dispositivo->MARCA,
+                            'modelo' => $dispositivo->MODELO,
+                            'numero_serie' => $dispositivo->NUMERO_SERIE,
+                            'descripcion' => "{$dispositivo->PULGADAS}\" {$dispositivo->TIPO}",
+                            'especificaciones' => "Resolución: {$dispositivo->RESOLUCION}, Conexión: {$dispositivo->CONEXION}",
+                            'fecha_baja' => $dispositivo->FECHA_BAJA,
+                            'motivo_baja' => $dispositivo->MOTIVO_BAJA ?? 'No especificado',
+                            'responsable' => $dispositivo->NOMBRE_USUARIO ?? 'N/A',
+                            'observaciones' => $dispositivo->OBSERVACIONES ?? ''
+                        ];
+                    }
+                    break;
+                    
+                case 'impresora':
+                    $dispositivo = Impresora::findOne($id);
+                    if ($dispositivo) {
+                        $data = [
+                            'categoria' => 'Impresora',
+                            'marca' => $dispositivo->MARCA,
+                            'modelo' => $dispositivo->MODELO,
+                            'numero_serie' => $dispositivo->NUMERO_SERIE,
+                            'descripcion' => $dispositivo->TIPO,
+                            'especificaciones' => "Conexión: {$dispositivo->CONEXION}",
+                            'fecha_baja' => $dispositivo->FECHA_BAJA,
+                            'motivo_baja' => $dispositivo->MOTIVO_BAJA ?? 'No especificado',
+                            'responsable' => $dispositivo->NOMBRE_USUARIO ?? 'N/A',
+                            'observaciones' => $dispositivo->OBSERVACIONES ?? ''
+                        ];
+                    }
+                    break;
+                    
+                case 'telefonia':
+                    $dispositivo = Telefonia::findOne($id);
+                    if ($dispositivo) {
+                        $data = [
+                            'categoria' => 'Telefonía',
+                            'marca' => $dispositivo->MARCA,
+                            'modelo' => $dispositivo->MODELO,
+                            'numero_serie' => $dispositivo->NUMERO_SERIE,
+                            'descripcion' => $dispositivo->TIPO,
+                            'especificaciones' => $dispositivo->CARACTERISTICAS ?? 'N/A',
+                            'fecha_baja' => $dispositivo->FECHA_BAJA,
+                            'motivo_baja' => $dispositivo->MOTIVO_BAJA ?? 'No especificado',
+                            'responsable' => $dispositivo->NOMBRE_USUARIO ?? 'N/A',
+                            'observaciones' => $dispositivo->OBSERVACIONES ?? ''
+                        ];
+                    }
+                    break;
+                    
+                case 'videovigilancia':
+                    $dispositivo = VideoVigilancia::findOne($id);
+                    if ($dispositivo) {
+                        $data = [
+                            'categoria' => 'Video Vigilancia',
+                            'marca' => $dispositivo->MARCA,
+                            'modelo' => $dispositivo->MODELO,
+                            'numero_serie' => $dispositivo->NUMERO_SERIE,
+                            'descripcion' => $dispositivo->TIPO,
+                            'especificaciones' => "Resolución: {$dispositivo->RESOLUCION}",
+                            'fecha_baja' => $dispositivo->FECHA_BAJA,
+                            'motivo_baja' => $dispositivo->MOTIVO_BAJA ?? 'No especificado',
+                            'responsable' => $dispositivo->NOMBRE_USUARIO ?? 'N/A',
+                            'observaciones' => $dispositivo->OBSERVACIONES ?? ''
+                        ];
+                    }
+                    break;
+                    
+                case 'conectividad':
+                    $dispositivo = Conectividad::findOne($id);
+                    if ($dispositivo) {
+                        $data = [
+                            'categoria' => 'Conectividad',
+                            'marca' => $dispositivo->MARCA,
+                            'modelo' => $dispositivo->MODELO,
+                            'numero_serie' => $dispositivo->NUMERO_SERIE,
+                            'descripcion' => $dispositivo->TIPO,
+                            'especificaciones' => $dispositivo->CARACTERISTICAS ?? 'N/A',
+                            'fecha_baja' => $dispositivo->FECHA_BAJA,
+                            'motivo_baja' => $dispositivo->MOTIVO_BAJA ?? 'No especificado',
+                            'responsable' => $dispositivo->NOMBRE_USUARIO ?? 'N/A',
+                            'observaciones' => $dispositivo->OBSERVACIONES ?? ''
+                        ];
+                    }
+                    break;
+                    
+                case 'bateria':
+                    $dispositivo = Bateria::findOne($id);
+                    if ($dispositivo) {
+                        $data = [
+                            'categoria' => 'Batería',
+                            'marca' => $dispositivo->MARCA,
+                            'modelo' => $dispositivo->MODELO,
+                            'numero_serie' => $dispositivo->NUMERO_SERIE,
+                            'descripcion' => "{$dispositivo->TIPO} - {$dispositivo->CAPACIDAD}",
+                            'especificaciones' => "Voltaje: {$dispositivo->VOLTAJE}",
+                            'fecha_baja' => $dispositivo->FECHA_BAJA,
+                            'motivo_baja' => $dispositivo->MOTIVO_BAJA ?? 'No especificado',
+                            'responsable' => $dispositivo->NOMBRE_USUARIO ?? 'N/A',
+                            'observaciones' => $dispositivo->OBSERVACIONES ?? ''
+                        ];
+                    }
+                    break;
+                    
+                case 'nobreak':
+                    $dispositivo = Nobreak::findOne($id);
+                    if ($dispositivo) {
+                        $data = [
+                            'categoria' => 'No Break',
+                            'marca' => $dispositivo->MARCA,
+                            'modelo' => $dispositivo->MODELO,
+                            'numero_serie' => $dispositivo->NUMERO_SERIE,
+                            'descripcion' => "No Break - {$dispositivo->CAPACIDAD}",
+                            'especificaciones' => "Capacidad: {$dispositivo->CAPACIDAD}",
+                            'fecha_baja' => $dispositivo->FECHA_BAJA,
+                            'motivo_baja' => $dispositivo->MOTIVO_BAJA ?? 'No especificado',
+                            'responsable' => $dispositivo->NOMBRE_USUARIO ?? 'N/A',
+                            'observaciones' => $dispositivo->OBSERVACIONES ?? ''
+                        ];
+                    }
+                    break;
+            }
+            
+            if ($dispositivo) {
+                return [
+                    'success' => true,
+                    'data' => $data
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Dispositivo no encontrado'
+                ];
+            }
+            
+        } catch (Exception $e) {
+            Yii::error("Error obteniendo detalle de dispositivo: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al obtener detalles: ' . $e->getMessage()
+            ];
         }
     }
 }

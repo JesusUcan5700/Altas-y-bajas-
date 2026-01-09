@@ -7,6 +7,9 @@ use yii\helpers\Html;
 
 $this->title = 'Gestión de Impresoras';
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', ['position' => \yii\web\View::POS_END]);
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js', ['position' => \yii\web\View::POS_END]);
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js', ['position' => \yii\web\View::POS_END]);
 
 // Agregar estilos
 $this->registerCss("
@@ -112,13 +115,25 @@ $this->registerCss("
                                 <input type="text" class="form-control" id="buscar_impresora" placeholder="Buscar por marca, modelo, tipo...">
                             </div>
                         </div>
+                        <div class="col-md-6 text-end">
+                            <button type="button" class="btn btn-primary me-2" onclick="exportarPDF()">
+                                <i class="fas fa-file-pdf me-1"></i>Exportar a PDF
+                            </button>
+                            <button type="button" class="btn btn-danger me-2" onclick="eliminarSeleccionados()" id="btnEliminar" disabled>
+                                <i class="fas fa-trash me-1"></i>Eliminar Seleccionados
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="descargarQRSeleccionados()" id="btnQR" disabled>
+                                <i class="fas fa-qrcode me-1"></i>Descargar QR
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Tabla de Impresoras -->
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                        <table class="table table-striped table-hover" id="impresorasTable">
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -127,6 +142,8 @@ $this->registerCss("
                                     <th>N° Inventario</th>
                                     <th>Estado</th>
                                     <th>Propiedad</th>
+                                    <th>Ubicación Edificio</th>
+                                    <th>Ubicación Detalle</th>
                                     <th>Tiempo Activo</th>
                                     <th>Último Editor</th>
                                     <th>Acciones</th>
@@ -135,19 +152,20 @@ $this->registerCss("
                             <tbody id="tbody_impresoras">
                                 <?php if (empty($impresoras) && !$error): ?>
                                     <tr>
-                                        <td colspan="11" class="text-center text-muted">
+                                        <td colspan="14" class="text-center text-muted">
                                             <i class="fas fa-info-circle"></i> No hay impresoras registradas en el sistema. Por favor, agregue algunos equipos para comenzar.
                                         </td>
                                     </tr>
                                 <?php elseif ($error): ?>
                                     <tr>
-                                        <td colspan="11" class="text-center text-danger">
+                                        <td colspan="14" class="text-center text-danger">
                                             <i class="fas fa-exclamation-triangle"></i> Error al cargar los datos: <?= Html::encode($error) ?>
                                         </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($impresoras as $impresora): ?>
-                                        <tr>
+                                        <tr data-id="<?= $impresora->idIMPRESORA ?>" data-marca="<?= htmlspecialchars($impresora->MARCA ?? '') ?>" data-modelo="<?= htmlspecialchars($impresora->MODELO ?? '') ?>" data-tipo="<?= htmlspecialchars($impresora->TIPO ?? '') ?>" data-inventario="<?= htmlspecialchars($impresora->NUMERO_INVENTARIO ?? '') ?>">
+                                            <td><input type="checkbox" class="row-checkbox" value="<?= $impresora->idIMPRESORA ?>" onchange="actualizarSeleccion()"></td>
                                             <td><strong><?= htmlspecialchars($impresora->idIMPRESORA) ?></strong></td>
                                             <td><?= htmlspecialchars($impresora->MARCA ?? '-') ?></td>
                                             <td><?= htmlspecialchars($impresora->MODELO ?? '-') ?></td>
@@ -188,6 +206,8 @@ $this->registerCss("
                                                 ?>
                                                 <span class="badge <?= $propiedadClass ?>"><?= $propiedadTexto ?></span>
                                             </td>
+                                            <td><?= Html::encode($impresora->ubicacion_edificio ?? '-') ?></td>
+                                            <td><?= Html::encode($impresora->ubicacion_detalle ?? '-') ?></td>
                                             <td>
                                                 <small class="text-muted">
                                                     <?= $impresora->getAnosActivoTexto() ?>
@@ -200,7 +220,10 @@ $this->registerCss("
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="<?= \yii\helpers\Url::to(['site/impresora-editar', 'id' => $impresora->idIMPRESORA]) ?>" class="btn btn-sm btn-info" title="Editar">
+                                                    <button class="btn btn-sm btn-info" onclick="verDetalles(<?= $impresora->idIMPRESORA ?>)" title="Ver detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <a href="<?= \yii\helpers\Url::to(['site/impresora-editar', 'id' => $impresora->idIMPRESORA]) ?>" class="btn btn-sm btn-warning" title="Editar">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                 </div>
@@ -218,45 +241,254 @@ $this->registerCss("
 </div>
 
 <?php
-$this->registerJs("
-// Datos de Impresoras
-let impresorasData = " . json_encode($impresoras, JSON_HEX_TAG|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE) . ";
+// JavaScript movido a bloque script para funciones globales
+?>
 
-// Función de búsqueda
-document.getElementById('buscar_impresora').addEventListener('input', function() {
-    const filtro = this.value.toLowerCase().trim();
-    const filas = document.querySelectorAll('#tbody_impresoras tr');
+<!-- Biblioteca QRious para generar QR -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script>
+// Datos de Impresoras
+var impresorasData = <?= json_encode($impresoras, JSON_HEX_TAG|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE) ?>;
+
+// Función de búsqueda mejorada
+function buscarImpresoras() {
+    const input = document.getElementById('buscar_impresora');
+    const filtro = input.value.toLowerCase().trim();
+    const tbody = document.getElementById('tbody_impresoras');
+    const filas = tbody.getElementsByTagName('tr');
     
-    filas.forEach(fila => {
-        if (fila.cells && fila.cells.length >= 10) {
-            const texto = fila.textContent.toLowerCase();
-            fila.style.display = filtro === '' || texto.includes(filtro) ? '' : 'none';
+    Array.from(filas).forEach(fila => {
+        if (filtro === '') {
+            fila.style.display = '';
+            return;
         }
+        
+        let encontrado = false;
+        const celdas = fila.cells;
+        
+        for (let i = 0; i < celdas.length; i++) {
+            const textoCelda = celdas[i].textContent.toLowerCase();
+            if (textoCelda.includes(filtro)) {
+                encontrado = true;
+                break;
+            }
+        }
+        
+        fila.style.display = encontrado ? '' : 'none';
     });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const inputBusqueda = document.getElementById('buscar_impresora');
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener('input', buscarImpresoras);
+    }
 });
 
 // Función para ver detalles
 function verDetalles(id) {
-    const impresora = impresorasData.find(i => i.idIMPRESORA == id);
-    if (impresora) {
-        const propiedadTexto = impresora.propia_rentada === 'propia' ? 'Propia' : 'Rentada';
-        alert('📋 Detalles de la Impresora\\n\\n' +
-              '🆔 ID: ' + (impresora.idIMPRESORA || 'N/A') + '\\n' +
-              '🏷️ Marca: ' + (impresora.MARCA || 'N/A') + '\\n' +
-              '📱 Modelo: ' + (impresora.MODELO || 'N/A') + '\\n' +
-              '🖨️ Tipo: ' + (impresora.TIPO || 'N/A') + '\\n' +
-              '🔢 Serie: ' + (impresora.NUMERO_SERIE || 'N/A') + '\\n' +
-              '📦 Inventario: ' + (impresora.NUMERO_INVENTARIO || 'N/A') + '\\n' +
-              '🔄 Estado: ' + (impresora.Estado || 'N/A') + '\\n' +
-              '🏠 Propiedad: ' + (propiedadTexto || 'N/A') + '\\n' +
-              '🏢 Ubicación: ' + (impresora.ubicacion_edificio || 'N/A') + '\\n' +
-              '📝 Descripción: ' + (impresora.DESCRIPCION || 'N/A'));
+    window.location.href = '<?= \yii\helpers\Url::to(['site/impresora-ver']) ?>&id=' + id;
+}
+
+// Función para seleccionar/deseleccionar todos
+function toggleSelectAll() {
+    var selectAll = document.getElementById('selectAll');
+    var checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(function(cb) {
+        if (cb.closest('tr').style.display !== 'none') {
+            cb.checked = selectAll.checked;
+        }
+    });
+    actualizarSeleccion();
+}
+
+// Función para actualizar botones
+function actualizarSeleccion() {
+    var checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    var count = checkboxes.length;
+    document.getElementById('btnEliminar').disabled = count === 0;
+    document.getElementById('btnQR').disabled = count === 0;
+}
+
+// Función para eliminar seleccionados
+function eliminarSeleccionados() {
+    var checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Por favor seleccione al menos una impresora para eliminar.');
+        return;
+    }
+    
+    if (!confirm('¿Está seguro que desea eliminar ' + checkboxes.length + ' impresora(s) seleccionada(s)?')) {
+        return;
+    }
+    
+    var ids = Array.from(checkboxes).map(function(cb) { return cb.value; });
+    
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '<?= \yii\helpers\Url::to(['site/impresora-eliminar-multiple']) ?>';
+    
+    var csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '<?= Yii::$app->request->csrfParam ?>';
+    csrfInput.value = '<?= Yii::$app->request->csrfToken ?>';
+    form.appendChild(csrfInput);
+    
+    ids.forEach(function(id) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'ids[]';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Función para descargar QR de seleccionados
+function descargarQRSeleccionados() {
+    var checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Por favor seleccione al menos una impresora para generar QR.');
+        return;
+    }
+    
+    var items = [];
+    checkboxes.forEach(function(cb) {
+        var tr = cb.closest('tr');
+        items.push({
+            id: cb.value,
+            marca: tr.dataset.marca || 'N/A',
+            modelo: tr.dataset.modelo || 'N/A',
+            tipo: tr.dataset.tipo || 'N/A',
+            inventario: tr.dataset.inventario || 'N/A'
+        });
+    });
+    
+    generarPDFConQRs(items);
+}
+
+// Función para generar PDF con múltiples QRs
+function generarPDFConQRs(items) {
+    if (typeof window.jspdf === 'undefined') {
+        var script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script.onload = function() {
+            crearPDF(items);
+        };
+        document.head.appendChild(script);
+    } else {
+        crearPDF(items);
     }
 }
 
+function crearPDF(items) {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF('portrait', 'mm', 'letter');
+    
+    var qrSize = 65;
+    var margin = 20;
+    var spacingX = 100;
+    var spacingY = 120;
+    var qrsPerRow = 2;
+    var qrsPerPage = 4;
+    
+    function agregarEncabezado() {
+        doc.setFontSize(16);
+        doc.setTextColor(23, 162, 184); // Color cyan/teal
+        doc.text('Códigos QR - Impresoras', doc.internal.pageSize.getWidth() / 2, 12, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('Fecha: ' + new Date().toLocaleDateString('es-ES'), doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' });
+    }
+    
+    agregarEncabezado();
+    
+    items.forEach(function(item, index) {
+        if (index > 0 && index % qrsPerPage === 0) {
+            doc.addPage();
+            agregarEncabezado();
+        }
+        
+        var posInPage = index % qrsPerPage;
+        var row = Math.floor(posInPage / qrsPerRow);
+        var col = posInPage % qrsPerRow;
+        
+        var x = margin + (col * spacingX);
+        var y = 30 + (row * spacingY);
+        
+        // Obtener todos los datos de la fila
+        const fila = document.querySelector(`tr[data-id="${item.id}"]`);
+        const celdas = fila.querySelectorAll('td');
+        const serie = celdas[5].textContent.trim();
+        const estado = celdas[7].textContent.trim();
+        const propiedad = celdas[8].textContent.trim();
+        const edificio = celdas[9].textContent.trim();
+        const ubicacionDetalle = celdas[10].textContent.trim();
+        const tiempoActivo = celdas[11].textContent.trim();
+        const ultimoEditor = celdas[12].textContent.trim();
+        
+        // Crear texto con todos los datos
+        var textoQR = 'IMPRESORA' + '\n' +
+                      'ID: ' + item.id + '\n' +
+                      'Marca: ' + item.marca + '\n' +
+                      'Modelo: ' + item.modelo + '\n' +
+                      'Tipo: ' + item.tipo + '\n' +
+                      'No. Serie: ' + serie + '\n' +
+                      'No. Inventario: ' + item.inventario + '\n' +
+                      'Estado: ' + estado + '\n' +
+                      'Propiedad: ' + propiedad + '\n' +
+                      'Edificio: ' + edificio + '\n' +
+                      'Ubicacion: ' + ubicacionDetalle + '\n' +
+                      'Tiempo Activo: ' + tiempoActivo + '\n' +
+                      'Ultimo Editor: ' + ultimoEditor;
+        
+        // Crear QR
+        var canvas = document.createElement('canvas');
+        var qr = new QRious({
+            element: canvas,
+            value: textoQR,
+            size: 200,
+            level: 'H',
+            foreground: '#212529',
+            background: '#ffffff'
+        });
+        
+        // Marco cyan compacto
+        doc.setDrawColor(23, 162, 184);
+        doc.setLineWidth(0.7);
+        const marcoAlto = qrSize + 22;
+        const marcoAncho = qrSize + 10;
+        doc.rect(x - 3, y + 2, marcoAncho, marcoAlto);
+
+        // Fecha arriba del QR, dentro del marco
+        doc.setFontSize(10);
+        doc.setTextColor(23, 162, 184);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Fecha de impresión: ' + new Date().toLocaleDateString('es-ES'), x + qrSize/2, y + 10, { align: 'center' });
+
+        // QR más abajo para compactar
+        var imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', x, y + 13, qrSize, qrSize);
+    });
+    
+    // Agregar números de página
+    var totalPages = doc.internal.getNumberOfPages();
+    for (var i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
+    
+    doc.save('QR_Impresoras_' + new Date().toISOString().slice(0,10) + '.pdf');
+}
+
 console.log('✅ Sistema de Impresoras cargado con', impresorasData.length, 'equipos');
-");
-?>
+</script>
 
 <!-- Modal para Equipos Dañados -->
 <div class="modal fade" id="modalEquiposDanados" tabindex="-1" aria-labelledby="modalEquiposDanadosLabel" aria-hidden="true">
@@ -317,7 +549,8 @@ console.log('✅ Sistema de Impresoras cargado con', impresorasData.length, 'equ
                                 <th>Tipo</th>
                                 <th>Nº Serie</th>
                                 <th>Nº Inventario</th>
-                                <th>Ubicación</th>
+                                <th>Ubicación Edificio</th>
+                                <th>Ubicación Detalle</th>
                                 <th>Estado</th>
                             </tr>
                         </thead>
@@ -337,7 +570,8 @@ console.log('✅ Sistema de Impresoras cargado con', impresorasData.length, 'equ
                                 <td><?= \yii\helpers\Html::encode($impresora->TIPO) ?></td>
                                 <td><?= \yii\helpers\Html::encode($impresora->NUMERO_SERIE) ?></td>
                                 <td><?= \yii\helpers\Html::encode($impresora->NUMERO_INVENTARIO) ?></td>
-                                <td><?= \yii\helpers\Html::encode($impresora->ubicacion_edificio) ?></td>
+                                <td><?= \yii\helpers\Html::encode($impresora->ubicacion_edificio ?? '-') ?></td>
+                                <td><?= \yii\helpers\Html::encode($impresora->ubicacion_detalle ?? '-') ?></td>
                                 <td>
                                     <span class="badge bg-warning text-dark">
                                         <?= \yii\helpers\Html::encode($impresora->Estado) ?>
@@ -410,4 +644,77 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function exportarPDF() {
+    try {
+        var jsPDF = window.jspdf.jsPDF;
+        var doc = new jsPDF('landscape');
+        
+        doc.setFontSize(18);
+        doc.setTextColor(23, 162, 184);
+        doc.text('Gestión de Impresoras', 14, 20);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('Impresoras, Plotters y Multifuncionales', 14, 28);
+        doc.text('Fecha de exportación: ' + new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), 14, 35);
+        
+        var tabla = document.getElementById('impresorasTable');
+        if (!tabla) {
+            alert('Error: No se encontró la tabla de impresoras');
+            return;
+        }
+        var filas = tabla.querySelectorAll('tbody tr');
+        var datos = [];
+        
+        filas.forEach(function(fila) {
+            if (fila.style.display !== 'none') {
+                var celdas = fila.querySelectorAll('td');
+                if (celdas.length >= 13) {
+                    datos.push([
+                        celdas[1].textContent.trim().toUpperCase(),
+                        celdas[2].textContent.trim().toUpperCase(),
+                        celdas[3].textContent.trim().toUpperCase(),
+                        celdas[4].textContent.trim().toUpperCase(),
+                        celdas[5].textContent.trim().toUpperCase(),
+                        celdas[6].textContent.trim().toUpperCase(),
+                        celdas[7].textContent.trim().toUpperCase(),
+                        celdas[8].textContent.trim().toUpperCase(),
+                        celdas[9].textContent.trim().toUpperCase(),
+                        celdas[10].textContent.trim().toUpperCase(),
+                        celdas[11].textContent.trim().toUpperCase(),
+                        celdas[12].textContent.trim().toUpperCase()
+                    ]);
+                }
+            }
+        });
+        
+        if (datos.length === 0) {
+            alert('No hay datos para exportar');
+            return;
+        }
+        
+        doc.autoTable({
+            startY: 42,
+            head: [['ID', 'Marca', 'Modelo', 'Tipo', 'N° Serie', 'N° Inventario', 'Estado', 'Propiedad', 'Ubicación Edificio', 'Ubicación Detalle', 'Tiempo Activo', 'Último Editor']],
+            body: datos,
+            styles: { fontSize: 7, cellPadding: 0.5, overflow: 'linebreak', lineWidth: 0.1 },
+            headStyles: { fillColor: [23, 162, 184], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            alternateRowStyles: { fillColor: [232, 245, 248] }
+        });
+        
+        var pageCount = doc.internal.getNumberOfPages();
+        for (var i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Componentes', doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+        }
+        
+        doc.save('impresoras_' + new Date().toISOString().slice(0,10) + '.pdf');
+    } catch (error) {
+        console.error('Error al exportar PDF:', error);
+        alert('Error al exportar: ' + error.message);
+    }
+}
 </script>

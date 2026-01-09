@@ -52,10 +52,23 @@ class Nobreak extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+        // Escenario para catálogo: solo requiere MARCA y MODELO
+        $scenarios['catalogo'] = ['MARCA', 'MODELO', 'Estado', 'ubicacion_detalle', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'DESCRIPCION', 'EMISION_INVENTARIO', 'ubicacion_edificio'];
+        return $scenarios;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'DESCRIPCION', 'Estado', 'EMISION_INVENTARIO'], 'required'],
+            // En modo catálogo solo MARCA y MODELO son requeridos
+            [['MARCA', 'MODELO'], 'required'],
+            [['CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'Estado', 'EMISION_INVENTARIO'], 'required', 'except' => 'catalogo'],
             [['EMISION_INVENTARIO', 'fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['MARCA', 'MODELO', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
             [['DESCRIPCION'], 'string', 'max' => 100],
@@ -63,6 +76,9 @@ class Nobreak extends \yii\db\ActiveRecord
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
             [['ultimo_editor'], 'string', 'max' => 100],
             [['Estado'], 'in', 'range' => array_keys(self::getEstados())],
+            // Validaciones de unicidad
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro equipo.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro equipo.'],
         ];
     }
 
@@ -247,11 +263,27 @@ class Nobreak extends \yii\db\ActiveRecord
     public static function getUbicacionesEdificio()
     {
         return [
-            'Edificio A' => 'Edificio A',
-            'Edificio B' => 'Edificio B',
-            'Edificio C' => 'Edificio C',
-            'Oficina Central' => 'Oficina Central',
-            'Almacén' => 'Almacén',
+            'A' => 'Edificio A',
+            'B' => 'Edificio B',
+            'C' => 'Edificio C',
+            'D' => 'Edificio D',
+            'E' => 'Edificio E',
+            'F' => 'Edificio F',
+            'G' => 'Edificio G',
+            'H' => 'Edificio H',
+            'I' => 'Edificio I',
+            'J' => 'Edificio J',
+            'K' => 'Edificio K',
+            'L' => 'Edificio L',
+            'M' => 'Edificio M',
+            'N' => 'Edificio N',
+            'O' => 'Edificio O',
+            'P' => 'Edificio P',
+            'Q' => 'Edificio Q',
+            'R' => 'Edificio R',
+            'S' => 'Edificio S',
+            'T' => 'Edificio T',
+            'U' => 'Edificio U',
         ];
     }
 

@@ -9,6 +9,10 @@ $this->title = 'Stock Disponible por Categoría';
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 $this->registerJsFile('https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js');
 
+// Registrar scripts de jsPDF para exportar a PDF
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', ['position' => \yii\web\View::POS_HEAD]);
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js', ['position' => \yii\web\View::POS_HEAD]);
+
 // Cargar datos de stock por categoría
 $categorias = [
     'nobreak' => [
@@ -100,7 +104,7 @@ function obtenerStockCategoria($categoria) {
             ];
         }
         
-        // Consulta para obtener estadísticas
+        // Consulta para obtener estadísticas (excluyendo dispositivos con estado BAJA)
         $sql = "
             SELECT 
                 COUNT(*) as total,
@@ -111,6 +115,7 @@ function obtenerStockCategoria($categoria) {
                 SUM(CASE WHEN $campoEstado LIKE '%mantenimiento%' OR $campoEstado = 'Reparación' OR $campoEstado LIKE '%Mantenimiento%' THEN 1 ELSE 0 END) as mantenimiento,
                 SUM(CASE WHEN $campoEstado = 'Inactivo(Sin Asignar)' THEN 1 ELSE 0 END) as inactivos_sin_asignar
             FROM $tabla
+            WHERE $campoEstado != 'BAJA'
         ";
         
         $resultado = $connection->createCommand($sql)->queryOne();
@@ -537,11 +542,11 @@ html { scroll-behavior: smooth; }
                         </div>
                     </div>
                     
-                    <!-- Botón verde para descargar CSV del Resumen General -->
+                    <!-- Botón para descargar PDF del Resumen General -->
                     <div class="text-center mt-5" style="margin-bottom:80px;"> <!-- mayor separación vertical -->
-                        <a href="<?= Url::to(['site/download-resumen']) ?>" class="btn btn-success btn-lg">
-                            <i class="fas fa-download me-2"></i>Descargar Resumen (CSV)
-                        </a>
+                        <button type="button" class="btn btn-primary btn-lg" onclick="exportarResumenPDF()">
+                            <i class="fas fa-file-pdf me-2"></i>Descargar Resumen (PDF)
+                        </button>
                     </div>
                     
                     <!-- Filtros y Búsqueda (ELIMINADO) -->
@@ -1357,8 +1362,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button class="btn btn-warning btn-sm ms-3" id="editarCategoriaBtn">
                         <i class="fas fa-edit me-1"></i>Editar
                     </button>
-                    <button class="btn btn-success btn-sm ms-2" id="exportarCategoriaBtn">
-                        <i class="fas fa-file-csv me-1"></i>Exportar
+                    <button class="btn btn-primary btn-sm ms-2" id="exportarCategoriaBtn">
+                        <i class="fas fa-file-pdf me-1"></i>Exportar
                     </button>
                 </div>
                 
@@ -1414,54 +1419,82 @@ document.getElementById('exportarCategoriaBtn').addEventListener('click', functi
     // Obtener filtro activo
     const filtrosDiv = document.getElementById('categoriaModalFiltros');
     const filtroActivoBtn = filtrosDiv.querySelector('.filtro-categoria-btn.active');
-    let filtroNombre = filtroActivoBtn ? filtroActivoBtn.innerText.trim().replace(/\s+/g, '_').toLowerCase() : 'export';
+    let filtroNombre = filtroActivoBtn ? filtroActivoBtn.innerText.trim().replace(/\s+/g, '_').toUpperCase() : 'EXPORT';
 
     // Obtener nombre de la categoría
     const modalTitle = document.getElementById('categoriaModalLabel');
-    let categoriaNombre = 'categoria';
+    let categoriaNombre = 'CATEGORIA';
     if (modalTitle) {
         let match = modalTitle.innerText.match(/categor[ií]a\s*(.*)/i);
         if (match && match[1]) {
-            categoriaNombre = match[1].trim().replace(/\s+/g, '_').toLowerCase();
+            categoriaNombre = match[1].trim().replace(/\s+/g, '_').toUpperCase();
         }
     }
 
-    // Nombre de archivo: Stock_Categoria_Filtro.csv
-    let nombreArchivo = `Stock_${categoriaNombre}_${filtroNombre}.csv`;
-
-    let csv = [];
-    // Cabecera
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    
+    // Título
+    doc.setFontSize(18);
+    doc.setTextColor(79, 70, 229);
+    doc.text('STOCK - ' + categoriaNombre, 14, 20);
+    
+    // Subtítulo con filtro
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text('Filtro: ' + filtroNombre, 14, 28);
+    
+    // Fecha
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    const fechaActual = new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', month: '2-digit', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit' 
+    });
+    doc.text('Fecha de exportación: ' + fechaActual, 14, 35);
+    
+    // Obtener headers
     let headers = [];
     tabla.querySelectorAll('thead th').forEach(th => {
-        let headerText = th.innerText.replace(/"/g, '""').toUpperCase();
-        headers.push('"' + headerText + '"');
+        headers.push(th.innerText.trim().toUpperCase());
     });
-    csv.push(headers.join(','));
-
-    // Filas visibles (todos los datos en mayúsculas)
+    
+    // Obtener datos de filas visibles
+    let datos = [];
     tabla.querySelectorAll('tbody tr').forEach(tr => {
-        if (tr.style.display === 'none') return; // solo filas visibles
+        if (tr.style.display === 'none') return;
         let row = [];
         tr.querySelectorAll('td').forEach(td => {
-            let value = td.innerText.replace(/"/g, '""').trim().toUpperCase();
-            // Si parece fecha, fuerza a texto con apóstrofe
-            if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
-                value = "'" + value;
-            }
-            row.push('"' + value + '"');
+            row.push(td.innerText.trim().toUpperCase());
         });
-        csv.push(row.join(','));
+        datos.push(row);
     });
-
-    // Descargar
-    let csvContent = csv.join('\r\n');
-    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    let link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = nombreArchivo;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    
+    // Generar tabla
+    doc.autoTable({
+        startY: 42,
+        head: [headers],
+        body: datos,
+        styles: { fontSize: 7, cellPadding: 2 },
+        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        alternateRowStyles: { fillColor: [245, 243, 255] }
+    });
+    
+    // Pie de página
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Inventario', 
+            doc.internal.pageSize.getWidth() / 2, 
+            doc.internal.pageSize.getHeight() - 10, 
+            { align: 'center' });
+    }
+    
+    // Nombre de archivo
+    let nombreArchivo = 'Stock_' + categoriaNombre + '_' + filtroNombre + '_' + new Date().toISOString().slice(0,10) + '.pdf';
+    doc.save(nombreArchivo);
 });
 
 </script>
@@ -1645,8 +1678,8 @@ $modelosPorCategoria = obtenerModelosPorCategoria([
 <div class="card modelos-card mt-5">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="fas fa-list me-2"></i>Modelos de Equipos por Categoría</h5>
-            <button id="exportarModelosBtn" class="btn btn-success btn-sm">
-                <i class="fas fa-file-csv me-1"></i>Exportar Tabla
+            <button id="exportarModelosBtn" class="btn btn-primary btn-sm">
+                <i class="fas fa-file-pdf me-1"></i>Exportar Tabla
             </button>
         </div>
 </style>
@@ -1702,54 +1735,95 @@ $modelosPorCategoria = obtenerModelosPorCategoria([
 </div>
 
 <script>
-// Exportar la tabla de modelos por categoría a CSV
+// Exportar la tabla de modelos por categoría a PDF
 document.getElementById('exportarModelosBtn').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    
+    // Título principal
+    doc.setFontSize(18);
+    doc.setTextColor(79, 70, 229);
+    doc.text('MODELOS DE EQUIPOS POR CATEGORÍA', 14, 20);
+    
+    // Fecha
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    const fechaActual = new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', month: '2-digit', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit' 
+    });
+    doc.text('Fecha de exportación: ' + fechaActual, 14, 28);
+    
     // Selecciona todas las tablas dentro del contenedor
     const container = document.getElementById('modelosTablaContainer');
     const tablas = container.querySelectorAll('table');
-    let csv = [];
-
+    
+    let startY = 38;
+    
     tablas.forEach((tabla, idx) => {
-        // Título de la categoría (en mayúsculas)
-        const categoriaTitle = tabla.closest('.table-responsive').previousElementSibling?.innerText || `Categoría ${idx+1}`;
-        csv.push('"' + categoriaTitle.replace(/"/g, '""').toUpperCase() + '"');
-        csv.push(''); // Línea en blanco después del título
+        // Verificar si necesitamos una nueva página
+        if (startY > doc.internal.pageSize.getHeight() - 40) {
+            doc.addPage();
+            startY = 20;
+        }
         
-        // Cabecera con las nuevas columnas (en mayúsculas)
+        // Título de la categoría
+        const categoriaTitle = tabla.closest('.table-responsive').previousElementSibling?.innerText || `Categoría ${idx+1}`;
+        doc.setFontSize(12);
+        doc.setTextColor(55, 65, 129);
+        doc.text(categoriaTitle.toUpperCase(), 14, startY);
+        startY += 6;
+        
+        // Obtener headers
         let headers = [];
         tabla.querySelectorAll('thead th').forEach(th => {
-            let headerText = th.innerText.replace(/"/g, '""').toUpperCase();
-            headers.push('"' + headerText + '"');
+            headers.push(th.innerText.trim().toUpperCase());
         });
-        csv.push(headers.join(','));
         
-        // Filas de datos (todos los datos en mayúsculas)
+        // Obtener datos
+        let datos = [];
         tabla.querySelectorAll('tbody tr').forEach(tr => {
             let row = [];
             tr.querySelectorAll('td').forEach((td, cellIndex) => {
                 let value = '';
                 if (cellIndex === 4) { // Columna de porcentaje
-                    // Extraer solo el número del porcentaje
                     const percentText = td.querySelector('small.fw-bold');
-                    value = percentText ? percentText.innerText.replace('%', '') : '0';
+                    value = percentText ? percentText.innerText : '0%';
                 } else {
-                    value = td.innerText.replace(/"/g, '""').trim().toUpperCase();
+                    value = td.innerText.trim().toUpperCase();
                 }
-                row.push('"' + value + '"');
+                row.push(value);
             });
-            csv.push(row.join(',')); 
+            datos.push(row);
         });
-        csv.push(''); // Línea en blanco entre categorías
+        
+        // Generar tabla
+        doc.autoTable({
+            startY: startY,
+            head: [headers],
+            body: datos,
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            alternateRowStyles: { fillColor: [245, 243, 255] },
+            margin: { left: 14, right: 14 }
+        });
+        
+        startY = doc.lastAutoTable.finalY + 12;
     });
-
-    let csvContent = csv.join('\r\n');
-    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    let link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'Modelos_por_Categoria_Detallado.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    
+    // Pie de página en todas las páginas
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Inventario', 
+            doc.internal.pageSize.getWidth() / 2, 
+            doc.internal.pageSize.getHeight() - 10, 
+            { align: 'center' });
+    }
+    
+    doc.save('Modelos_por_Categoria_' + new Date().toISOString().slice(0,10) + '.pdf');
 });
 </script>
 
@@ -1811,5 +1885,97 @@ document.addEventListener('DOMContentLoaded', function() {
         modelosCard.style.display = 'none';
     }
 });
+
+// Función para exportar el resumen general a PDF
+function exportarResumenPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait');
+    
+    // Título principal
+    doc.setFontSize(20);
+    doc.setTextColor(79, 70, 229); // Color violeta del header
+    doc.text('STOCK DISPONIBLE POR CATEGORÍA', 105, 20, { align: 'center' });
+    
+    // Subtítulo
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text('Control de inventario y disponibilidad de equipos', 105, 28, { align: 'center' });
+    
+    // Fecha de generación
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    const fechaActual = new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    doc.text('Fecha de generación: ' + fechaActual, 105, 36, { align: 'center' });
+    
+    // Línea separadora
+    doc.setDrawColor(79, 70, 229);
+    doc.setLineWidth(0.5);
+    doc.line(20, 42, 190, 42);
+    
+    // Título de sección
+    doc.setFontSize(14);
+    doc.setTextColor(55, 65, 129);
+    doc.text('Resumen General del Inventario', 105, 52, { align: 'center' });
+    
+    // Datos del resumen
+    const datos = [
+        ['TOTAL EQUIPOS', '<?= $totalGeneral ?>'],
+        ['EN USO', '<?= $activosGeneral ?>'],
+        ['DISPONIBLES', '<?= $disponiblesGeneral ?>'],
+        ['MANTENIMIENTO', '<?= $mantenimientoGeneral ?>'],
+        ['DAÑADOS', '<?= $danadosGeneral ?>'],
+        ['BAJA', '<?= $bajasGeneral ?>'],
+        ['DISPONIBILIDAD', '<?= $totalGeneral > 0 ? round(($disponiblesGeneral / $totalGeneral) * 100, 1) : 0 ?>%']
+    ];
+    
+    // Tabla del resumen
+    doc.autoTable({
+        startY: 58,
+        head: [['MÉTRICA', 'VALOR']],
+        body: datos,
+        styles: { 
+            fontSize: 11, 
+            cellPadding: 5,
+            halign: 'center'
+        },
+        headStyles: { 
+            fillColor: [79, 70, 229], 
+            textColor: 255, 
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        alternateRowStyles: { 
+            fillColor: [245, 243, 255] 
+        },
+        columnStyles: {
+            0: { halign: 'left', fontStyle: 'bold' },
+            1: { halign: 'center' }
+        },
+        margin: { left: 40, right: 40 }
+    });
+    
+    // Pie de página
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+            'Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Inventario', 
+            doc.internal.pageSize.getWidth() / 2, 
+            doc.internal.pageSize.getHeight() - 10, 
+            { align: 'center' }
+        );
+    }
+    
+    // Guardar PDF
+    doc.save('resumen_general_inventario_' + new Date().toISOString().slice(0,10) + '.pdf');
+}
 </script>
 

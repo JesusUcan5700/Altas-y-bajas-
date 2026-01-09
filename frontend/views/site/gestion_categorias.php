@@ -79,6 +79,29 @@ $this->registerCss("
         position: relative;
         z-index: 1;
     }
+    
+    /* Estilos para el botón de mostrar/ocultar catálogos */
+    .toggle-catalogs {
+        border-radius: 20px;
+        padding: 8px 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .toggle-catalogs:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    #catalogsSection {
+        transition: all 0.3s ease-in-out;
+        overflow: hidden;
+    }
+    
+    #catalogsSection.collapsed {
+        max-height: 0;
+        opacity: 0;
+        margin: 0 !important;
+    }
 ");
 ?>
 
@@ -109,9 +132,15 @@ $this->registerCss("
         </div>
 
         <!-- Sección: Catálogos -->
-        <h2 class="section-title display-6 fw-bold text-dark">Catálogos Rápidos</h2>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-title display-6 fw-bold text-dark mb-0">Catálogos Rápidos</h2>
+            <button type="button" class="btn btn-outline-secondary btn-sm toggle-catalogs" id="toggleCatalogs">
+                <i class="fas fa-eye-slash"></i>
+                <span class="ms-2">Ocultar</span>
+            </button>
+        </div>
         
-        <div class="row justify-content-center g-4 mb-5">
+        <div class="row justify-content-center g-4 mb-5" id="catalogsSection">
             <!-- Catálogo Procesadores -->
             <div class="col-lg-4 col-md-6">
                 <div class="card equipment-card h-100 border-success" style="border: 3px solid #28a745 !important;">
@@ -200,6 +229,177 @@ $this->registerCss("
                         <div class="d-grid gap-2">
                             <a href="<?= \yii\helpers\Url::to(['site/monitor-catalogo-listar']) ?>" class="btn btn-primary btn-equipment">
                                 <i class="fas fa-desktop me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo No Break / UPS -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-warning" style="border: 3px solid #ffc107 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-warning">
+                            <i class="fas fa-battery-half"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo No Break / UPS</h3>
+                        <p class="card-text text-muted mb-4">Gestiona No Break del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/nobreak-catalogo-listar']) ?>" class="btn btn-warning btn-equipment">
+                                <i class="fas fa-battery-half me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Baterías -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-warning" style="border: 3px solid #ffc107 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-warning">
+                            <i class="fas fa-battery-three-quarters"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Baterías</h3>
+                        <p class="card-text text-muted mb-4">Gestiona baterías del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/baterias-catalogo-listar']) ?>" class="btn btn-warning btn-equipment">
+                                <i class="fas fa-battery-three-quarters me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Equipos de Cómputo -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-primary" style="border: 3px solid #007bff !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-primary">
+                            <i class="fas fa-computer"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Equipos de Cómputo</h3>
+                        <p class="card-text text-muted mb-4">Gestiona equipos de cómputo del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/equipos-catalogo-listar']) ?>" class="btn btn-primary btn-equipment">
+                                <i class="fas fa-computer me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Impresoras -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-info" style="border: 3px solid #17a2b8 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-info">
+                            <i class="fas fa-print"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Impresoras</h3>
+                        <p class="card-text text-muted mb-4">Gestiona impresoras del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/impresoras-catalogo-listar']) ?>" class="btn btn-info btn-equipment">
+                                <i class="fas fa-print me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Adaptadores -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-dark" style="border: 3px solid #343a40 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-dark">
+                            <i class="fas fa-plug"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Adaptadores</h3>
+                        <p class="card-text text-muted mb-4">Gestiona adaptadores del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/adaptadores-catalogo-listar']) ?>" class="btn btn-dark btn-equipment">
+                                <i class="fas fa-plug me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Equipo de Sonido -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-danger" style="border: 3px solid #dc3545 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-danger">
+                            <i class="fas fa-volume-up"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Equipo de Sonido</h3>
+                        <p class="card-text text-muted mb-4">Gestiona equipos de sonido del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/sonido-catalogo-listar']) ?>" class="btn btn-danger btn-equipment">
+                                <i class="fas fa-volume-up me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Conectividad -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-primary" style="border: 3px solid #007bff !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-primary">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Conectividad</h3>
+                        <p class="card-text text-muted mb-4">Gestiona equipos de conectividad del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/conectividad-catalogo-listar']) ?>" class="btn btn-primary btn-equipment">
+                                <i class="fas fa-network-wired me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Telefonía -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-secondary" style="border: 3px solid #6c757d !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-secondary">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Telefonía</h3>
+                        <p class="card-text text-muted mb-4">Gestiona equipos de telefonía del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/telefonia-catalogo-listar']) ?>" class="btn btn-secondary btn-equipment">
+                                <i class="fas fa-phone me-2"></i>VER CATÁLOGO
+                            </a>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogo Video Vigilancia -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card equipment-card h-100 border-dark" style="border: 3px solid #343a40 !important;">
+                    <div class="card-body text-center p-4">
+                        <div class="equipment-icon text-dark">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <h3 class="card-title h4 mb-3">Catálogo Video Vigilancia</h3>
+                        <p class="card-text text-muted mb-4">Gestiona equipos de video vigilancia del catálogo</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?= \yii\helpers\Url::to(['site/videovigilancia-catalogo-listar']) ?>" class="btn btn-dark btn-equipment">
+                                <i class="fas fa-video me-2"></i>VER CATÁLOGO
                             </a>
                         </div>
                         <small class="text-muted mt-2 d-block">Reutilización infinita - Solo marca y modelo</small>
@@ -465,3 +665,24 @@ $this->registerCss("
         </div>
     </div>
 </div>
+
+<?php
+// Script para mostrar/ocultar la sección de catálogos
+$this->registerJs("
+    $('#toggleCatalogs').on('click', function() {
+        var catalogsSection = $('#catalogsSection');
+        var icon = $(this).find('i');
+        var text = $(this).find('span');
+        
+        catalogsSection.toggleClass('collapsed');
+        
+        if (catalogsSection.hasClass('collapsed')) {
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            text.text('Mostrar');
+        } else {
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            text.text('Ocultar');
+        }
+    });
+", \yii\web\View::POS_READY);
+?>

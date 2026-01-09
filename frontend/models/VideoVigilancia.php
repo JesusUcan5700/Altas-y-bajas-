@@ -76,7 +76,7 @@ class VideoVigilancia extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'DESCRIPCION'], 'required'],
+            [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'required'],
             [['fecha'], 'date', 'format' => 'yyyy-MM-dd'],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['ultimo_editor'], 'string', 'max' => 100],
@@ -85,7 +85,8 @@ class VideoVigilancia extends \yii\db\ActiveRecord
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
-            [['NUMERO_SERIE'], 'unique'],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otra cámara.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otra cámara.'],
             [['NUMERO_INVENTARIO'], 'unique'],
             [['ESTADO'], 'in', 'range' => [
                 self::ESTADO_ACTIVO, 

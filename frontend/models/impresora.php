@@ -65,7 +65,7 @@ class Impresora extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO', 'TIPO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'EMISION_INVENTARIO', 'DESCRIPCION', 'Estado', 'propia_rentada'], 'required'],
+            [['MARCA', 'MODELO', 'TIPO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'EMISION_INVENTARIO', 'Estado', 'propia_rentada'], 'required'],
             [['EMISION_INVENTARIO'], 'date', 'format' => 'yyyy-MM-dd'],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['MARCA', 'MODELO', 'TIPO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'EMISION_INVENTARIO', 'DESCRIPCION'], 'string', 'max' => 45],
@@ -74,8 +74,8 @@ class Impresora extends \yii\db\ActiveRecord
             [['propia_rentada'], 'string', 'max' => 10],
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
-            [['NUMERO_SERIE'], 'unique'],
-            [['NUMERO_INVENTARIO'], 'unique'],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otra impresora.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otra impresora.'],
             [['Estado'], 'in', 'range' => [
                 self::ESTADO_ACTIVO, 
                 self::ESTADO_INACTIVO, 

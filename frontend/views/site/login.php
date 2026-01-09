@@ -39,6 +39,11 @@ use yii\bootstrap5\ActiveForm;
 
 $this->title = 'Iniciar Sesión';
 
+// Registrar Font Awesome
+$this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', [
+    'position' => \yii\web\View::POS_HEAD
+]);
+
 // Registrar CSS para marca de agua del desarrollador
 $this->registerCss("
     .dev-watermark {
@@ -64,10 +69,55 @@ $this->registerCss("
     }
     .dev-watermark::before { content: '💻 ' !important; }
     .dev-watermark::after { content: ' 👨‍💻' !important; }
+    
+    /* Estilos para el botón de mostrar/ocultar contraseña */
+    .password-wrapper {
+        position: relative;
+    }
+    .password-wrapper .form-control {
+        padding-right: 45px !important;
+    }
+    .password-toggle {
+        position: absolute;
+        right: 12px;
+        top: 38px;
+        cursor: pointer;
+        color: #6c757d;
+        z-index: 10;
+        background: transparent;
+        border: none;
+        padding: 8px;
+        font-size: 18px;
+        line-height: 1;
+    }
+    .password-toggle:hover {
+        color: #495057;
+    }
+    .password-toggle:focus {
+        outline: none;
+    }
 ");
 
 // Registrar script de protección
 $this->registerJsFile('@web/js/watermark-protection.js', ['position' => \yii\web\View::POS_END]);
+
+// Script para mostrar/ocultar contraseña
+$this->registerJs("
+    $('.password-toggle').on('click', function(e) {
+        e.preventDefault();
+        var wrapper = $(this).closest('.password-wrapper');
+        var input = wrapper.find('input[type=\"password\"], input[type=\"text\"]');
+        var icon = $(this).find('i');
+        
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            input.attr('type', 'password');
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    });
+", \yii\web\View::POS_READY);
 ?>
 <div class="container-fluid d-flex align-items-center justify-content-center position-relative" style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 0;">
     <!-- Logo de fondo -->
@@ -127,10 +177,16 @@ $this->registerJsFile('@web/js/watermark-protection.js', ['position' => \yii\web
                         'class' => 'form-control'
                     ])->label('Usuario') ?>
 
-                    <?= $form->field($model, 'password')->passwordInput([
-                        'placeholder' => 'Ingrese su contraseña',
-                        'class' => 'form-control'
-                    ])->label('Contraseña') ?>
+                    <div class="password-wrapper">
+                        <?= $form->field($model, 'password')->passwordInput([
+                            'placeholder' => 'Ingrese su contraseña',
+                            'class' => 'form-control',
+                            'id' => 'password-input'
+                        ])->label('Contraseña') ?>
+                        <button type="button" class="password-toggle" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
 
                     <?= $form->field($model, 'rememberMe')->checkbox([
                         'template' => '<div class="form-check mb-3">{input} {label}</div>',
@@ -148,6 +204,11 @@ $this->registerJsFile('@web/js/watermark-protection.js', ['position' => \yii\web
                     <?php ActiveForm::end(); ?>
 
                     <div class="text-center mt-3">
+                        <p class="text-muted small mb-2">
+                            <?= Html::a('¿Olvidaste tu contraseña?', ['site/request-password-reset'], [
+                                'class' => 'text-decoration-none'
+                            ]) ?>
+                        </p>
                         <p class="text-muted small mb-2">¿No tienes cuenta?</p>
                         <?= Html::a('<i class="fas fa-user-plus me-2"></i>Registrarse', ['site/signup'], [
                             'class' => 'btn btn-outline-secondary btn-sm',

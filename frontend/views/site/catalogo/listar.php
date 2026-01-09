@@ -9,6 +9,10 @@ use yii\helpers\Url;
 $this->title = 'Gestión de Catálogos - Procesadores';
 $this->params['breadcrumbs'][] = $this->title;
 $this->registerMetaTag(['name' => 'csrf-token', 'content' => Yii::$app->request->getCsrfToken()]);
+
+// Registrar scripts de jsPDF para exportar a PDF
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', ['position' => \yii\web\View::POS_HEAD]);
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js', ['position' => \yii\web\View::POS_HEAD, 'depends' => [\yii\web\JqueryAsset::class]]);
 ?>
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -54,9 +58,12 @@ $this->registerMetaTag(['name' => 'csrf-token', 'content' => Yii::$app->request-
                         <?php else: ?>
                             <!-- Botones de acción múltiple -->
                             <div class="row mb-3">
-                                <div class="col-md-12">
+                                <div class="col-md-12 d-flex flex-wrap gap-2 align-items-center">
                                     <button type="button" class="btn btn-danger" id="btn-eliminar-seleccionados" onclick="eliminarSeleccionados()" disabled>
                                         <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="exportarPDF()">
+                                        <i class="fas fa-file-pdf me-2"></i>Exportar a PDF
                                     </button>
                                     <span id="contador-seleccionados" class="ms-3 text-muted"></span>
                                 </div>
@@ -64,7 +71,7 @@ $this->registerMetaTag(['name' => 'csrf-token', 'content' => Yii::$app->request-
 
                             <!-- Tabla de procesadores del catálogo -->
                             <div class="table-responsive">
-                                <table class="table table-hover">
+                                <table class="table table-hover" id="catalogoTable">
                                     <thead class="table-success">
                                         <tr>
                                             <th>
@@ -333,6 +340,11 @@ function eliminarProcesador(id, modelo) {
     }
 }
 
+// Alias para compatibilidad
+function confirmarEliminarProcesador(id, modelo) {
+    eliminarProcesador(id, modelo);
+}
+
 // Función para eliminar procesadores seleccionados
 function eliminarSeleccionados() {
     if (procesadoresSeleccionados.length === 0) {
@@ -366,5 +378,91 @@ function eliminarSeleccionados() {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+// Función para exportar a PDF
+function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape'); // Orientación horizontal para más espacio
+    
+    // Título del documento
+    doc.setFontSize(18);
+    doc.setTextColor(40, 167, 69); // Color verde
+    doc.text('Gestión de Catálogos - Procesadores', 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Solo procesadores creados desde el formulario rápido (catálogo)', 14, 28);
+    doc.text('Fecha de exportación: ' + new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    }), 14, 35);
+    
+    // Obtener datos directamente de la tabla HTML
+    const tabla = document.getElementById('catalogoTable');
+    const filas = tabla.querySelectorAll('tbody tr');
+    const datos = [];
+    
+    filas.forEach(function(fila) {
+        const celdas = fila.querySelectorAll('td');
+        if (celdas.length >= 7) {
+            datos.push([
+                celdas[1].textContent.trim().toUpperCase(), // ID
+                celdas[2].textContent.trim().toUpperCase(), // Marca
+                celdas[3].textContent.trim().toUpperCase(), // Modelo
+                celdas[4].textContent.trim().toUpperCase(), // Estado
+                celdas[5].textContent.trim().toUpperCase(), // Fecha Creación
+                celdas[6].textContent.trim().toUpperCase()  // Ubicación
+            ]);
+        }
+    });
+    
+    // Generar tabla con autoTable
+    doc.autoTable({
+        startY: 42,
+        head: [['ID', 'Marca', 'Modelo', 'Estado', 'Fecha Creación', 'Ubicación']],
+        body: datos,
+        styles: {
+            fontSize: 10,
+            cellPadding: 4,
+        },
+        headStyles: {
+            fillColor: [40, 167, 69], // Color verde como el header
+            textColor: 255,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        alternateRowStyles: {
+            fillColor: [245, 245, 245]
+        },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 20 },
+            1: { fontStyle: 'bold', cellWidth: 35 },
+            2: { cellWidth: 40 },
+            3: { halign: 'center', cellWidth: 45 },
+            4: { halign: 'center', cellWidth: 35 },
+            5: { cellWidth: 'auto' }
+        }
+    });
+    
+    // Pie de página
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+            'Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Componentes',
+            doc.internal.pageSize.getWidth() / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+        );
+    }
+    
+    // Guardar el PDF
+    doc.save('catalogo_procesadores_' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 </script>

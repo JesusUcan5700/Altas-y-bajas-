@@ -47,6 +47,8 @@ class Microfono extends \yii\db\ActiveRecord
             [['DESCRIPCION'], 'string', 'max' => 100],
             [['ESTADO'], 'string', 'max' => 15],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro micrófono.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro micrófono.'],
         ];
     }
 

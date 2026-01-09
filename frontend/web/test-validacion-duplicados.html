@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Validación Duplicados</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <h1>Test de Validación</h1>
+    
+    <label>Número de Serie:</label>
+    <input type="text" id="test-serie" name="test_serie" placeholder="Ingresa un número">
+    <br><br>
+    
+    <button onclick="testValidacion()">Probar Validación Manual</button>
+    <button onclick="testSweetAlert()">Probar SweetAlert2</button>
+    
+    <div id="resultado"></div>
+    
+    <script>
+    function testSweetAlert() {
+        Swal.fire({
+            icon: 'warning',
+            title: '¡Test SweetAlert2!',
+            text: 'Si ves esto, SweetAlert2 está funcionando correctamente',
+            confirmButtonText: 'Entendido'
+        });
+    }
+    
+    function testValidacion() {
+        const valor = document.getElementById('test-serie').value;
+        
+        $.ajax({
+            url: '/site/verificar-duplicado',
+            method: 'POST',
+            data: {
+                tipo: 'serie',
+                valor: valor,
+                modelo: 'Nobreak',
+                id: '',
+                _csrf: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                console.log('Respuesta:', response);
+                document.getElementById('resultado').innerHTML = '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
+                
+                if (response.existe) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '¡Número Duplicado!',
+                        html: `
+                            <p><strong>Número de Serie:</strong> ${valor}</p>
+                            <p>Ya está registrado en: <strong>${response.dispositivo}</strong></p>
+                        `,
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#d33'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Número Disponible',
+                        text: 'Este número no está duplicado',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+                document.getElementById('resultado').innerHTML = '<p style="color:red">Error: ' + error + '</p>';
+                alert('Error en AJAX: ' + error);
+            }
+        });
+    }
+    </script>
+</body>
+</html>

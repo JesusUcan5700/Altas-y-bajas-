@@ -158,6 +158,10 @@ class Ram extends \yii\db\ActiveRecord
             
             // Otros campos opcionales
             [['FECHA', 'ESTADO', 'numero_serie', 'numero_inventario', 'Descripcion', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
+            
+            // Validaciones de unicidad
+            [['numero_serie'], 'unique', 'message' => 'Este número de serie ya está registrado en otra memoria RAM.'],
+            [['numero_inventario'], 'unique', 'message' => 'Este número de inventario ya está registrado en otra memoria RAM.'],
         ];
     }
 

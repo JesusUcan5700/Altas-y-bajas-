@@ -36,87 +36,174 @@ $this->params['breadcrumbs'][] = $this->title;
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <?= $form->field($model, 'CPU')->textInput(['maxlength' => true]) ?>
+                            <?php
+                            // Preparar opciones del dropdown
+                            $procesadorOptions = ['id' => 'cpu-select'];
+                            
+                            // Solo agregar el prompt si NO hay un CPU_ID seleccionado
+                            if (empty($model->CPU_ID) || $model->CPU_ID === null) {
+                                $procesadorOptions['prompt'] = 'Selecciona un procesador';
+                            }
+                            ?>
+                            <?= $form->field($model, 'CPU_ID')->dropDownList(
+                                yii\helpers\ArrayHelper::map($procesadores, 'idProcesador', function($procesador) {
+                                    return $procesador->MARCA . ' ' . $procesador->MODELO;
+                                }),
+                                $procesadorOptions
+                            )->label('CPU (Procesador)') ?>
+                            <?= $form->field($model, 'CPU')->hiddenInput(['id' => 'cpu-desc-hidden'])->label(false) ?>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <?= $form->field($model, 'DD')->textInput(['maxlength' => true]) ?>
+                            <?= $form->field($model, 'DD_ID')->dropDownList(
+                                yii\helpers\ArrayHelper::map($almacenamiento, 'idAlmacenamiento', function($model) {
+                                    return $model->MARCA . ' ' . $model->MODELO . ' (' . $model->CAPACIDAD . ' ' . $model->TIPO . ')';
+                                }),
+                                [
+                                    'prompt' => 'Selecciona almacenamiento',
+                                    'id' => 'dd-select'
+                                ]
+                            )->label('Disco Duro (Almacenamiento)') ?>
+                            <?= $form->field($model, 'DD')->hiddenInput(['id' => 'dd-desc-hidden'])->label(false) ?>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="tiene-dd2" <?= (!empty($model->DD2) && $model->DD2 !== 'NO') ? 'checked' : '' ?>>
+                                <input class="form-check-input" type="checkbox" id="tiene-dd2" <?= !empty($model->DD2_ID) ? 'checked' : '' ?>>
                                 <label class="form-check-label" for="tiene-dd2">
                                     <i class="fas fa-hdd me-2"></i>Segundo disco duro
                                 </label>
                             </div>
-                            <div id="dd2-field" style="display: <?= (!empty($model->DD2) && $model->DD2 !== 'NO') ? 'block' : 'none' ?>;">
-                                <?= $form->field($model, 'DD2')->textInput(['maxlength' => true, 'placeholder' => 'Ej: 1TB HDD']) ?>
+                            <div id="dd2-field" style="display: <?= !empty($model->DD2_ID) ? 'block' : 'none' ?>;">
+                                <?= $form->field($model, 'DD2_ID')->dropDownList(
+                                    yii\helpers\ArrayHelper::map($almacenamiento, 'idAlmacenamiento', function($model) {
+                                        return $model->MARCA . ' ' . $model->MODELO . ' (' . $model->CAPACIDAD . ' ' . $model->TIPO . ')';
+                                    }),
+                                    [
+                                        'prompt' => 'Selecciona segundo almacenamiento',
+                                        'id' => 'dd2-select'
+                                    ]
+                                )->label('Segundo Disco Duro') ?>
+                                <?= $form->field($model, 'DD2')->hiddenInput(['id' => 'dd2-desc-hidden'])->label(false) ?>
                             </div>
 
                             <!-- DD3 aparece solo si DD2 está activado -->
-                            <div id="dd3-container" style="display: <?= (!empty($model->DD2) && $model->DD2 !== 'NO') ? 'block' : 'none' ?>;">
+                            <div id="dd3-container" style="display: <?= !empty($model->DD2_ID) ? 'block' : 'none' ?>;">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="tiene-dd3" <?= (!empty($model->DD3) && $model->DD3 !== 'NO') ? 'checked' : '' ?>>
+                                    <input class="form-check-input" type="checkbox" id="tiene-dd3" <?= !empty($model->DD3_ID) ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="tiene-dd3">
                                         <i class="fas fa-hdd me-2"></i>Tercer disco duro
                                     </label>
                                 </div>
-                                <div id="dd3-field" style="display: <?= (!empty($model->DD3) && $model->DD3 !== 'NO') ? 'block' : 'none' ?>;">
-                                    <?= $form->field($model, 'DD3')->textInput(['maxlength' => true, 'placeholder' => 'Ej: 2TB HDD']) ?>
+                                <div id="dd3-field" style="display: <?= !empty($model->DD3_ID) ? 'block' : 'none' ?>;">
+                                    <?= $form->field($model, 'DD3_ID')->dropDownList(
+                                        yii\helpers\ArrayHelper::map($almacenamiento, 'idAlmacenamiento', function($model) {
+                                            return $model->MARCA . ' ' . $model->MODELO . ' (' . $model->CAPACIDAD . ' ' . $model->TIPO . ')';
+                                        }),
+                                        [
+                                            'prompt' => 'Selecciona tercer almacenamiento',
+                                            'id' => 'dd3-select'
+                                        ]
+                                    )->label('Tercer Disco Duro') ?>
+                                    <?= $form->field($model, 'DD3')->hiddenInput(['id' => 'dd3-desc-hidden'])->label(false) ?>
                                 </div>
                             </div>
 
                             <!-- DD4 aparece solo si DD3 está activado -->
-                            <div id="dd4-container" style="display: <?= (!empty($model->DD3) && $model->DD3 !== 'NO') ? 'block' : 'none' ?>;">
+                            <div id="dd4-container" style="display: <?= !empty($model->DD3_ID) ? 'block' : 'none' ?>;">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="tiene-dd4" <?= (!empty($model->DD4) && $model->DD4 !== 'NO') ? 'checked' : '' ?>>
+                                    <input class="form-check-input" type="checkbox" id="tiene-dd4" <?= !empty($model->DD4_ID) ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="tiene-dd4">
                                         <i class="fas fa-hdd me-2"></i>Cuarto disco duro
                                     </label>
                                 </div>
-                                <div id="dd4-field" style="display: <?= (!empty($model->DD4) && $model->DD4 !== 'NO') ? 'block' : 'none' ?>;">
-                                    <?= $form->field($model, 'DD4')->textInput(['maxlength' => true, 'placeholder' => 'Ej: 500GB SSD']) ?>
+                                <div id="dd4-field" style="display: <?= !empty($model->DD4_ID) ? 'block' : 'none' ?>;">
+                                    <?= $form->field($model, 'DD4_ID')->dropDownList(
+                                        yii\helpers\ArrayHelper::map($almacenamiento, 'idAlmacenamiento', function($model) {
+                                            return $model->MARCA . ' ' . $model->MODELO . ' (' . $model->CAPACIDAD . ' ' . $model->TIPO . ')';
+                                        }),
+                                        [
+                                            'prompt' => 'Selecciona cuarto almacenamiento',
+                                            'id' => 'dd4-select'
+                                        ]
+                                    )->label('Cuarto Disco Duro') ?>
+                                    <?= $form->field($model, 'DD4')->hiddenInput(['id' => 'dd4-desc-hidden'])->label(false) ?>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <?= $form->field($model, 'RAM')->textInput(['maxlength' => true]) ?>
+                            <?= $form->field($model, 'RAM_ID')->dropDownList(
+                                yii\helpers\ArrayHelper::map($memoriaRam, 'idRAM', function($model) {
+                                    return $model->MARCA . ' ' . $model->MODELO . ' (' . $model->CAPACIDAD . ')';
+                                }),
+                                [
+                                    'prompt' => 'Selecciona memoria RAM',
+                                    'id' => 'ram-select'
+                                ]
+                            )->label('RAM') ?>
+                            <?= $form->field($model, 'RAM')->hiddenInput(['id' => 'ram-desc-hidden'])->label(false) ?>
                             
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="tiene-ram2" <?= (!empty($model->RAM2) && $model->RAM2 !== 'NO') ? 'checked' : '' ?>>
+                                <input class="form-check-input" type="checkbox" id="tiene-ram2" <?= !empty($model->RAM2_ID) ? 'checked' : '' ?>>
                                 <label class="form-check-label" for="tiene-ram2">
                                     <i class="fas fa-memory me-2"></i>Segunda RAM
                                 </label>
                             </div>
-                            <div id="ram2-field" style="display: <?= (!empty($model->RAM2) && $model->RAM2 !== 'NO') ? 'block' : 'none' ?>;">
-                                <?= $form->field($model, 'RAM2')->textInput(['maxlength' => true, 'placeholder' => 'Ej: 8GB DDR4']) ?>
+                            <div id="ram2-field" style="display: <?= !empty($model->RAM2_ID) ? 'block' : 'none' ?>;">
+                                <?= $form->field($model, 'RAM2_ID')->dropDownList(
+                                    yii\helpers\ArrayHelper::map($memoriaRam, 'idRAM', function($model) {
+                                        return $model->MARCA . ' ' . $model->MODELO . ' (' . $model->CAPACIDAD . ')';
+                                    }),
+                                    [
+                                        'prompt' => 'Selecciona segunda RAM',
+                                        'id' => 'ram2-select'
+                                    ]
+                                )->label('Segunda RAM') ?>
+                                <?= $form->field($model, 'RAM2')->hiddenInput(['id' => 'ram2-desc-hidden'])->label(false) ?>
                             </div>
 
                             <!-- RAM3 aparece solo si RAM2 está activado -->
-                            <div id="ram3-container" style="display: <?= (!empty($model->RAM2) && $model->RAM2 !== 'NO') ? 'block' : 'none' ?>;">
+                            <div id="ram3-container" style="display: <?= !empty($model->RAM2_ID) ? 'block' : 'none' ?>;">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="tiene-ram3" <?= (!empty($model->RAM3) && $model->RAM3 !== 'NO') ? 'checked' : '' ?>>
+                                    <input class="form-check-input" type="checkbox" id="tiene-ram3" <?= !empty($model->RAM3_ID) ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="tiene-ram3">
                                         <i class="fas fa-memory me-2"></i>Tercera RAM
                                     </label>
                                 </div>
-                                <div id="ram3-field" style="display: <?= (!empty($model->RAM3) && $model->RAM3 !== 'NO') ? 'block' : 'none' ?>;">
-                                    <?= $form->field($model, 'RAM3')->textInput(['maxlength' => true, 'placeholder' => 'Ej: 4GB DDR4']) ?>
+                                <div id="ram3-field" style="display: <?= !empty($model->RAM3_ID) ? 'block' : 'none' ?>;">
+                                    <?= $form->field($model, 'RAM3_ID')->dropDownList(
+                                        yii\helpers\ArrayHelper::map($memoriaRam, 'idRAM', function($model) {
+                                            return $model->MARCA . ' ' . $model->MODELO . ' (' . $model->CAPACIDAD . ')';
+                                        }),
+                                        [
+                                            'prompt' => 'Selecciona tercera RAM',
+                                            'id' => 'ram3-select'
+                                        ]
+                                    )->label('Tercera RAM') ?>
+                                    <?= $form->field($model, 'RAM3')->hiddenInput(['id' => 'ram3-desc-hidden'])->label(false) ?>
                                 </div>
                             </div>
 
                             <!-- RAM4 aparece solo si RAM3 está activado -->
-                            <div id="ram4-container" style="display: <?= (!empty($model->RAM3) && $model->RAM3 !== 'NO') ? 'block' : 'none' ?>;">
+                            <div id="ram4-container" style="display: <?= !empty($model->RAM3_ID) ? 'block' : 'none' ?>;">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="tiene-ram4" <?= (!empty($model->RAM4) && $model->RAM4 !== 'NO') ? 'checked' : '' ?>>
+                                    <input class="form-check-input" type="checkbox" id="tiene-ram4" <?= !empty($model->RAM4_ID) ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="tiene-ram4">
                                         <i class="fas fa-memory me-2"></i>Cuarta RAM
                                     </label>
                                 </div>
-                                <div id="ram4-field" style="display: <?= (!empty($model->RAM4) && $model->RAM4 !== 'NO') ? 'block' : 'none' ?>;">
-                                    <?= $form->field($model, 'RAM4')->textInput(['maxlength' => true, 'placeholder' => 'Ej: 2GB DDR3']) ?>
+                                <div id="ram4-field" style="display: <?= !empty($model->RAM4_ID) ? 'block' : 'none' ?>;">
+                                    <?= $form->field($model, 'RAM4_ID')->dropDownList(
+                                        yii\helpers\ArrayHelper::map($memoriaRam, 'idRAM', function($model) {
+                                            return $model->MARCA . ' ' . $model->MODELO . ' (' . $model->CAPACIDAD . ')';
+                                        }),
+                                        [
+                                            'prompt' => 'Selecciona cuarta RAM',
+                                            'id' => 'ram4-select'
+                                        ]
+                                    )->label('Cuarta RAM') ?>
+                                    <?= $form->field($model, 'RAM4')->hiddenInput(['id' => 'ram4-desc-hidden'])->label(false) ?>
                                 </div>
                             </div>
                         </div>
@@ -160,7 +247,12 @@ $this->params['breadcrumbs'][] = $this->title;
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <?= $form->field($model, 'ubicacion_detalle')->textInput(['maxlength' => true]) ?>
+                            <?= $form->field($model, 'ubicacion_detalle')->textInput([
+                                'maxlength' => 255,
+                                'placeholder' => 'DETALLE DE UBICACIÓN',
+                                'style' => 'text-transform: uppercase;',
+                                'oninput' => 'this.value = this.value.toUpperCase()'
+                            ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                         </div>
                     </div>
 
@@ -329,6 +421,92 @@ function toggleRAM4() {
     }
 }
 
+// Función para actualizar campos ocultos cuando se selecciona un componente del dropdown
+function updateComponentSelection(componentType, id, text) {
+    // Actualizar campo oculto con el texto seleccionado
+    const hiddenField = document.getElementById(componentType + '-desc-hidden');
+    if (hiddenField) {
+        // Limpiar el texto de los emojis y espacios extras
+        let cleanText = text.replace(/[✅🔄⚠️]/g, '').trim();
+        hiddenField.value = cleanText;
+    }
+}
+
+// Event listeners para los dropdowns de componentes
+document.addEventListener('DOMContentLoaded', function() {
+    // CPU (Procesador)
+    const cpuSelect = document.getElementById('cpu-select');
+    if (cpuSelect) {
+        cpuSelect.addEventListener('change', function() {
+            updateComponentSelection('cpu', this.value, this.options[this.selectedIndex].text);
+        });
+    }
+    
+    // DD (Disco Duro principal)
+    const ddSelect = document.getElementById('dd-select');
+    if (ddSelect) {
+        ddSelect.addEventListener('change', function() {
+            updateComponentSelection('dd', this.value, this.options[this.selectedIndex].text);
+        });
+    }
+    
+    // DD2
+    const dd2Select = document.getElementById('dd2-select');
+    if (dd2Select) {
+        dd2Select.addEventListener('change', function() {
+            updateComponentSelection('dd2', this.value, this.options[this.selectedIndex].text);
+        });
+    }
+    
+    // DD3
+    const dd3Select = document.getElementById('dd3-select');
+    if (dd3Select) {
+        dd3Select.addEventListener('change', function() {
+            updateComponentSelection('dd3', this.value, this.options[this.selectedIndex].text);
+        });
+    }
+    
+    // DD4
+    const dd4Select = document.getElementById('dd4-select');
+    if (dd4Select) {
+        dd4Select.addEventListener('change', function() {
+            updateComponentSelection('dd4', this.value, this.options[this.selectedIndex].text);
+        });
+    }
+    
+    // RAM
+    const ramSelect = document.getElementById('ram-select');
+    if (ramSelect) {
+        ramSelect.addEventListener('change', function() {
+            updateComponentSelection('ram', this.value, this.options[this.selectedIndex].text);
+        });
+    }
+    
+    // RAM2
+    const ram2Select = document.getElementById('ram2-select');
+    if (ram2Select) {
+        ram2Select.addEventListener('change', function() {
+            updateComponentSelection('ram2', this.value, this.options[this.selectedIndex].text);
+        });
+    }
+    
+    // RAM3
+    const ram3Select = document.getElementById('ram3-select');
+    if (ram3Select) {
+        ram3Select.addEventListener('change', function() {
+            updateComponentSelection('ram3', this.value, this.options[this.selectedIndex].text);
+        });
+    }
+    
+    // RAM4
+    const ram4Select = document.getElementById('ram4-select');
+    if (ram4Select) {
+        ram4Select.addEventListener('change', function() {
+            updateComponentSelection('ram4', this.value, this.options[this.selectedIndex].text);
+        });
+    }
+});
+
 // Event listeners para los checkboxes
 document.getElementById('tiene-dd2').addEventListener('change', toggleDD2);
 document.getElementById('tiene-dd3').addEventListener('change', toggleDD3);
@@ -339,40 +517,93 @@ document.getElementById('tiene-ram4').addEventListener('change', toggleRAM4);
 
 // Configuración inicial de la página basada en valores existentes
 document.addEventListener('DOMContentLoaded', function() {
-    // Configurar DD2-DD4
-    const dd2Value = document.querySelector('input[name="Equipo[DD2]"]').value;
-    const dd3Value = document.querySelector('input[name="Equipo[DD3]"]').value;
-    const dd4Value = document.querySelector('input[name="Equipo[DD4]"]').value;
-    
-    if (dd2Value && dd2Value !== 'NO') {
-        document.getElementById('tiene-dd2').checked = true;
-        toggleDD2();
-    }
-    if (dd3Value && dd3Value !== 'NO') {
-        document.getElementById('tiene-dd3').checked = true;
-        toggleDD3();
-    }
-    if (dd4Value && dd4Value !== 'NO') {
-        document.getElementById('tiene-dd4').checked = true;
-        toggleDD4();
+    // Sincronizar valores de los dropdowns con los campos ocultos al cargar
+    const cpuSelect = document.getElementById('cpu-select');
+    if (cpuSelect && cpuSelect.value) {
+        updateComponentSelection('cpu', cpuSelect.value, cpuSelect.options[cpuSelect.selectedIndex].text);
     }
     
-    // Configurar RAM2-RAM4
-    const ram2Value = document.querySelector('input[name="Equipo[RAM2]"]').value;
-    const ram3Value = document.querySelector('input[name="Equipo[RAM3]"]').value;
-    const ram4Value = document.querySelector('input[name="Equipo[RAM4]"]').value;
+    const ddSelect = document.getElementById('dd-select');
+    if (ddSelect && ddSelect.value) {
+        updateComponentSelection('dd', ddSelect.value, ddSelect.options[ddSelect.selectedIndex].text);
+    }
     
-    if (ram2Value && ram2Value !== 'NO') {
-        document.getElementById('tiene-ram2').checked = true;
-        toggleRAM2();
+    const dd2Select = document.getElementById('dd2-select');
+    if (dd2Select && dd2Select.value) {
+        updateComponentSelection('dd2', dd2Select.value, dd2Select.options[dd2Select.selectedIndex].text);
     }
-    if (ram3Value && ram3Value !== 'NO') {
-        document.getElementById('tiene-ram3').checked = true;
-        toggleRAM3();
+    
+    const dd3Select = document.getElementById('dd3-select');
+    if (dd3Select && dd3Select.value) {
+        updateComponentSelection('dd3', dd3Select.value, dd3Select.options[dd3Select.selectedIndex].text);
     }
-    if (ram4Value && ram4Value !== 'NO') {
-        document.getElementById('tiene-ram4').checked = true;
-        toggleRAM4();
+    
+    const dd4Select = document.getElementById('dd4-select');
+    if (dd4Select && dd4Select.value) {
+        updateComponentSelection('dd4', dd4Select.value, dd4Select.options[dd4Select.selectedIndex].text);
+    }
+    
+    const ramSelect = document.getElementById('ram-select');
+    if (ramSelect && ramSelect.value) {
+        updateComponentSelection('ram', ramSelect.value, ramSelect.options[ramSelect.selectedIndex].text);
+    }
+    
+    const ram2Select = document.getElementById('ram2-select');
+    if (ram2Select && ram2Select.value) {
+        updateComponentSelection('ram2', ram2Select.value, ram2Select.options[ram2Select.selectedIndex].text);
+    }
+    
+    const ram3Select = document.getElementById('ram3-select');
+    if (ram3Select && ram3Select.value) {
+        updateComponentSelection('ram3', ram3Select.value, ram3Select.options[ram3Select.selectedIndex].text);
+    }
+    
+    const ram4Select = document.getElementById('ram4-select');
+    if (ram4Select && ram4Select.value) {
+        updateComponentSelection('ram4', ram4Select.value, ram4Select.options[ram4Select.selectedIndex].text);
+    }
+    
+    // Los checkboxes ya vienen marcados desde PHP, solo necesitamos asegurar que los contenedores
+    // estén visibles correctamente basándonos en si los checkboxes están marcados
+    
+    // Verificar DD2 - si el checkbox está marcado, asegurar visibilidad
+    const dd2Checkbox = document.getElementById('tiene-dd2');
+    if (dd2Checkbox && dd2Checkbox.checked) {
+        document.getElementById('dd2-field').style.display = 'block';
+        document.getElementById('dd3-container').style.display = 'block';
+    }
+    
+    // Verificar DD3 - si el checkbox está marcado, asegurar visibilidad
+    const dd3Checkbox = document.getElementById('tiene-dd3');
+    if (dd3Checkbox && dd3Checkbox.checked) {
+        document.getElementById('dd3-field').style.display = 'block';
+        document.getElementById('dd4-container').style.display = 'block';
+    }
+    
+    // Verificar DD4 - si el checkbox está marcado, asegurar visibilidad
+    const dd4Checkbox = document.getElementById('tiene-dd4');
+    if (dd4Checkbox && dd4Checkbox.checked) {
+        document.getElementById('dd4-field').style.display = 'block';
+    }
+    
+    // Verificar RAM2 - si el checkbox está marcado, asegurar visibilidad
+    const ram2Checkbox = document.getElementById('tiene-ram2');
+    if (ram2Checkbox && ram2Checkbox.checked) {
+        document.getElementById('ram2-field').style.display = 'block';
+        document.getElementById('ram3-container').style.display = 'block';
+    }
+    
+    // Verificar RAM3 - si el checkbox está marcado, asegurar visibilidad
+    const ram3Checkbox = document.getElementById('tiene-ram3');
+    if (ram3Checkbox && ram3Checkbox.checked) {
+        document.getElementById('ram3-field').style.display = 'block';
+        document.getElementById('ram4-container').style.display = 'block';
+    }
+    
+    // Verificar RAM4 - si el checkbox está marcado, asegurar visibilidad
+    const ram4Checkbox = document.getElementById('tiene-ram4');
+    if (ram4Checkbox && ram4Checkbox.checked) {
+        document.getElementById('ram4-field').style.display = 'block';
     }
 });
 
@@ -493,3 +724,9 @@ function mostrarNotificacionTemporal(mensaje) {
 
 <!-- Sistema de confirmación de guardado -->
 <script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
+
+<?php
+// Registrar el script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+$this->registerJs("inicializarValidacionDuplicados('Equipo', " . $model->idEQUIPO . ");", \yii\web\View::POS_READY);
+?>

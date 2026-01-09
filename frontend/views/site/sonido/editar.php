@@ -75,7 +75,12 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                             <?= $form->field($model, 'ubicacion_edificio')->dropDownList(Sonido::getEdificios(), ['prompt' => 'Selecciona Edificio']) ?>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <?= $form->field($model, 'ubicacion_detalle')->textInput(['maxlength' => true, 'placeholder' => 'Detalle de ubicación']) ?>
+                            <?= $form->field($model, 'ubicacion_detalle')->textInput([
+                                'maxlength' => 255,
+                                'placeholder' => 'DETALLE DE UBICACIÓN',
+                                'style' => 'text-transform: uppercase;',
+                                'oninput' => 'this.value = this.value.toUpperCase()'
+                            ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                         </div>
                     </div>
                     <div class="row">

@@ -229,6 +229,7 @@ $this->registerCss("
                                     <th>N° Serie</th>
                                     <th>N° Inventario</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Estado</th>
                                     <th>Emisión</th>
                                     <th>Ubicación</th>
@@ -241,7 +242,7 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="10" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="11" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -252,15 +253,15 @@ $this->registerCss("
                                                 <td class="serie-cell" title="N° Serie: <?= Html::encode($item->NUMERO_SERIE) ?>"><?= Html::encode($item->NUMERO_SERIE) ?></td>
                                                 <td class="inventario-cell" title="N° Inventario: <?= Html::encode($item->NUMERO_INVENTARIO) ?>"><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td class="descripcion-cell" title="Descripción: <?= Html::encode($item->DESCRIPCION) ?>"><?= Html::encode($item->DESCRIPCION) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                                 <td title="Estado: <?= Html::encode($item->Estado) ?>"><?= Html::encode($item->Estado) ?></td>
                                                 <td title="Emisión: <?= Html::encode($item->EMISION_INVENTARIO) ?>"><?= Html::encode($item->EMISION_INVENTARIO) ?></td>
                                                 <td class="ubicacion-cell" title="Ubicación: <?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?>"><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
-                                                <td><?= Html::encode($item->Estado) ?></td>
                                             </tr>
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="9" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="10" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -305,6 +306,7 @@ $this->registerCss("
                                     <th>Estado</th>
                                     <th>Edificio</th>
                                     <th>Ubicación Detalle</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Fecha Creación</th>
                                 </tr>
                             </thead>
@@ -315,7 +317,7 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="13" class="text-center">No hay fuentes de poder dadas de baja</td></tr>';
+                                        echo '<tr><td colspan="14" class="text-center">No hay fuentes de poder dadas de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -331,12 +333,13 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->ESTADO) ?></td>
                                                 <td><?= Html::encode($item->ubicacion_edificio) ?></td>
                                                 <td><?= Html::encode($item->ubicacion_detalle) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                                 <td><?= Html::encode($item->fecha_creacion) ?></td>
                                             </tr>
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="13" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="14" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -389,6 +392,7 @@ $this->registerCss("
                                     <th>Tipo Equipo</th>
                                     <th>Ubicación</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -398,7 +402,7 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="19" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="20" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -421,14 +425,12 @@ $this->registerCss("
                                                 <td title="Tipo: <?= Html::encode($item->tipoequipo) ?>"><?= Html::encode($item->tipoequipo) ?></td>
                                                 <td class="ubicacion-cell" title="Ubicación: <?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?>"><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
                                                 <td class="descripcion-cell" title="Descripción: <?= Html::encode($item->descripcion) ?>"><?= Html::encode($item->descripcion) ?></td>
-                                                <td><?= Html::encode($item->EMISION_INVENTARIO) ?></td>
-                                                <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
-                                                <td><?= Html::encode($item->Estado) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                             </tr>
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="12" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="13" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -467,9 +469,11 @@ $this->registerCss("
                                     <th>N° Inventario</th>
                                     <th>Emisión</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Estado</th>
                                     <th>Propiedad</th>
                                     <th>Ubicación</th>
+                                    <th>Fecha de Baja</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -479,7 +483,7 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="11" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="12" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -491,6 +495,7 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->EMISION_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->DESCRIPCION) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                                 <td><?= Html::encode($item->Estado) ?></td>
                                                 <td><?= Html::encode($item->propia_rentada) ?></td>
                                                 <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
@@ -499,7 +504,7 @@ $this->registerCss("
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="10" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="11" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -541,6 +546,7 @@ $this->registerCss("
                                     <th>N° Inventario</th>
                                     <th>Emisión</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Estado</th>
                                     <th>Ubicación</th>
                                     <th>Tamaño</th>
@@ -553,7 +559,7 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="14" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="15" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -568,6 +574,7 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->EMISION_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->DESCRIPCION) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                                 <td><?= Html::encode($item->ESTADO) ?></td>
                                                 <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
                                                 <td><?= Html::encode($item->TAMANIO) ?></td>
@@ -579,7 +586,7 @@ $this->registerCss("
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="11" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="12" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -625,6 +632,7 @@ $this->registerCss("
                                     <th>N° Inventario</th>
                                     <th>Emisión</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Ubicación</th>
                                 </tr>
                             </thead>
@@ -654,6 +662,7 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->EMISION_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->DESCRIPCION) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                                 <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
                                                 <td><?= Html::encode($item->VOLTAJE) ?></td>
                                                 <td><?= Html::encode($item->POTENCIA_WATTS) ?></td>
@@ -664,7 +673,7 @@ $this->registerCss("
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="11" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="12" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -706,6 +715,7 @@ $this->registerCss("
                                     <th>Recargable</th>
                                     <th>N° Inventario</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Estado</th>
                                     <th>Fecha</th>
                                     <th>Fecha Vencimiento</th>
@@ -722,7 +732,7 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="18" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="19" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -737,6 +747,7 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->RECARGABLE ? 'Sí' : 'No') ?></td>
                                                 <td><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->DESCRIPCION) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                                 <td><?= Html::encode($item->ESTADO) ?></td>
                                                 <td><?= Html::encode($item->FECHA) ?></td>
                                                 <td><?= Html::encode($item->FECHA_VENCIMIENTO) ?></td>
@@ -753,7 +764,7 @@ $this->registerCss("
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="12" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="13" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -793,6 +804,7 @@ $this->registerCss("
                                     <th>Interfaz</th>
                                     <th>N° Serie</th>
                                     <th>Ubicación</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Estado</th>
                                 </tr>
                             </thead>
@@ -803,7 +815,7 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="10" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="11" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -816,12 +828,13 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->INTERFAZ) ?></td>
                                                 <td><?= Html::encode($item->NUMERO_SERIE) ?></td>
                                                 <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                                 <td><?= Html::encode($item->ESTADO) ?></td>
                                             </tr>
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="10" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="11" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -863,6 +876,7 @@ $this->registerCss("
                                     <th>N° Serie</th>
                                     <th>N° Inventario</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Ubicación</th>
                                 </tr>
                             </thead>
@@ -873,7 +887,7 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="12" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="13" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -888,16 +902,12 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->numero_serie) ?></td>
                                                 <td><?= Html::encode($item->numero_inventario) ?></td>
                                                 <td><?= Html::encode($item->Descripcion) ?></td>
-                                                <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
-                                                <td><?= Html::encode($item->TIPO_INTERFAZ) ?></td>
-                                                <td><?= Html::encode($item->numero_serie) ?></td>
-                                                <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
-                                                <td><?= Html::encode($item->ESTADO) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                             </tr>
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="10" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="11" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -937,6 +947,7 @@ $this->registerCss("
                                     <th>N° Serie</th>
                                     <th>N° Inventario</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Estado</th>
                                     <th>Fecha</th>
                                     <th>Ubicación</th>
@@ -949,7 +960,7 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="12" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="13" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -962,6 +973,7 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->NUMERO_SERIE) ?></td>
                                                 <td><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->DESCRIPCION) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                                 <td><?= Html::encode($item->ESTADO) ?></td>
                                                 <td><?= Html::encode($item->FECHA) ?></td>
                                                 <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
@@ -972,7 +984,7 @@ $this->registerCss("
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="10" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="11" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -1012,6 +1024,7 @@ $this->registerCss("
                                     <th>N° Serie</th>
                                     <th>N° Inventario</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Estado</th>
                                     <th>Fecha</th>
                                     <th>Ubicación</th>
@@ -1024,7 +1037,7 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="12" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="13" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -1037,6 +1050,7 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->NUMERO_SERIE) ?></td>
                                                 <td><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->DESCRIPCION) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                                 <td><?= Html::encode($item->Estado) ?></td>
                                                 <td><?= Html::encode($item->fecha) ?></td>
                                                 <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
@@ -1045,7 +1059,7 @@ $this->registerCss("
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="9" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="10" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                     Yii::error("Error en la sección de procesadores: " . $e->getMessage());
                                 }
                                 ?>
@@ -1085,9 +1099,7 @@ $this->registerCss("
                                     <th>N° Inventario</th>
                                     <th>Cantidad Puertos</th>
                                     <th>Descripción</th>
-                                    <th>Estado</th>
-                                    <th>Ubicación</th>
-                                    <th>Fecha</th>
+                                    <th>Fecha de Baja</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1097,7 +1109,7 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="11" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="9" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -1109,15 +1121,12 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->CANTIDAD_PUERTOS) ?></td>
                                                 <td><?= Html::encode($item->DESCRIPCION) ?></td>
-                                                <td><?= Html::encode($item->Estado) ?></td>
-                                                <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
-                                                <td><?= Html::encode($item->fecha) ?></td>
-                                                <td><?= Html::encode($item->Estado) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                             </tr>
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="8" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="9" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -1159,6 +1168,7 @@ $this->registerCss("
                                     <th>Tiempo Transcurrido</th>
                                     <th>Fecha</th>
                                     <th>Ubicación</th>
+                                    <th>Fecha de Baja</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1168,7 +1178,7 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="11" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="12" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -1224,6 +1234,7 @@ $this->registerCss("
                                     <th>N° Serie</th>
                                     <th>N° Inventario</th>
                                     <th>Descripción</th>
+                                    <th>Fecha de Baja</th>
                                     <th>Tipo Cámara</th>
                                     <th>Edificio</th>
                                     <th>Estado</th>
@@ -1241,7 +1252,7 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="14" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="15" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
@@ -1251,19 +1262,12 @@ $this->registerCss("
                                                 <td><?= Html::encode($item->NUMERO_SERIE) ?></td>
                                                 <td><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->DESCRIPCION) ?></td>
-                                                <td><?= Html::encode($item->tipo_camara) ?></td>
-                                                <td><?= Html::encode($item->EDIFICIO) ?></td>
-                                                <td><?= Html::encode($item->ESTADO) ?></td>
-                                                <td><?= Html::encode($item->ubicacion_edificio . ' - ' . $item->ubicacion_detalle) ?></td>
-                                                <td><?= Html::encode($item->EMISION_INVENTARIO) ?></td>
-                                                <td><?= Html::encode($item->TIEMPO_TRANSCURRIDO) ?></td>
-                                                <td><?= Html::encode($item->VIDEO_VIGILANCIA_COL) ?></td>
-                                                <td><?= Html::encode($item->fecha) ?></td>
+                                                <td><?= Html::encode(isset($item->fecha_ultima_edicion) && $item->fecha_ultima_edicion ? date('Y-m-d', strtotime($item->fecha_ultima_edicion)) : 'N/A') ?></td>
                                             </tr>
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="9" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="10" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>

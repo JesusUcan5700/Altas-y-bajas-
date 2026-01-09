@@ -43,7 +43,10 @@ $this->registerCss("
                 </div>
                 <div class="card-body p-4">
                     
-                    <?php $form = ActiveForm::begin(['id' => 'nobreak-form']); ?>
+                    <?php $form = ActiveForm::begin([
+                        'id' => 'nobreak-form',
+                        'enableClientValidation' => true,
+                    ]); ?>
                     
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -68,10 +71,16 @@ $this->registerCss("
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'NUMERO_SERIE')->textInput(['placeholder' => 'Serie del fabricante']) ?>
+                                <?= $form->field($model, 'NUMERO_SERIE', [
+                                    'enableClientValidation' => false,
+                                    'enableAjaxValidation' => false
+                                ])->textInput(['placeholder' => 'Serie del fabricante']) ?>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'NUMERO_INVENTARIO')->textInput(['placeholder' => 'Código interno']) ?>
+                                <?= $form->field($model, 'NUMERO_INVENTARIO', [
+                                    'enableClientValidation' => false,
+                                    'enableAjaxValidation' => false
+                                ])->textInput(['placeholder' => 'Código interno']) ?>
                             </div>
                         </div>
                         
@@ -83,10 +92,12 @@ $this->registerCss("
                                 ) ?>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'ubicacion_detalle')->dropDownList(
-                                    $model::getUbicacionesDetalle(),
-                                    ['prompt' => 'Seleccionar ubicación']
-                                ) ?>
+                                <?= $form->field($model, 'ubicacion_detalle')->textInput([
+                                    'maxlength' => 255,
+                                    'placeholder' => 'Ej: SALA DE SERVIDORES, OFICINA 301, ETC.',
+                                    'style' => 'text-transform: uppercase;',
+                                    'oninput' => 'this.value = this.value.toUpperCase()'
+                                ])->hint('Escriba la ubicación (se convertirá automáticamente a MAYÚSCULAS)') ?>
                             </div>
                         </div>
                         
@@ -125,3 +136,12 @@ $this->registerCss("
         </div>
     </div>
 </div>
+
+<?php
+// Registrar SweetAlert2
+$this->registerJsFile('https://cdn.jsdelivr.net/npm/sweetalert2@11', ['position' => \yii\web\View::POS_HEAD]);
+
+// Registrar el script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+$this->registerJs("inicializarValidacionDuplicados('Nobreak');", \yii\web\View::POS_READY);
+?>

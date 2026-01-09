@@ -72,7 +72,8 @@ class Telefonia extends \yii\db\ActiveRecord
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
-            [['NUMERO_SERIE'], 'unique'],
+            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro equipo de telefonía.'],
+            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro equipo de telefonía.'],
             [['NUMERO_INVENTARIO'], 'unique'],
             [['ESTADO'], 'in', 'range' => [
                 self::ESTADO_ACTIVO, 

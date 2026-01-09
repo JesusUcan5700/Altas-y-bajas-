@@ -24,14 +24,8 @@ $this->title = 'Editar Fuente de Poder';
     <?= $form->field($model, 'NUMERO_SERIE')->textInput() ?>
     <?= $form->field($model, 'NUMERO_INVENTARIO')->textInput() ?>
     <?= $form->field($model, 'DESCRIPCION')->textarea() ?>
-    <?= $form->field($model, 'ESTADO')->dropDownList([
-        'Activo' => 'Activo',
-        'Inactivo(Sin Asignar)' => 'Inactivo(Sin Asignar)',
-        'dañado(Proceso de baja)' => 'dañado(Proceso de baja)',
-        'En Mantenimiento' => 'En Mantenimiento',
-        'BAJA' => 'BAJA',
-    ], ['prompt'=>'Seleccionar estado']) ?>
-    <?= $form->field($model, 'ubicacion_edificio')->dropDownList(array_combine(range('A','Z'), range('A','Z')), ['prompt'=>'Seleccionar edificio']) ?>
+    <?= $form->field($model, 'ESTADO')->dropDownList(frontend\models\FuentesDePoder::getEstados(), ['prompt'=>'Seleccionar estado']) ?>
+    <?= $form->field($model, 'ubicacion_edificio')->dropDownList(frontend\models\FuentesDePoder::getEdificios(), ['prompt'=>'Selecciona Edificio']) ?>
     <?= $form->field($model, 'ubicacion_detalle')->textInput() ?>
     <div class="form-group">
         <?= Html::submitButton('Guardar Cambios', ['class' => 'btn btn-primary']) ?>

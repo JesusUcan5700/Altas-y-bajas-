@@ -3,16 +3,24 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 /** @var yii\web\View $this */
 /** @var frontend\models\Nobreak $model */
-$this->title = 'Agregar Nuevo No Break';
+/** @var bool $modoSimplificado */
+
+$modoSimplificado = isset($modoSimplificado) ? $modoSimplificado : false;
+$this->title = $modoSimplificado ? 'Agregar No Break (Catálogo)' : 'Agregar Nuevo No Break';
 ?>
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card">
-                <div class="card-header bg-danger text-white">
+                <div class="card-header bg-warning text-dark">
                     <h3 class="mb-0">
-                        <i class="fas fa-battery-full me-2"></i><?= Html::encode($this->title) ?>
+                        <i class="fas fa-battery-half me-2"></i><?= Html::encode($this->title) ?>
                     </h3>
+                    <?php if ($modoSimplificado): ?>
+                        <small class="d-block mt-1 text-white">
+                            <i class="fas fa-info-circle me-1"></i>Modo catálogo: Solo se requieren marca y modelo
+                        </small>
+                    <?php endif; ?>
                 </div>
                 <div class="card-body">
                     <?php if (Yii::$app->session->hasFlash('success')): ?>
@@ -28,6 +36,40 @@ $this->title = 'Agregar Nuevo No Break';
                         </div>
                     <?php endif; ?>
                     <?php $form = ActiveForm::begin(); ?>
+                    
+                    <?php if ($modoSimplificado): ?>
+                        <!-- MODO CATÁLOGO: Solo marca y modelo -->
+                        <div class="alert alert-info" role="alert">
+                            <h5><i class="fas fa-info-circle me-2"></i>Modo Catálogo</h5>
+                            Este No Break se guardará SOLO con marca y modelo para uso en catálogo.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <?= $form->field($model, 'MARCA')->dropDownList([
+                                    '' => 'Selecciona una marca',
+                                    'APC' => 'APC',
+                                    'Tripp Lite' => 'Tripp Lite',
+                                    'CyberPower' => 'CyberPower',
+                                    'Eaton' => 'Eaton',
+                                    'Forza' => 'Forza',
+                                    'Schneider Electric' => 'Schneider Electric',
+                                    'Vertiv' => 'Vertiv',
+                                    'Otra' => 'Otra',
+                                ], ['class' => 'form-select']) ?>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <?= $form->field($model, 'MODELO')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                            <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar en Catálogo', ['class' => 'btn btn-warning btn-lg']) ?>
+                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver', ['site/nobreak-catalogo-listar'], ['class' => 'btn btn-secondary btn-lg']) ?>
+                        </div>
+                        
+                    <?php else: ?>
+                        <!-- MODO COMPLETO: Todos los campos -->
                     <div class="row">
                         <div class="col-md-6">
                             <?= $form->field($model, 'MARCA')->dropDownList([
@@ -58,43 +100,14 @@ $this->title = 'Agregar Nuevo No Break';
                                 'value' => date('Y-m-d'),
                                 'class' => 'form-control'
                             ]) ?>
-                            <?= $form->field($model, 'ubicacion_edificio')->dropDownList([
-                                '' => 'Selecciona un edificio',
-                                'Edificio A' => 'Edificio A',
-                                'Edificio B' => 'Edificio B',
-                                'Edificio C' => 'Edificio C',
-                                'Edificio D' => 'Edificio D',
-                                'Edificio E' => 'Edificio E',
-                                'Edificio F' => 'Edificio F',
-                                'Edificio G' => 'Edificio G',
-                                'Edificio H' => 'Edificio H',
-                                'Edificio I' => 'Edificio I',
-                                'Edificio J' => 'Edificio J',
-                                'Edificio K' => 'Edificio K',
-                                'Edificio L' => 'Edificio L',
-                                'Edificio M' => 'Edificio M',
-                                'Edificio N' => 'Edificio N',
-                                'Edificio O' => 'Edificio O',
-                                'Edificio P' => 'Edificio P',
-                                'Edificio Q' => 'Edificio Q',
-                                'Edificio R' => 'Edificio R',
-                                'Edificio S' => 'Edificio S',
-                                'Edificio T' => 'Edificio T',
-                                'Edificio U' => 'Edificio U',
-                                'Edificio V' => 'Edificio V',
-                                'Edificio W' => 'Edificio W',
-                                'Edificio X' => 'Edificio X',
-                                'Edificio Y' => 'Edificio Y',
-                                'Edificio Z' => 'Edificio Z',
-                                'Oficina Central' => 'Oficina Central',
-                                'Almacén Principal' => 'Almacén Principal',
-                                'Centro de Datos' => 'Centro de Datos',
-                            ], ['class' => 'form-select']) ?>
+                            <?= $form->field($model, 'ubicacion_edificio')->dropDownList(frontend\models\Nobreak::getUbicacionesEdificio(), ['prompt' => 'Selecciona Edificio', 'class' => 'form-select']) ?>
                             <?= $form->field($model, 'ubicacion_detalle')->textInput([
                                 'maxlength' => 255,
-                                'placeholder' => 'Ej: Sala de Servidores, Piso 3, Oficina 301, etc.',
-                                'class' => 'form-control'
-                            ])->hint('Descripción específica de la ubicación dentro del edificio') ?>
+                                'placeholder' => 'Ej: SALA DE SERVIDORES, PISO 3, OFICINA 301, ETC.',
+                                'class' => 'form-control',
+                                'style' => 'text-transform: uppercase;',
+                                'oninput' => 'this.value = this.value.toUpperCase()'
+                            ])->hint('Descripción específica de la ubicación dentro del edificio (se escribirá en MAYÚSCULAS)') ?>
                         </div>
                     </div>
                     <div class="row">
@@ -124,6 +137,7 @@ $this->title = 'Agregar Nuevo No Break';
                             'class' => 'btn btn-danger'
                         ]) ?>
                     </div>
+                    <?php endif; ?>
                     <?php ActiveForm::end(); ?>
                 </div>
             </div>

@@ -8,6 +8,12 @@ use yii\helpers\Html;
 $this->title = 'Gestión de Almacenamiento';
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 
+// Registrar scripts de jsPDF para exportar a PDF
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', ['position' => \yii\web\View::POS_HEAD]);
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js', ['position' => \yii\web\View::POS_HEAD]);
+// Registrar script de QRious para generación de códigos QR
+$this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js', ['position' => \yii\web\View::POS_HEAD]);
+
 // Agregar estilos
 $this->registerCss("
     .equipment-header {
@@ -68,7 +74,7 @@ $this->registerCss("
                             <?php endif; ?>
                         </div>
                         <div class="col-md-6 text-end">
-                            <a href="<?= \yii\helpers\Url::to(['site/index']) ?>" class="btn btn-secondary btn-equipment">
+                            <a href="<?= \yii\helpers\Url::to(['site/index']) ?>" class="btn btn-secondary btn-equipment me-2">
                                 <i class="fas fa-arrow-left me-2"></i>Volver al Menú
                             </a>
                         </div>
@@ -104,18 +110,26 @@ $this->registerCss("
                     </div>
                     <?php endif; ?>
 
-                    <!-- Barra de búsqueda -->
-                    <div class="row mb-3">
-                        <div class="col-md-8">
+                    <!-- Barra de búsqueda y acciones -->
+                    <div class="row mb-3 align-items-center">
+                        <div class="col-md-5">
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-search"></i></span>
                                 <input type="text" class="form-control" id="buscar_almacenamiento" placeholder="Buscar por marca, modelo, tipo, capacidad...">
                             </div>
                         </div>
-                        <div class="col-md-4 text-end">
-                            <button type="button" id="deleteSelectedStorage" class="btn btn-danger" onclick="deleteSelectedStorages()" style="display: none;">
-                                <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
-                            </button>
+                        <div class="col-md-7">
+                            <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                <button type="button" class="btn btn-primary" onclick="exportarPDF()">
+                                    <i class="fas fa-file-pdf me-1"></i>Exportar PDF
+                                </button>
+                                <button type="button" id="deleteSelectedStorage" class="btn btn-danger" onclick="deleteSelectedStorages()">
+                                    <i class="fas fa-trash me-1"></i>Eliminar Seleccionados
+                                </button>
+                                <button type="button" class="btn" style="background-color: #6f42c1; color: white;" onclick="descargarQRSeleccionados()">
+                                    <i class="fas fa-qrcode me-1"></i>Descargar QR
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -135,7 +149,8 @@ $this->registerCss("
                                     <th>Interfaz</th>
                                     <th>N° Serie</th>
                                     <th>Estado</th>
-                                    <th>Ubicación</th>
+                                    <th>Ubicación Edificio</th>
+                                    <th>Ubicación Detalle</th>
                                     <th><i class="fas fa-clock me-1"></i>Tiempo Activo</th>
                                     <th><i class="fas fa-user me-1"></i>Último Editor</th>
                                     <th>Acciones</th>
@@ -144,19 +159,19 @@ $this->registerCss("
                             <tbody id="tbody_almacenamiento">
                                 <?php if (empty($almacenamientos) && !$error): ?>
                                     <tr>
-                                        <td colspan="12" class="text-center text-muted">
+                                        <td colspan="14" class="text-center text-muted">
                                             <i class="fas fa-info-circle"></i> No hay dispositivos de almacenamiento registrados en el sistema. Por favor, agregue algunos equipos para comenzar.
                                         </td>
                                     </tr>
                                 <?php elseif ($error): ?>
                                     <tr>
-                                        <td colspan="12" class="text-center text-danger">
+                                        <td colspan="14" class="text-center text-danger">
                                             <i class="fas fa-exclamation-triangle"></i> Error al cargar los datos: <?= Html::encode($error) ?>
                                         </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($almacenamientos as $almacenamiento): ?>
-                                        <tr>
+                                        <tr data-id="<?= $almacenamiento->idAlmacenamiento ?>" data-marca="<?= Html::encode($almacenamiento->MARCA ?? '') ?>" data-modelo="<?= Html::encode($almacenamiento->MODELO ?? '') ?>" data-tipo="<?= Html::encode($almacenamiento->TIPO ?? '') ?>">
                                             <td>
                                                 <input type="checkbox" class="storage-checkbox" value="<?= $almacenamiento->idAlmacenamiento ?>" onchange="updateStorageDeleteButton()">
                                             </td>
@@ -201,12 +216,8 @@ $this->registerCss("
                                                 ?>
                                                 <span class="badge <?= $badgeClass ?>"><?= Html::encode($almacenamiento->ESTADO ?? '-') ?></span>
                                             </td>
-                                            <td>
-                                                <small><?= Html::encode($almacenamiento->ubicacion_edificio ?? '-') ?></small>
-                                                <?php if ($almacenamiento->ubicacion_detalle): ?>
-                                                    <br><small class="text-muted"><?= Html::encode($almacenamiento->ubicacion_detalle) ?></small>
-                                                <?php endif; ?>
-                                            </td>
+                                            <td><?= Html::encode($almacenamiento->ubicacion_edificio ?? '-') ?></td>
+                                            <td><?= Html::encode($almacenamiento->ubicacion_detalle ?? '-') ?></td>
                                             <td>
                                                 <span class="text-success fw-bold">
                                                     <i class="fas fa-hourglass-half me-1"></i>
@@ -231,9 +242,9 @@ $this->registerCss("
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <button class="btn btn-sm btn-info" onclick="verDetalles(<?= $almacenamiento->idAlmacenamiento ?>)" title="Ver detalles">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
+                                                    <?= Html::a('<i class="fas fa-eye"></i>', 
+                                                        ['site/almacenamiento-ver', 'id' => $almacenamiento->idAlmacenamiento], 
+                                                        ['class' => 'btn btn-sm btn-info me-1', 'title' => 'Ver']) ?>
                                                     <?= Html::a('<i class="fas fa-edit"></i>', 
                                                         ['site/almacenamiento-editar', 'id' => $almacenamiento->idAlmacenamiento], 
                                                         ['class' => 'btn btn-sm btn-success me-1', 'title' => 'Editar']) ?>
@@ -259,17 +270,39 @@ $this->registerJs("
 // Datos de Almacenamiento
 let almacenamientoData = " . json_encode($almacenamientos, JSON_HEX_TAG|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE) . ";
 
-// Función de búsqueda
-document.getElementById('buscar_almacenamiento').addEventListener('input', function() {
-    const filtro = this.value.toLowerCase().trim();
-    const filas = document.querySelectorAll('#tbody_almacenamiento tr');
+// Función de búsqueda mejorada
+function buscarAlmacenamientos() {
+    const input = document.getElementById('buscar_almacenamiento');
+    const filtro = input.value.toLowerCase().trim();
+    const tbody = document.getElementById('tbody_almacenamiento');
+    const filas = tbody.getElementsByTagName('tr');
     
-    filas.forEach(fila => {
-        if (fila.cells && fila.cells.length >= 10) {
-            const texto = fila.textContent.toLowerCase();
-            fila.style.display = filtro === '' || texto.includes(filtro) ? '' : 'none';
+    Array.from(filas).forEach(fila => {
+        if (filtro === '') {
+            fila.style.display = '';
+            return;
         }
+        
+        let encontrado = false;
+        const celdas = fila.cells;
+        
+        for (let i = 0; i < celdas.length; i++) {
+            const textoCelda = celdas[i].textContent.toLowerCase();
+            if (textoCelda.includes(filtro)) {
+                encontrado = true;
+                break;
+            }
+        }
+        
+        fila.style.display = encontrado ? '' : 'none';
     });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const inputBusqueda = document.getElementById('buscar_almacenamiento');
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener('input', buscarAlmacenamientos);
+    }
 });
 
 // Función para ver detalles
@@ -296,6 +329,72 @@ function verDetalles(id) {
 console.log('✅ Sistema de Almacenamiento cargado con', almacenamientoData.length, 'dispositivos');
 ");
 ?>
+
+<script>
+// Función para exportar a PDF
+function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    
+    doc.setFontSize(18);
+    doc.setTextColor(111, 66, 193);
+    doc.text('Gestión de Dispositivos de Almacenamiento', 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('HDDs, SSDs, Pendrives y Almacenamiento', 14, 28);
+    doc.text('Fecha de exportación: ' + new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), 14, 35);
+    
+    const tabla = document.getElementById('storageTable');
+    const filas = tabla.querySelectorAll('tbody tr');
+    const datos = [];
+    
+    filas.forEach(function(fila) {
+        if (fila.style.display !== 'none') {
+            const celdas = fila.querySelectorAll('td');
+            if (celdas.length >= 12) {
+                datos.push([
+                    celdas[1].textContent.trim().toUpperCase(),
+                    celdas[2].textContent.trim().toUpperCase(),
+                    celdas[3].textContent.trim().toUpperCase(),
+                    celdas[4].textContent.trim().toUpperCase(),
+                    celdas[5].textContent.trim().toUpperCase(),
+                    celdas[6].textContent.trim().toUpperCase(),
+                    celdas[7].textContent.trim().toUpperCase(),
+                    celdas[8].textContent.trim().toUpperCase(),
+                    celdas[9].textContent.trim().toUpperCase(),
+                    celdas[10].textContent.trim().toUpperCase(),
+                    celdas[11].textContent.trim().split('\n')[0].toUpperCase()
+                ]);
+            }
+        }
+    });
+    
+    if (datos.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    
+    doc.autoTable({
+        startY: 42,
+        head: [['ID', 'Marca', 'Modelo', 'Tipo', 'Capacidad', 'Interfaz', 'N° Serie', 'Estado', 'Ubicación Edificio', 'Ubicación Detalle', 'Tiempo Activo']],
+        body: datos,
+        styles: { fontSize: 7, cellPadding: 2 },
+        headStyles: { fillColor: [111, 66, 193], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        alternateRowStyles: { fillColor: [245, 240, 255] }
+    });
+    
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Componentes', doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
+    
+    doc.save('almacenamiento_' + new Date().toISOString().slice(0,10) + '.pdf');
+}
+</script>
 
 <!-- Modal para Equipos Dañados -->
 <div class="modal fade" id="modalEquiposDanados" tabindex="-1" aria-labelledby="modalEquiposDanadosLabel" aria-hidden="true">
@@ -358,7 +457,8 @@ console.log('✅ Sistema de Almacenamiento cargado con', almacenamientoData.leng
                                 <th>Interfaz</th>
                                 <th>Nº Serie</th>
                                 <th>Nº Inventario</th>
-                                <th>Ubicación</th>
+                                <th>Ubicación Edificio</th>
+                                <th>Ubicación Detalle</th>
                                 <th>Estado</th>
                             </tr>
                         </thead>
@@ -380,7 +480,8 @@ console.log('✅ Sistema de Almacenamiento cargado con', almacenamientoData.leng
                                 <td><?= \yii\helpers\Html::encode($almacenamiento->INTERFAZ) ?></td>
                                 <td><?= \yii\helpers\Html::encode($almacenamiento->NUMERO_SERIE) ?></td>
                                 <td><?= \yii\helpers\Html::encode($almacenamiento->NUMERO_INVENTARIO) ?></td>
-                                <td><?= \yii\helpers\Html::encode($almacenamiento->ubicacion_edificio) ?></td>
+                                <td><?= \yii\helpers\Html::encode($almacenamiento->ubicacion_edificio ?? '-') ?></td>
+                                <td><?= \yii\helpers\Html::encode($almacenamiento->ubicacion_detalle ?? '-') ?></td>
                                 <td>
                                     <span class="badge bg-warning text-dark">
                                         <?= \yii\helpers\Html::encode($almacenamiento->ESTADO) ?>
@@ -544,4 +645,140 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Función para descargar QR de los elementos seleccionados
+function descargarQRSeleccionados() {
+    const checkboxes = document.querySelectorAll('.storage-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('Por favor, seleccione al menos un dispositivo de almacenamiento.');
+        return;
+    }
+    
+    const equipos = [];
+    checkboxes.forEach(function(checkbox) {
+        const fila = checkbox.closest('tr');
+        if (fila) {
+            const celdas = fila.querySelectorAll('td');
+            equipos.push({
+                id: fila.dataset.id,
+                marca: fila.dataset.marca,
+                modelo: fila.dataset.modelo,
+                tipo: fila.dataset.tipo,
+                capacidad: celdas[5] ? celdas[5].textContent.trim() : 'N/A',
+                interfaz: celdas[6] ? celdas[6].textContent.trim() : 'N/A',
+                serie: celdas[7] ? celdas[7].textContent.trim() : 'N/A',
+                estado: celdas[8] ? celdas[8].textContent.trim() : 'N/A',
+                ubicacionEdificio: celdas[9] ? celdas[9].textContent.trim() : 'N/A',
+                ubicacionDetalle: celdas[10] ? celdas[10].textContent.trim() : 'N/A'
+            });
+        }
+    });
+    
+    if (equipos.length > 0) {
+        crearPDF(equipos);
+    }
+}
+
+// Función para crear PDF con códigos QR
+function crearPDF(equipos) {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF();
+    var baseUrl = '<?= \yii\helpers\Url::to(['site/almacenamiento-ver'], true) ?>';
+    var fecha = new Date().toLocaleString('es-MX');
+    
+    // Color púrpura para almacenamiento
+    var headerColor = [111, 66, 193];
+    
+    // Título
+    doc.setFillColor(headerColor[0], headerColor[1], headerColor[2]);
+    doc.rect(0, 0, 210, 25, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text('Códigos QR de Almacenamiento', 105, 12, {align: 'center'});
+    doc.setFontSize(9);
+    doc.text('Generado: ' + fecha, 105, 20, {align: 'center'});
+    
+    doc.setTextColor(0, 0, 0);
+    
+    var qrSize = 40;
+    var startY = 35;
+    var marginX = 15;
+    var spacingX = 65;
+    var spacingY = 60;
+    var itemsPerPage = 9;
+    var cols = 3;
+    var col = 0;
+    var row = 0;
+    
+    equipos.forEach(function(equipo, index) {
+        if (index > 0 && index % itemsPerPage === 0) {
+            doc.addPage();
+            doc.setFillColor(headerColor[0], headerColor[1], headerColor[2]);
+            doc.rect(0, 0, 210, 25, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.text('Códigos QR de Almacenamiento', 105, 12, {align: 'center'});
+            doc.setFontSize(9);
+            doc.text('Generado: ' + fecha, 105, 20, {align: 'center'});
+            doc.setTextColor(0, 0, 0);
+            col = 0;
+            row = 0;
+        }
+        
+        var x = marginX + (col * spacingX);
+        var y = startY + (row * spacingY);
+        
+        // Marco púrpura compacto
+        doc.setDrawColor(headerColor[0], headerColor[1], headerColor[2]);
+        doc.setLineWidth(0.7);
+        const marcoAlto = qrSize + 22;
+        const marcoAncho = qrSize + 10;
+        doc.rect(x + 4, y + 2, marcoAncho, marcoAlto);
+
+        // Fecha arriba del QR, dentro del marco
+        doc.setFontSize(10);
+        doc.setTextColor(headerColor[0], headerColor[1], headerColor[2]);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Fecha de impresión: ' + new Date().toLocaleDateString('es-ES'), x + 27.5, y + 10, { align: 'center' });
+
+        // QR más abajo para compactar
+        var textoQR = 'ALMACENAMIENTO' + '\n' +
+            'ID: ' + equipo.id + '\n' +
+            'Marca: ' + equipo.marca + '\n' +
+            'Modelo: ' + equipo.modelo + '\n' +
+            'Tipo: ' + equipo.tipo + '\n' +
+            'Capacidad: ' + equipo.capacidad + '\n' +
+            'Interfaz: ' + equipo.interfaz + '\n' +
+            'No. Serie: ' + equipo.serie + '\n' +
+            'Estado: ' + equipo.estado + '\n' +
+            'Ubicacion Edificio: ' + equipo.ubicacionEdificio + '\n' +
+            'Ubicacion Detalle: ' + equipo.ubicacionDetalle;
+        var canvas = document.createElement('canvas');
+        var qr = new QRious({
+            element: canvas,
+            value: textoQR,
+            size: 200
+        });
+        var imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', x + 7.5, y + 13, qrSize, qrSize);
+        
+        col++;
+        if (col >= cols) {
+            col = 0;
+            row++;
+        }
+    });
+    
+    // Número de página
+    var pageCount = doc.internal.getNumberOfPages();
+    for (var i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text('Página ' + i + ' de ' + pageCount, 105, 290, {align: 'center'});
+    }
+    
+    doc.save('QR_Almacenamiento_' + Date.now() + '.pdf');
+}
 </script>
