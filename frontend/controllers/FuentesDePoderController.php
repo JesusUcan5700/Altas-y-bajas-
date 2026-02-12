@@ -26,7 +26,10 @@ class FuentesDePoderController extends Controller
     {
         $model = new FuentesDePoder();
         $dataProvider = new \yii\data\ActiveDataProvider([
-            'query' => FuentesDePoder::find(),
+            'query' => FuentesDePoder::find()
+                ->where(['!=', 'ubicacion_detalle', 'Catálogo'])
+                ->orWhere(['ubicacion_detalle' => null])
+                ->orWhere(['ubicacion_detalle' => '']),
         ]);
         return $this->render('index', [
             'dataProvider' => $dataProvider,
