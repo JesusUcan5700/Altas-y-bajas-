@@ -58,109 +58,65 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
                                 </a>
                             </div>
                         <?php else: ?>
-                            <!-- Botones de acción múltiple -->
+                            <!-- Botones de acción -->
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="select-all" onchange="toggleSelectAll(this)">
-                                        <label class="form-check-label" for="select-all">
-                                            Seleccionar todos
-                                        </label>
-                                    </div>
+                                    <h5 class="text-muted mb-0">
+                                        <i class="fas fa-list me-2"></i><?= count($fuentes) ?> fuentes de poder en catálogo
+                                    </h5>
                                 </div>
                                 <div class="col-md-6 text-end">
-                                    <button type="button" class="btn btn-danger" id="btn-eliminar-seleccionados" onclick="eliminarSeleccionados()" disabled>
+                                    <button type="button" class="btn btn-outline-danger me-2" id="btn-eliminar-seleccionados" style="display:none;">
                                         <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
                                     </button>
-                                    <button type="button" class="btn btn-dark" id="btn-qr-seleccionados" onclick="descargarQRSeleccionados()" disabled>
-                                        <i class="fas fa-qrcode me-2"></i>Descargar QR
-                                    </button>
-                                    <button type="button" class="btn btn-warning text-dark" onclick="exportarPDF()">
+                                    <button type="button" class="btn btn-outline-info me-2" onclick="exportarPDF()">
                                         <i class="fas fa-file-pdf me-2"></i>Exportar a PDF
                                     </button>
-                                    <span id="contador-seleccionados" class="ms-3 text-muted"></span>
                                 </div>
+                            </div>
+
+                            <!-- Selector todos -->
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="select-all">
+                                <label class="form-check-label fw-bold" for="select-all">
+                                    Seleccionar Todos
+                                </label>
                             </div>
 
                             <!-- Lista de fuentes de poder -->
                             <div class="row g-3">
                                 <?php foreach ($fuentes as $fuente): ?>
-                                    <div class="col-lg-4 col-md-6">
-                                        <div class="card h-100 shadow-sm border-warning">
-                                            <div class="card-body">
-                                                <!-- Checkbox de selección -->
-                                                <div class="form-check position-absolute" style="top: 10px; left: 10px; z-index: 1;">
-                                                    <input type="checkbox" name="fuente_ids[]" class="form-check-input" value="<?= $fuente->idFuentePoder ?>">
-                                                </div>
-                                                <!-- QR en pantalla con formato unificado -->
-                                                <div class="d-flex flex-column align-items-center mb-2">
-                                                    <canvas id="qr-fuente-<?= $fuente->idFuentePoder ?>" width="120" height="150" style="margin-bottom: 0.5rem;"></canvas>
-                                                </div>
-                                                <script>
-                                                document.addEventListener('DOMContentLoaded', function() {
-                                                    var canvas = document.getElementById('qr-fuente-<?= $fuente->idFuentePoder ?>');
-                                                    if (canvas && window.QRious) {
-                                                        var qrCanvas = document.createElement('canvas');
-                                                        // Obtener datos adicionales de la tarjeta
-                                                        var card = document.getElementById('qr-fuente-<?= $fuente->idFuentePoder ?>').closest('.card');
-                                                        var tipo = card.querySelector('.fuente-tipo')?.textContent?.trim() || 'N/A';
-                                                        var voltaje = card.querySelector('.fuente-voltaje')?.textContent?.trim() || 'N/A';
-                                                        var potencia = card.querySelector('.fuente-potencia')?.textContent?.trim() || 'N/A';
-                                                        var amperaje = card.querySelector('.fuente-amperaje')?.textContent?.trim() || 'N/A';
-                                                        var inventario = '<?= Html::encode($fuente->NUMERO_INVENTARIO) ?>' || 'N/A';
-                                                        var textoQR = 'Marca: <?= Html::encode($fuente->MARCA) ?> | Modelo: <?= Html::encode($fuente->MODELO) ?> | Tipo: ' + tipo + ' | Voltaje: ' + voltaje + ' | Potencia: ' + potencia + ' | Amperaje: ' + amperaje + ' | Serie: ' + inventario;
-                                                        var qr = new QRious({
-                                                            element: qrCanvas,
-                                                            value: textoQR,
-                                                            size: 90
-                                                        });
-                                                        var ctx = canvas.getContext('2d');
-                                                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                                                        // Marco amarillo
-                                                        ctx.strokeStyle = '#ffc107';
-                                                        ctx.lineWidth = 2;
-                                                        ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
-                                                        // QR centrado
-                                                        ctx.drawImage(qrCanvas, (canvas.width - 90) / 2, 22, 90, 90);
-                                                        // Sin texto debajo
-                                                    }
-                                                });
-                                                </script>
-                                                <div class="d-flex align-items-start justify-content-between">
-                                                    <!-- Botones de acción -->
-                                                    <div class="dropdown">
-                                                        <button class="btn btn-outline-warning btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                            <i class="fas fa-cog"></i>
-                                                        </button>
-                                                        <ul class="dropdown-menu">
-                                                            <li>
-                                                                <?= Html::a('<i class="fas fa-eye me-2"></i>Ver Detalles', ['fuente-ver', 'id' => $fuente->idFuentePoder], ['class' => 'dropdown-item']) ?>
-                                                            </li>
-                                                            <li>
-                                                                <?= Html::a('<i class="fas fa-edit me-2"></i>Editar', ['fuente-editar', 'id' => $fuente->idFuentePoder], ['class' => 'dropdown-item']) ?>
-                                                            </li>
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            <li>
-                                                                <a href="javascript:void(0)" onclick="eliminarFuente(<?= $fuente->idFuentePoder ?>, '<?= Html::encode($fuente->MARCA . ' ' . $fuente->MODELO) ?>')" class="dropdown-item text-danger">
-                                                                    <i class="fas fa-trash me-2"></i>Eliminar
-                                                                </a>
-                                                            </li>
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            <li>
-                                                                <?= Html::a('<i class="fas fa-computer me-2"></i>Usar en Equipo', ['computo'], ['class' => 'dropdown-item text-success']) ?>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card h-100 shadow-sm hover-shadow">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="fuente_ids[]" class="form-check-input item-checkbox" value="<?= $fuente->idFuentePoder ?>">
                                                 </div>
                                             </div>
-                                            <div class="card-footer bg-light text-muted">
-                                                <small>
-                                                    <i class="fas fa-clock me-1"></i>
-                                                    Agregado: <?= Yii::$app->formatter->asDatetime($fuente->fecha_creacion ?? 'now', 'short') ?>
-                                                </small>
+                                            <div class="text-center mb-3">
+                                                <div class="bg-warning bg-opacity-10 rounded-circle mx-auto mb-2" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                                                    <i class="fas fa-bolt fa-2x text-warning"></i>
+                                                </div>
+                                                <h5 class="card-title mb-1 fw-bold text-warning">
+                                                    <i class="fas fa-bolt me-2"></i><?= Html::encode($fuente->MARCA) ?>
+                                                </h5>
+                                                <p class="card-text mb-2 text-dark fw-medium"><?= Html::encode($fuente->MODELO) ?></p>
+                                                <span class="badge bg-warning text-dark"><?= Html::encode($fuente->POTENCIA_WATTS ?? 'Sin especificar') ?></span>
+                                            </div>
+                                            <div class="text-muted small">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span><i class="fas fa-cube me-1"></i>Tipo:</span>
+                                                    <span class="fw-medium"><?= Html::encode($fuente->TIPO ?? 'N/A') ?></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span><i class="fas fa-plug me-1"></i>Voltaje:</span>
+                                                    <span class="fw-medium"><?= Html::encode($fuente->VOLTAJE ?? 'N/A') ?></span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
                                 <?php endforeach; ?>
                             </div>
 
@@ -168,16 +124,12 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
 
                     <?php endif; ?>
 
-                    <!-- Botones de navegación -->
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Gestión', ['gestion-categorias'], ['class' => 'btn btn-secondary']) ?>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <?= Html::a('<i class="fas fa-plus me-2"></i>Agregar Nuevo al Catálogo', ['site/fuentes-de-poder', 'simple' => 1], ['class' => 'btn btn-warning me-2']) ?>
-                            <?= Html::a('<i class="fas fa-list me-2"></i>Ver Todas las Fuentes', ['/fuentes-de-poder/index'], ['class' => 'btn btn-outline-primary']) ?>
-                        </div>
-                    </div>
+                            <div class="mt-4 text-center">
+                                <div class="btn-group" role="group">
+                                    <?= Html::a('<i class="fas fa-plus me-2"></i>Agregar Nuevo al Catálogo', ['site/fuentes-de-poder', 'simple' => 1], ['class' => 'btn btn-warning me-2']) ?>
+                                    <?= Html::a('<i class="fas fa-list me-2"></i>Ver Todas las Fuentes de Poder', ['/fuentes-de-poder/index'], ['class' => 'btn btn-outline-warning']) ?>
+                                </div>
+                            </div>
                 </div>
             </div>
         </div>
@@ -185,21 +137,12 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
 </div>
 
 <style>
-.card {
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+.hover-shadow {
+    transition: all 0.3s ease;
 }
-
-.card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
-.badge {
-    font-size: 0.75em;
-}
-
-.text-warning.fw-bold {
-    color: #ffc107 !important;
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
 }
 </style>
 

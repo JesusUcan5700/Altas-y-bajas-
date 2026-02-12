@@ -1249,7 +1249,7 @@ function saveFormAndRedirect(componentType) {
         'procesadores': '<?= \yii\helpers\Url::to(["site/procesadores", "simple" => 1]) ?>',
         'memoria_ram': '<?= \yii\helpers\Url::to(["site/memoria-ram", "simple" => 1]) ?>',
         'almacenamiento': '<?= \yii\helpers\Url::to(["site/almacenamiento-agregar", "simple" => 1]) ?>',
-        'fuentes_de_poder': '<?= \yii\helpers\Url::to(["/fuentes-de-poder/create", "simple" => 1]) ?>',
+        'fuentes_de_poder': '<?= \yii\helpers\Url::to(["site/fuentes-de-poder", "simple" => 1]) ?>',
         'monitor': '<?= \yii\helpers\Url::to(["site/monitor-agregar", "simple" => 1]) ?>'
     };
     

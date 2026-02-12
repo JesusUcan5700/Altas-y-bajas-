@@ -95,21 +95,6 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.
                                                 <div class="form-check">
                                                     <input type="checkbox" name="ram_ids[]" class="form-check-input item-checkbox" value="<?= $ram->idRAM ?>">
                                                 </div>
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                        <i class="fas fa-ellipsis-v"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end">
-                                                        <?= Html::a('<i class="fas fa-eye me-2"></i>Ver Detalles', ['ram-ver', 'id' => $ram->idRAM], ['class' => 'dropdown-item']) ?>
-                                                        <?= Html::a('<i class="fas fa-edit me-2"></i>Editar', ['ram-editar', 'id' => $ram->idRAM], ['class' => 'dropdown-item']) ?>
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <li>
-                                                            <a class="dropdown-item text-danger" href="#" onclick="eliminarItem(<?= $ram->idRAM ?>, '<?= Html::encode($ram->MARCA . ' ' . $ram->MODELO) ?>'); return false;">
-                                                                <i class="fas fa-trash me-2"></i>Eliminar
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
                                             </div>
                                             <div class="text-center mb-3">
                                                 <div class="bg-primary bg-opacity-10 rounded-circle mx-auto mb-2" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">

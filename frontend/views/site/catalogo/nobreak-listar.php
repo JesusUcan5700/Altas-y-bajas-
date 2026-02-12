@@ -61,7 +61,7 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="select-all" onchange="toggleSelectAll(this)">
+                                        <input type="checkbox" class="form-check-input" id="select-all">
                                         <label class="form-check-label" for="select-all">
                                             Seleccionar todos
                                         </label>
@@ -175,60 +175,114 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
 </div>
 
 <?php
-$this->registerJs(<<<JS
-    // Toggle select all
-    function toggleSelectAll(checkbox) {
-        document.querySelectorAll('.item-checkbox').forEach(function(item) {
-            item.checked = checkbox.checked;
-        });
-        actualizarContador();
-    }
-    window.toggleSelectAll = toggleSelectAll;
+// Inyectar variables PHP como JavaScript antes del bloque principal
+$csrfParam = Yii::$app->request->csrfParam;
+$csrfToken = Yii::$app->request->csrfToken;
+$eliminarUrl = \yii\helpers\Url::to(['site/nobreak-eliminar-multiple']);
+$this->registerJs("var CSRF_PARAM = '$csrfParam'; var CSRF_TOKEN = '$csrfToken'; var ELIMINAR_URL = '$eliminarUrl';", \yii\web\View::POS_HEAD);
 
-    // Actualizar contador de seleccionados
-    function actualizarContador() {
-        var seleccionados = document.querySelectorAll('.item-checkbox:checked').length;
-        var contador = document.getElementById('contador-seleccionados');
-        var btnEliminar = document.getElementById('btn-eliminar-seleccionados');
+$this->registerJs(<<<'JS'
+(function() {
+    // Función para seleccionar/deseleccionar todos
+    window.toggleSelectAll = function(masterCheckbox) {
+        const itemCheckboxes = document.querySelectorAll('input.item-checkbox');
         
-        if (seleccionados > 0) {
-            contador.textContent = seleccionados + ' seleccionado(s)';
-            btnEliminar.disabled = false;
+        itemCheckboxes.forEach(function(checkbox) {
+            checkbox.checked = masterCheckbox.checked;
+        });
+        updateCounter();
+    };
+
+    // Función para actualizar contador y botón eliminar
+    function updateCounter() {
+        const checkedBoxes = document.querySelectorAll('input.item-checkbox:checked');
+        const counter = document.getElementById('contador-seleccionados');
+        const deleteButton = document.getElementById('btn-eliminar-seleccionados');
+        
+        if (checkedBoxes.length > 0) {
+            if (counter) counter.textContent = checkedBoxes.length + ' seleccionado(s)';
+            if (deleteButton) deleteButton.disabled = false;
         } else {
-            contador.textContent = '';
-            btnEliminar.disabled = true;
+            if (counter) counter.textContent = '';
+            if (deleteButton) deleteButton.disabled = true;
+        }
+        
+        // Actualizar estado del checkbox maestro
+        const masterCheckbox = document.getElementById('select-all');
+        const allCheckboxes = document.querySelectorAll('input.item-checkbox');
+        
+        if (masterCheckbox) {
+            if (checkedBoxes.length === 0) {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = false;
+            } else if (checkedBoxes.length === allCheckboxes.length) {
+                masterCheckbox.checked = true;
+                masterCheckbox.indeterminate = false;
+            } else {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = true;
+            }
         }
     }
-    
-    document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
-        checkbox.addEventListener('change', actualizarContador);
-    });
 
-    // Eliminar seleccionados
-    function eliminarSeleccionados() {
-        var seleccionados = [];
-        document.querySelectorAll('.item-checkbox:checked').forEach(function(checkbox) {
-            seleccionados.push(checkbox.value);
+    // Inicializar cuando el DOM esté listo
+    function init() {
+        // Event listener para el checkbox maestro
+        const masterCheckbox = document.getElementById('select-all');
+        if (masterCheckbox) {
+            masterCheckbox.addEventListener('change', function() {
+                toggleSelectAll(this);
+            });
+        }
+
+        // Event listeners para checkboxes individuales
+        const itemCheckboxes = document.querySelectorAll('input.item-checkbox');
+        
+        itemCheckboxes.forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                updateCounter();
+            });
         });
-        
-        if (seleccionados.length === 0) {
-            alert('No hay elementos seleccionados');
-            return;
-        }
-        
-        alert('❌ PROTEGIDO: Los items del catálogo NO se pueden eliminar.\n\n✅ Son reutilizables infinitamente.\n\nEstos ' + seleccionados.length + ' No-Breaks están protegidos y disponibles para uso ilimitado.');
-    }
-    window.eliminarSeleccionados = eliminarSeleccionados;
 
-    // Eliminar un item
-    function eliminarItem(id, nombre) {
-        alert('❌ PROTEGIDO: Los items del catálogo NO se pueden eliminar.\n\n✅ Son reutilizables infinitamente.\n\nPuedes usar este No-Break cuantas veces quieras sin que se agote.');
-        }
+        // Inicializar contador
+        updateCounter();
     }
-    window.eliminarItem = eliminarItem;
 
-    // Exportar a PDF
-    function exportarPDF() {
+    // Función para eliminar seleccionados
+    window.eliminarSeleccionados = function() {
+        var ids = [];
+        document.querySelectorAll('input.item-checkbox:checked').forEach(function(cb) {
+            ids.push(cb.value);
+        });
+        if (ids.length === 0) { alert('No hay elementos seleccionados'); return; }
+        if (!confirm('¿Eliminar ' + ids.length + ' elemento(s) del catálogo?')) return;
+        enviarEliminacion(ids);
+    };
+
+    // Función para eliminar un item individual
+    window.eliminarItem = function(id, nombre) {
+        if (!confirm('¿Eliminar "' + nombre + '" del catálogo?')) return;
+        enviarEliminacion([id]);
+    };
+
+    // Enviar eliminación por POST
+    function enviarEliminacion(ids) {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.style.display = 'none';
+        var h = '<input type="hidden" name="' + CSRF_PARAM + '" value="' + CSRF_TOKEN + '">';
+        h += '<input type="hidden" name="from_catalog" value="1">';
+        for (var i = 0; i < ids.length; i++) {
+            h += '<input type="hidden" name="ids[]" value="' + ids[i] + '">';
+        }
+        form.innerHTML = h;
+        form.action = ELIMINAR_URL;
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Función para exportar a PDF
+    window.exportarPDF = function() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
@@ -242,7 +296,11 @@ $this->registerJs(<<<JS
             const marca = card.querySelector('.card-title')?.textContent?.trim() || '';
             const modelo = card.querySelector('.card-text')?.textContent?.trim() || '';
             const inventario = card.querySelector('.fa-tag')?.parentElement?.textContent?.trim() || '';
-            tableData.push([marca.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase(), modelo.toUpperCase(), inventario.toUpperCase()]);
+            tableData.push([
+                marca.replace(/[^a-zA-Z0-9\s]/g, '').trim(), 
+                modelo.trim(), 
+                inventario.trim()
+            ]);
         });
         
         doc.autoTable({
@@ -252,8 +310,15 @@ $this->registerJs(<<<JS
         });
         
         doc.save('catalogo_nobreak.pdf');
+    };
+
+    // Ejecutar inicialización
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
-    window.exportarPDF = exportarPDF;
+})();
 JS
-);
+, \yii\web\View::POS_END);
 ?>

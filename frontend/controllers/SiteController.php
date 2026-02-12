@@ -31,10 +31,13 @@ use yii\helpers\Html;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use common\models\LoginForm;
+use common\models\AuthRequest;
 use frontend\models\PasswordResetRequestForm;
 use frontend\models\ResetPasswordForm;
 use frontend\models\SignupForm;
 use frontend\models\ContactForm;
+use frontend\models\AccessRequestForm;
+use frontend\models\MagicLinkRequestForm;
 
 /**
  * Site controller
@@ -49,10 +52,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'signup', 'login', 'request-password-reset', 'reset-password'],
+                'only' => ['logout', 'signup', 'login', 'request-password-reset', 'reset-password', 'auth-login', 'magic-login', 'request-access', 'approve-access'],
                 'rules' => [
                     [
-                        'actions' => ['login', 'signup', 'request-password-reset', 'reset-password'],
+                        'actions' => ['login', 'signup', 'request-password-reset', 'reset-password', 'auth-login', 'magic-login', 'request-access', 'approve-access'],
                         'allow' => true,
                         'roles' => ['?'],
                     ],
@@ -76,6 +79,18 @@ class SiteController extends Controller
 
     public function beforeAction($action)
     {
+        // Verificar autenticación personalizada para usuarios autorizados por email
+        if (!in_array($action->id, ['login', 'auth-login', 'magic-login', 'request-access', 'approve-access', 'error', 'captcha'])) {
+            // Verificar si el usuario está autenticado via sistema tradicional o via auth_request
+            $isAuthenticatedViaSession = Yii::$app->session->get('authenticated', false);
+            $isAuthenticatedViaUser = !Yii::$app->user->isGuest;
+            
+            if (!$isAuthenticatedViaSession && !$isAuthenticatedViaUser) {
+                Yii::$app->session->setFlash('warning', 'Debe iniciar sesión para acceder al sistema.');
+                return $this->redirect(['site/auth-login']);
+            }
+        }
+        
         // Deshabilitar CSRF para acciones de eliminación y reciclaje
         if (in_array($action->id, ['equipo-eliminar', 'equipo-eliminar-multiple', 'ram-eliminar', 'ram-eliminar-multiple', 'eliminar-ram', 'eliminar-ram-masivo', 'procesador-eliminar', 'procesador-eliminar-multiple', 'eliminar-procesador', 'eliminar-procesadores-masivo', 'almacenamiento-eliminar', 'almacenamiento-eliminar-multiple', 'eliminar-almacenamiento', 'eliminar-almacenamiento-masivo', 'fuente-eliminar', 'fuente-eliminar-multiple', 'monitor-eliminar', 'monitor-eliminar-multiple', 'eliminar-monitor', 'eliminar-monitores-masivo', 'registrar-pieza-reciclaje', 'actualizar-pieza-reciclaje', 'eliminar-pieza-reciclaje', 'inventario-piezas-reciclaje', 'detalle-pieza-reciclaje', 'estadisticas-reciclaje', 'opciones-pieza-reciclaje', 'catalogo-piezas-existentes', 'obtener-dispositivos-baja', 'detalle-dispositivo-baja'])) {
             $this->enableCsrfValidation = false;
@@ -106,10 +121,13 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        // Si el usuario no está autenticado, mostrar mensaje y redirigir al login
-        if (Yii::$app->user->isGuest) {
+        // Verificar autenticación (ya verificado en beforeAction, pero por seguridad)
+        $isAuthenticatedViaSession = Yii::$app->session->get('authenticated', false);
+        $isAuthenticatedViaUser = !Yii::$app->user->isGuest;
+        
+        if (!$isAuthenticatedViaSession && !$isAuthenticatedViaUser) {
             Yii::$app->session->setFlash('warning', 'Debe iniciar sesión para acceder al sistema.');
-            return $this->redirect(['site/login']);
+            return $this->redirect(['site/auth-login']);
         }
         
         return $this->render('index');
@@ -122,9 +140,18 @@ class SiteController extends Controller
      */
     public function actionLogout()
     {
+        // Cerrar sesión tradicional de Yii2
         Yii::$app->user->logout();
+        
+        // Limpiar sesión de autenticación personalizada
+        Yii::$app->session->remove('auth_user_id');
+        Yii::$app->session->remove('auth_user_email');
+        Yii::$app->session->remove('auth_user_name');
+        Yii::$app->session->remove('authenticated');
+        
+        Yii::$app->session->setFlash('success', '👋 Has cerrado sesión correctamente.');
 
-        return $this->goHome();
+        return $this->redirect(['auth-login']);
     }
 
     /**
@@ -215,6 +242,213 @@ class SiteController extends Controller
         return $this->render('resetPassword', [
             'model' => $model,
         ]);
+    }
+
+    /**
+     * Solicitud de acceso al sistema
+     * Los usuarios envían sus datos para ser autorizados
+     *
+     * @return mixed
+     */
+    public function actionRequestAccess()
+    {
+        $model = new AccessRequestForm();
+
+        if ($model->load(Yii::$app->request->post())) {
+            if ($model->createRequest()) {
+                Yii::$app->session->setFlash('success', 
+                    '✅ Solicitud enviada correctamente. Se ha notificado al administrador. ' .
+                    'Recibirás un correo cuando tu acceso sea aprobado.'
+                );
+                return $this->redirect(['auth-login']);
+            } else {
+                Yii::$app->session->setFlash('error', 
+                    '❌ No se pudo procesar la solicitud. Por favor verifica los datos o intenta más tarde.'
+                );
+            }
+        }
+
+        return $this->render('request-access', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Aprobación/Rechazo de solicitud de acceso
+     * Solo accesible desde el enlace enviado al administrador
+     *
+     * @param string $token
+     * @param string $action
+     * @return mixed
+     */
+    public function actionApproveAccess($token, $action)
+    {
+        $authRequest = AuthRequest::findByApprovalToken($token);
+
+        if (!$authRequest) {
+            Yii::$app->session->setFlash('error', '❌ Token de aprobación inválido o expirado.');
+            return $this->goHome();
+        }
+
+        if ($authRequest->status != AuthRequest::STATUS_PENDING) {
+            Yii::$app->session->setFlash('warning', 
+                '⚠️ Esta solicitud ya fue procesada anteriormente.'
+            );
+            return $this->goHome();
+        }
+
+        $adminEmail = 'inventarioapoyoinformatico@valladolid.tecnm.mx';
+
+        if ($action === 'approve') {
+            if ($authRequest->approve($adminEmail)) {
+                // Enviar notificación al usuario
+                $this->sendApprovalNotification($authRequest);
+                
+                Yii::$app->session->setFlash('success', 
+                    '✅ Acceso aprobado para ' . $authRequest->nombre_completo . 
+                    '. Se ha enviado una notificación al usuario.'
+                );
+            } else {
+                Yii::$app->session->setFlash('error', '❌ Error al aprobar la solicitud.');
+            }
+        } elseif ($action === 'reject') {
+            if ($authRequest->reject($adminEmail)) {
+                // Enviar notificación de rechazo al usuario
+                $this->sendRejectionNotification($authRequest);
+                
+                Yii::$app->session->setFlash('info', 
+                    'ℹ️ Solicitud rechazada para ' . $authRequest->nombre_completo . 
+                    '. Se ha notificado al usuario.'
+                );
+            } else {
+                Yii::$app->session->setFlash('error', '❌ Error al rechazar la solicitud.');
+            }
+        }
+
+        return $this->redirect(['auth-login']);
+    }
+
+    /**
+     * Formulario de autenticación por enlace mágico
+     * Los usuarios autorizados pueden solicitar un enlace de acceso
+     *
+     * @return mixed
+     */
+    public function actionAuthLogin()
+    {
+        if (!Yii::$app->user->isGuest) {
+            return $this->goHome();
+        }
+
+        $model = new MagicLinkRequestForm();
+
+        if ($model->load(Yii::$app->request->post())) {
+            if ($model->sendMagicLink()) {
+                Yii::$app->session->setFlash('success', 
+                    '📧 Enlace de acceso enviado. Revisa tu correo electrónico. ' .
+                    'El enlace será válido por 15 minutos.'
+                );
+                return $this->refresh();
+            } else {
+                Yii::$app->session->setFlash('error', 
+                    '❌ No se pudo enviar el enlace. Verifica que tu email esté autorizado.'
+                );
+            }
+        }
+
+        return $this->render('auth-login', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Autenticación mediante enlace mágico
+     * El usuario hace clic en el enlace recibido por correo
+     *
+     * @param string $token
+     * @return mixed
+     */
+    public function actionMagicLogin($token)
+    {
+        $authRequest = AuthRequest::findByMagicLinkToken($token);
+
+        if (!$authRequest) {
+            Yii::$app->session->setFlash('error', 
+                '❌ El enlace de acceso es inválido o ha expirado. Por favor solicita uno nuevo.'
+            );
+            return $this->redirect(['auth-login']);
+        }
+
+        if (!$authRequest->isMagicLinkValid()) {
+            Yii::$app->session->setFlash('error', 
+                '⏰ El enlace de acceso ha expirado. Por favor solicita uno nuevo.'
+            );
+            return $this->redirect(['auth-login']);
+        }
+
+        // Crear sesión temporal sin usuario en la tabla user
+        // Usamos un identificador basado en el email del authRequest
+        $identity = new \yii\web\User([
+            'identityClass' => 'common\models\User',
+        ]);
+
+        // Login usando el ID del auth_request como identificador temporal
+        // Nota: Esto requiere modificar el modelo User o crear un IdentityInterface personalizado
+        // Por simplicidad, vamos a usar sesión directa
+        
+        Yii::$app->session->set('auth_user_id', $authRequest->id);
+        Yii::$app->session->set('auth_user_email', $authRequest->email);
+        Yii::$app->session->set('auth_user_name', $authRequest->nombre_completo);
+        Yii::$app->session->set('authenticated', true);
+
+        // Registrar el login
+        $authRequest->recordLogin();
+
+        Yii::$app->session->setFlash('success', 
+            '✅ Bienvenido ' . $authRequest->nombre_completo . '. Has iniciado sesión correctamente.'
+        );
+
+        return $this->redirect(['index']);
+    }
+
+    /**
+     * Envía notificación de aprobación al usuario
+     */
+    protected function sendApprovalNotification($authRequest)
+    {
+        try {
+            return Yii::$app->mailer->compose(
+                ['html' => 'authApproved-html', 'text' => 'authApproved-text'],
+                ['authRequest' => $authRequest]
+            )
+            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+            ->setTo($authRequest->email)
+            ->setSubject('✅ Acceso Aprobado - Sistema de Inventario')
+            ->send();
+        } catch (\Exception $e) {
+            Yii::error('Error al enviar notificación de aprobación: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Envía notificación de rechazo al usuario
+     */
+    protected function sendRejectionNotification($authRequest)
+    {
+        try {
+            return Yii::$app->mailer->compose(
+                ['html' => 'authRejected-html', 'text' => 'authRejected-text'],
+                ['authRequest' => $authRequest]
+            )
+            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+            ->setTo($authRequest->email)
+            ->setSubject('Solicitud de Acceso - Sistema de Inventario')
+            ->send();
+        } catch (\Exception $e) {
+            Yii::error('Error al enviar notificación de rechazo: ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -485,30 +719,25 @@ class SiteController extends Controller
     public function actionNobreakEliminarMultiple()
     {
         $ids = Yii::$app->request->post('ids');
+        $fromCatalog = Yii::$app->request->post('from_catalog');
         if (!empty($ids) && is_array($ids)) {
             $eliminados = 0;
-            $catalogoEncontrado = false;
             foreach ($ids as $id) {
                 $model = Nobreak::findOne($id);
                 if ($model !== null) {
-                    // PROTECCIÓN: No permitir eliminar items del catálogo
-                    if (!empty($model->ubicacion_detalle) && stripos($model->ubicacion_detalle, 'Catálogo') !== false) {
-                        $catalogoEncontrado = true;
-                        continue;
-                    }
                     if ($model->delete()) {
                         $eliminados++;
                     }
                 }
-            }
-            if ($catalogoEncontrado) {
-                Yii::$app->session->setFlash('warning', 'Se omitieron items del catálogo. Los items del catálogo no se pueden eliminar.');
             }
             if ($eliminados > 0) {
                 Yii::$app->session->setFlash('success', "Se eliminaron $eliminados No Break(s).");
             }
         } else {
             Yii::$app->session->setFlash('error', 'No se seleccionaron No Break para eliminar.');
+        }
+        if ($fromCatalog) {
+            return $this->redirect(['site/nobreak-catalogo-listar']);
         }
         return $this->redirect(['site/nobreak-listar']);
     }
@@ -1068,30 +1297,55 @@ class SiteController extends Controller
     public function actionMonitorAgregar()
     {
         $model = new Monitor();
+        $modoSimplificado = Yii::$app->request->get('simple', false);
 
-        if (Yii::$app->request->isPost) {
-            if ($model->load(Yii::$app->request->post()) && $model->save()) {
-                Yii::$app->session->setFlash('success', 'Monitor agregado exitosamente al catálogo.');
+        if ($model->load(Yii::$app->request->post())) {
+            if ($modoSimplificado) {
+                // Establecer escenario simplificado ANTES de procesar
+                $model->scenario = 'simplificado';
                 
-                // Si hay parámetro redirect, redirigir al formulario de equipos
-                $redirect = Yii::$app->request->get('redirect');
-                if ($redirect === 'computo') {
-                    return $this->redirect(['computo']);
+                // Solo procesar MARCA y MODELO del POST
+                $postData = Yii::$app->request->post('Monitor', []);
+                if (isset($postData['MARCA'])) $model->MARCA = $postData['MARCA'];
+                if (isset($postData['MODELO'])) $model->MODELO = $postData['MODELO'];
+                
+                // Establecer ubicacion_detalle como Catálogo automáticamente
+                $model->ubicacion_detalle = 'Catálogo';
+                $model->ESTADO = 'Activo';
+                
+                if ($model->save()) {
+                    Yii::$app->session->setFlash('success', 'Monitor agregado al catálogo exitosamente.');
+                    return $this->redirect(['monitor-catalogo-listar']);
                 }
-                
-                return $this->redirect(['monitor-listar']);
             } else {
-                Yii::$app->session->setFlash('error', 'Error al agregar el monitor.');
+                // Modo normal - validación completa
+                if ($model->save()) {
+                    Yii::$app->session->setFlash('success', 'Monitor agregado exitosamente.');
+                    
+                    // Si hay parámetro redirect, redirigir al formulario de equipos
+                    $redirect = Yii::$app->request->get('redirect');
+                    if ($redirect === 'computo') {
+                        return $this->redirect(['computo']);
+                    }
+                    
+                    return $this->redirect(['monitor-listar']);
+                }
             }
         }
 
-        return $this->render('monitor/agregar', ['model' => $model]);
+        return $this->render('monitor/agregar', [
+            'model' => $model,
+            'modoSimplificado' => $modoSimplificado,
+        ]);
     }
     
     public function actionMonitorListar()
     {
         try {
-                        $monitores = Monitor::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idMonitor ASC')->all();
+            $monitores = Monitor::find()
+                ->where(['!=', 'ESTADO', 'BAJA'])
+                ->andWhere(['!=', 'ubicacion_edificio', 'Catálogo'])
+                ->orderBy('idMonitor ASC')->all();
             $error = null;
         } catch (Exception $e) {
             $monitores = [];
@@ -1748,7 +2002,11 @@ class SiteController extends Controller
     public function actionRamListar()
     {
         try {
-            $rams = Ram::find()->where(['!=', 'ESTADO', 'BAJA'])->orderBy('idRAM ASC')->all();
+            $rams = Ram::find()
+                ->where(['!=', 'ESTADO', 'BAJA'])
+                ->andWhere(['!=', 'ubicacion_detalle', 'Catálogo'])
+                ->orderBy('idRAM ASC')
+                ->all();
             $error = null;
         } catch (Exception $e) {
             $rams = [];
@@ -3310,29 +3568,31 @@ class SiteController extends Controller
         $modoSimplificado = Yii::$app->request->get('simple', false);
         
         if ($model->load(Yii::$app->request->post())) {
-            // Si es modo catálogo, establecer valores por defecto
             if ($modoSimplificado) {
-                $timestamp = time() . rand(100, 999);
+                // Establecer escenario simplificado ANTES de procesar
+                $model->scenario = 'simplificado';
+                
+                // Solo procesar MARCA y MODELO del POST
+                $postData = Yii::$app->request->post('FuentesDePoder', []);
+                if (isset($postData['MARCA'])) $model->MARCA = $postData['MARCA'];
+                if (isset($postData['MODELO'])) $model->MODELO = $postData['MODELO'];
+                
+                // Establecer ubicacion_detalle como Catálogo automáticamente
                 $model->ubicacion_detalle = 'Catálogo';
                 $model->ESTADO = 'Activo';
-                $model->POTENCIA_WATTS = $model->POTENCIA_WATTS ?: 'N/A';
-                $model->TIPO = $model->TIPO ?: 'N/A';
-                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
-                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
-                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
-                $model->fecha = date('Y-m-d');
-                $model->ubicacion_edificio = 'Catálogo';
-            }
-            
-            if ($model->save()) {
-                Yii::$app->session->setFlash('success', 'Fuente de poder agregada exitosamente.');
-                if ($modoSimplificado) {
-                    return $this->redirect(['site/fuentes-catalogo-listar']);
+                
+                // NO asignar otros campos - dejar que se manejen automáticamente
+                
+                if ($model->save()) {
+                    Yii::$app->session->setFlash('success', 'Fuente de poder agregada al catálogo exitosamente.');
+                    return $this->redirect(['fuentes-catalogo-listar']);
                 }
-                return $this->redirect(['fuentes-de-poder']);
             } else {
-                $errors = $model->getErrors();
-                Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
+                // Modo normal - validación completa
+                if ($model->save()) {
+                    Yii::$app->session->setFlash('success', 'Fuente de poder agregada exitosamente.');
+                    return $this->redirect(['fuentes-de-poder']);
+                }
             }
         }
 
@@ -3793,12 +4053,11 @@ class SiteController extends Controller
                 $timestamp = time() . rand(100, 999);
                 $model->ubicacion_detalle = 'Catálogo';
                 $model->ESTADO = 'Activo';
-                $model->PULGADAS = $model->PULGADAS ?: 'N/A';
+                $model->TAMANIO = $model->TAMANIO ?: 'N/A';
                 $model->RESOLUCION = $model->RESOLUCION ?: 'N/A';
                 $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
                 $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
                 $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
-                $model->fecha = date('Y-m-d');
                 $model->ubicacion_edificio = 'Catálogo';
             }
             
@@ -6078,7 +6337,7 @@ class SiteController extends Controller
                 $dispositivos[] = [
                     'id' => $mon->idMONITOR,
                     'categoria' => 'Monitor',
-                    'descripcion' => ($mon->PULGADAS ?? 'N/A') . '" - ' . ($mon->TIPO ?? 'Monitor'),
+                    'descripcion' => ($mon->TAMANIO ?? 'N/A') . '" - ' . ($mon->TIPO_PANTALLA ?? 'Monitor'),
                     'marca' => $mon->MARCA ?? 'N/A',
                     'modelo' => $mon->MODELO ?? 'N/A',
                     'numero_serie' => $mon->NUMERO_SERIE ?? 'N/A',
@@ -6255,7 +6514,7 @@ class SiteController extends Controller
                             'marca' => $dispositivo->MARCA,
                             'modelo' => $dispositivo->MODELO,
                             'numero_serie' => $dispositivo->NUMERO_SERIE,
-                            'descripcion' => "{$dispositivo->PULGADAS}\" {$dispositivo->TIPO}",
+                            'descripcion' => "{$dispositivo->TAMANIO}\" {$dispositivo->TIPO_PANTALLA}",
                             'especificaciones' => "Resolución: {$dispositivo->RESOLUCION}, Conexión: {$dispositivo->CONEXION}",
                             'fecha_baja' => $dispositivo->FECHA_BAJA,
                             'motivo_baja' => $dispositivo->MOTIVO_BAJA ?? 'No especificado',

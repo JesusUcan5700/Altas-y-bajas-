@@ -78,20 +78,25 @@ class Monitor extends ActiveRecord
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO'], 'required'],
+            // Campos requeridos - modo normal
+            [['MARCA', 'MODELO'], 'required', 'except' => 'simplificado'],
+            
+            // Campos requeridos - modo simplificado
+            [['MARCA', 'MODELO'], 'required', 'on' => 'simplificado'],
+            
             [['TAMANIO', 'RESOLUCION', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'ESTADO', 'EMISION_INVENTARIO', 'TIPO_PANTALLA', 'FRECUENCIA_HZ', 'ENTRADAS_VIDEO', 'DESCRIPCION', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
             [['EMISION_INVENTARIO'], 'date', 'format' => 'php:Y-m-d'],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
-            [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
-            [['TAMANIO'], 'string', 'max' => 20],
-            [['RESOLUCION'], 'string', 'max' => 30],
-            [['TIPO_PANTALLA'], 'string', 'max' => 25],
-            [['FRECUENCIA_HZ'], 'string', 'max' => 10],
-            [['ENTRADAS_VIDEO'], 'string', 'max' => 100],
-            [['DESCRIPCION'], 'string', 'max' => 100],
-            [['ESTADO'], 'string', 'max' => 100],
-            [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
-            [['ultimo_editor'], 'string', 'max' => 100],
+            [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45, 'except' => 'simplificado'],
+            [['TAMANIO'], 'string', 'max' => 20, 'except' => 'simplificado'],
+            [['RESOLUCION'], 'string', 'max' => 30, 'except' => 'simplificado'],
+            [['TIPO_PANTALLA'], 'string', 'max' => 25, 'except' => 'simplificado'],
+            [['FRECUENCIA_HZ'], 'string', 'max' => 10, 'except' => 'simplificado'],
+            [['ENTRADAS_VIDEO'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['DESCRIPCION'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['ESTADO'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
+            [['ultimo_editor'], 'string', 'max' => 100, 'except' => 'simplificado'],
             [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro monitor.'],
             [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro monitor.'],
             [['ESTADO'], 'in', 'range' => [
@@ -100,11 +105,24 @@ class Monitor extends ActiveRecord
                 self::ESTADO_DANADO, 
                 self::ESTADO_MANTENIMIENTO,
                 self::ESTADO_BAJA
-            ]],
+            ], 'except' => 'simplificado'],
             [['ESTADO'], 'default', 'value' => self::ESTADO_ACTIVO],
             [['EMISION_INVENTARIO'], 'default', 'value' => date('Y-m-d')],
             [['ultimo_editor'], 'default', 'value' => 'Sistema'],
         ];
+    }
+    
+    /**
+     * Define scenarios para diferentes contextos
+     */
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+        
+        // Scenario para modo simplificado (catálogo)
+        $scenarios['simplificado'] = ['MARCA', 'MODELO', 'TAMANIO', 'RESOLUCION', 'TIPO_PANTALLA', 'FRECUENCIA_HZ', 'ENTRADAS_VIDEO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'DESCRIPCION', 'ESTADO', 'ubicacion_edificio', 'ubicacion_detalle'];
+        
+        return $scenarios;
     }
 
     public function attributeLabels()
@@ -167,27 +185,50 @@ class Monitor extends ActiveRecord
             // Configurar el editor actual
             $this->ultimo_editor = $this->getCurrentUser();
             
-            // Completar campos obligatorios automáticamente para formulario simplificado
-            if (empty($this->TAMANIO)) {
-                $this->TAMANIO = '24"';
-            }
-            if (empty($this->RESOLUCION)) {
-                $this->RESOLUCION = '1920x1080';
-            }
-            if (empty($this->NUMERO_SERIE)) {
-                $this->NUMERO_SERIE = 'MON-' . date('YmdHis');
-            }
-            if (empty($this->NUMERO_INVENTARIO)) {
-                $this->NUMERO_INVENTARIO = 'MON-' . date('YmdHis') . '-INV';
-            }
-            if (empty($this->ESTADO)) {
-                $this->ESTADO = self::ESTADO_INACTIVO;
-            }
-            if (empty($this->EMISION_INVENTARIO)) {
-                $this->EMISION_INVENTARIO = date('Y-m-d');
-            }
-            if (empty($this->ubicacion_detalle)) {
-                $this->ubicacion_detalle = 'Catálogo';
+            // Si estamos en escenario simplificado, completar campos faltantes
+            if ($this->scenario === 'simplificado' && $insert) {
+                $this->TAMANIO = $this->TAMANIO ?: '24"';
+                $this->RESOLUCION = $this->RESOLUCION ?: '1920x1080';
+                $this->TIPO_PANTALLA = $this->TIPO_PANTALLA ?: 'LED';
+                $this->FRECUENCIA_HZ = $this->FRECUENCIA_HZ ?: '60';
+                $this->ENTRADAS_VIDEO = $this->ENTRADAS_VIDEO ?: 'HDMI, VGA';
+                $this->ESTADO = $this->ESTADO ?: self::ESTADO_ACTIVO;
+                $this->ubicacion_edificio = $this->ubicacion_edificio ?: 'Catálogo';
+                $this->ubicacion_detalle = $this->ubicacion_detalle ?: 'Catálogo';
+                $this->DESCRIPCION = $this->DESCRIPCION ?: 'Entrada de catálogo';
+                
+                // Generar números únicos solo si no existen
+                if (empty($this->NUMERO_SERIE)) {
+                    $timestamp = time() . rand(100, 999);
+                    $this->NUMERO_SERIE = 'CAT-MON-' . $timestamp;
+                }
+                if (empty($this->NUMERO_INVENTARIO)) {
+                    $timestamp = time() . rand(100, 999);
+                    $this->NUMERO_INVENTARIO = 'CAT-MON-' . $timestamp;
+                }
+            } else {
+                // Modo normal - Completar campos obligatorios automáticamente solo si están vacíos
+                if (empty($this->TAMANIO)) {
+                    $this->TAMANIO = '24"';
+                }
+                if (empty($this->RESOLUCION)) {
+                    $this->RESOLUCION = '1920x1080';
+                }
+                if (empty($this->NUMERO_SERIE)) {
+                    $this->NUMERO_SERIE = 'MON-' . date('YmdHis');
+                }
+                if (empty($this->NUMERO_INVENTARIO)) {
+                    $this->NUMERO_INVENTARIO = 'MON-' . date('YmdHis') . '-INV';
+                }
+                if (empty($this->ESTADO)) {
+                    $this->ESTADO = self::ESTADO_INACTIVO;
+                }
+                if (empty($this->EMISION_INVENTARIO)) {
+                    $this->EMISION_INVENTARIO = date('Y-m-d');
+                }
+                if (empty($this->ubicacion_detalle)) {
+                    $this->ubicacion_detalle = 'Catálogo';
+                }
             }
             
             return true;

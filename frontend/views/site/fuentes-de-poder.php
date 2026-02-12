@@ -145,7 +145,9 @@ $this->params['breadcrumbs'][] = $this->title;
                     <div class="col-12">
                         <div class="d-flex justify-content-between mt-3">
                             <?php if ($modoSimple): ?>
-                                <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver al Catálogo', ['fuentes-listar'], ['class' => 'btn btn-secondary btn-lg']) ?>
+                                <button type="button" onclick="volverAtras()" class="btn btn-secondary btn-lg" id="btnVolver">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver al Catálogo
+                                </button>
                             <?php else: ?>
                                 <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Cancelar', ['/site/agregar-nuevo'], ['class' => 'btn btn-secondary btn-lg']) ?>
                             <?php endif; ?>
@@ -161,8 +163,27 @@ $this->params['breadcrumbs'][] = $this->title;
 </div>
 
 <script>
+// Función para volver atrás según el contexto
+function volverAtras() {
+    if (localStorage.getItem('returnToEquipo')) {
+        // Si venimos del formulario de equipo, limpiar localStorage y volver
+        localStorage.removeItem('returnToEquipo');
+        localStorage.removeItem('equipoFormData');
+        window.location.href = '<?= \yii\helpers\Url::to(["site/computo"]) ?>';
+    } else {
+        // Si no, ir al catálogo de fuentes
+        window.location.href = '<?= \yii\helpers\Url::to(["fuentes-catalogo-listar"]) ?>';
+    }
+}
+
 // Verificar si venimos del formulario de equipo y mostrar mensaje informativo
 if (localStorage.getItem('returnToEquipo')) {
+    // Cambiar el texto del botón
+    const btnVolver = document.getElementById('btnVolver');
+    if (btnVolver) {
+        btnVolver.innerHTML = '<i class="fas fa-arrow-left me-2"></i>Agregar Nuevo Equipo de Cómputo';
+    }
+    
     const alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-info alert-dismissible fade show mt-3';
     alertDiv.innerHTML = `
