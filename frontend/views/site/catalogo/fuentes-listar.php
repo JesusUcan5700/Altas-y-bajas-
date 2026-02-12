@@ -34,11 +34,11 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
                 
                 <div class="card-body">
                     <!-- Aviso de protección y reutilización -->
-                    <div class="alert alert-info alert-dismissible fade show" role="alert">
-                        <h5 class="alert-heading"><i class="fas fa-shield-alt me-2"></i>Items Protegidos y Reutilizables</h5>
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <h5 class="alert-heading"><i class="fas fa-bolt me-2"></i>Catálogo de Fuentes de Poder</h5>
                         <p class="mb-0">
                             <i class="fas fa-infinity me-1"></i> <strong>Reutilización infinita:</strong> Puedes usar estas fuentes de poder cuantas veces necesites sin que se agoten.<br>
-                            <i class="fas fa-lock me-1"></i> <strong>Protegidos contra eliminación:</strong> Los items del catálogo no se pueden borrar accidentalmente.
+                            <i class="fas fa-trash me-1"></i> <strong>Eliminación habilitada:</strong> Puedes seleccionar y eliminar items del catálogo que ya no necesites.
                         </p>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -66,8 +66,8 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
                                     </h5>
                                 </div>
                                 <div class="col-md-6 text-end">
-                                    <button type="button" class="btn btn-outline-danger me-2" id="btn-eliminar-seleccionados" style="display:none;">
-                                        <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
+                                    <button type="button" class="btn btn-outline-danger me-2" id="btn-eliminar-seleccionados" style="display:none;" onclick="eliminarSeleccionados()">
+                                        <i class="fas fa-trash me-2"></i>Eliminar Seleccionados <span id="contador-seleccionados"></span>
                                     </button>
                                     <button type="button" class="btn btn-outline-info me-2" onclick="exportarPDF()">
                                         <i class="fas fa-file-pdf me-2"></i>Exportar a PDF
@@ -77,7 +77,7 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
 
                             <!-- Selector todos -->
                             <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="select-all">
+                                <input class="form-check-input" type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
                                 <label class="form-check-label fw-bold" for="select-all">
                                     Seleccionar Todos
                                 </label>
@@ -184,6 +184,7 @@ function actualizarContadorSeleccionados() {
             contador.textContent = `(${fuentesSeleccionadas.length} seleccionado${fuentesSeleccionadas.length > 1 ? 's' : ''})`;
         }
         if (btnEliminar) {
+            btnEliminar.style.display = 'inline-block';
             btnEliminar.disabled = false;
         }
         if (btnQR) {
@@ -194,6 +195,7 @@ function actualizarContadorSeleccionados() {
             contador.textContent = '';
         }
         if (btnEliminar) {
+            btnEliminar.style.display = 'none';
             btnEliminar.disabled = true;
         }
         if (btnQR) {
