@@ -343,13 +343,6 @@ class SiteController extends Controller
         $approveUrl = Yii::$app->urlManager->createAbsoluteUrl([
             'site/approve-access',
             'token' => $authRequest->approval_token,
-            'action' => 'approve'
-        ]);
-
-        $rejectUrl = Yii::$app->urlManager->createAbsoluteUrl([
-            'site/approve-access',
-            'token' => $authRequest->approval_token,
-            'action' => 'reject'
         ]);
 
         try {
@@ -358,7 +351,6 @@ class SiteController extends Controller
                 [
                     'authRequest' => $authRequest,
                     'approveUrl' => $approveUrl,
-                    'rejectUrl' => $rejectUrl,
                 ]
             )
             ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName'] ?? 'Sistema de Inventario'])
@@ -455,7 +447,7 @@ class SiteController extends Controller
      * @param string $action
      * @return mixed
      */
-    public function actionApproveAccess($token, $action)
+    public function actionApproveAccess($token, $action = null)
     {
         $authRequest = AuthRequest::findByApprovalToken($token);
 
@@ -471,6 +463,17 @@ class SiteController extends Controller
             return $this->goHome();
         }
 
+        // Si es GET: mostrar página de confirmación (NO procesar automáticamente)
+        // Esto evita que los clientes de email pre-carguen y aprueben automáticamente
+        if (!Yii::$app->request->isPost) {
+            return $this->render('approveAccess', [
+                'authRequest' => $authRequest,
+                'token' => $token,
+            ]);
+        }
+
+        // Solo procesar con POST (clic real del admin en la página de confirmación)
+        $action = Yii::$app->request->post('action');
         $adminEmail = Yii::$app->params['authRequestEmail'] ?? Yii::$app->params['adminEmail'];
 
         if ($action === 'approve') {
@@ -504,9 +507,11 @@ class SiteController extends Controller
             } else {
                 Yii::$app->session->setFlash('error', '❌ Error al rechazar la solicitud.');
             }
+        } else {
+            Yii::$app->session->setFlash('error', 'Acción no válida.');
         }
 
-        return $this->redirect(['auth-login']);
+        return $this->redirect(['login']);
     }
 
     /**

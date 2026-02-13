@@ -92,15 +92,18 @@ use yii\helpers\Html;
             </ul>
         </div>
         
-        <p>Por favor, revise la solicitud y tome una decisión:</p>
+        <p>Por favor, haga clic en el siguiente enlace para revisar y tomar una decisión:</p>
         
         <div class="button-container">
-            <a href="<?= $approveUrl ?>" class="btn btn-approve">✅ Aprobar Acceso</a>
-            <a href="<?= $rejectUrl ?>" class="btn btn-reject">❌ Rechazar Solicitud</a>
+            <a href="<?= $approveUrl ?>" class="btn btn-approve" style="color: white;">🔍 Revisar Solicitud</a>
         </div>
         
         <p style="color: #666; font-size: 14px;">
-            <strong>Nota:</strong> Al aprobar, el usuario podrá solicitar enlaces de acceso temporal enviados a su correo.
+            <strong>⚠️ Importante:</strong> Al hacer clic se abrirá una página donde podrá <strong>aprobar o rechazar</strong> la solicitud.
+            La aprobación NO es automática, usted debe confirmar su decisión.
+        </p>
+        <p style="color: #666; font-size: 14px;">
+            <strong>Nota:</strong> Al aprobar, el usuario podrá iniciar sesión en el sistema.
         </p>
     </div>
     

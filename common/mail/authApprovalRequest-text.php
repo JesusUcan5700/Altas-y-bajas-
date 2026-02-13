@@ -26,18 +26,16 @@ Departamento: <?= $authRequest->departamento ?>
 Fecha de Solicitud: <?= Yii::$app->formatter->asDatetime($authRequest->created_at) ?>
 
 
-ACCIONES DISPONIBLES:
----------------------
+REVISAR SOLICITUD:
+------------------
 
-Para APROBAR la solicitud, visite:
+Para revisar y APROBAR o RECHAZAR la solicitud, visite:
 <?= $approveUrl ?>
 
+IMPORTANTE: La aprobación NO es automática.
+Al abrir el enlace verá una página donde debe confirmar su decisión.
 
-Para RECHAZAR la solicitud, visite:
-<?= $rejectUrl ?>
-
-
-Nota: Al aprobar, el usuario podrá solicitar enlaces de acceso temporal enviados a su correo.
+Nota: Al aprobar, el usuario podrá iniciar sesión en el sistema.
 
 ---
 Este es un correo automático del Sistema de Inventario TecNM Valladolid

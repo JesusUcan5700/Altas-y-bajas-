@@ -140,13 +140,6 @@ class SignupForm extends Model
         $approveUrl = Yii::$app->urlManager->createAbsoluteUrl([
             'site/approve-access',
             'token' => $authRequest->approval_token,
-            'action' => 'approve'
-        ]);
-
-        $rejectUrl = Yii::$app->urlManager->createAbsoluteUrl([
-            'site/approve-access',
-            'token' => $authRequest->approval_token,
-            'action' => 'reject'
         ]);
 
         try {
@@ -155,7 +148,6 @@ class SignupForm extends Model
                 [
                     'authRequest' => $authRequest,
                     'approveUrl' => $approveUrl,
-                    'rejectUrl' => $rejectUrl,
                 ]
             )
             ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
