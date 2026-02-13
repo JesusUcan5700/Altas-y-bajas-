@@ -80,7 +80,7 @@ class SiteController extends Controller
     public function beforeAction($action)
     {
         // Verificar autenticación personalizada para usuarios autorizados por email
-        if (!in_array($action->id, ['login', 'auth-login', 'magic-login', 'request-access', 'approve-access', 'error', 'captcha'])) {
+        if (!in_array($action->id, ['login', 'auth-login', 'magic-login', 'request-access', 'approve-access', 'request-password-reset', 'reset-password', 'signup', 'error', 'captcha'])) {
             // Verificar si el usuario está autenticado via sistema tradicional o via auth_request
             $isAuthenticatedViaSession = Yii::$app->session->get('authenticated', false);
             $isAuthenticatedViaUser = !Yii::$app->user->isGuest;
