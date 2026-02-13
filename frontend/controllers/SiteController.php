@@ -79,13 +79,48 @@ class SiteController extends Controller
 
     public function beforeAction($action)
     {
-        // Verificar autenticación personalizada para usuarios autorizados por email
-        if (!in_array($action->id, ['login', 'auth-login', 'magic-login', 'request-access', 'approve-access', 'request-password-reset', 'reset-password', 'signup', 'error', 'captcha'])) {
-            // Verificar si el usuario está autenticado via sistema tradicional o via auth_request
-            $isAuthenticatedViaSession = Yii::$app->session->get('authenticated', false);
+        // Acciones públicas que no requieren autenticación
+        $publicActions = ['login', 'auth-login', 'magic-login', 'request-access', 'approve-access', 'request-password-reset', 'reset-password', 'signup', 'error', 'captcha'];
+        
+        if (!in_array($action->id, $publicActions)) {
             $isAuthenticatedViaUser = !Yii::$app->user->isGuest;
+            $isAuthenticatedViaSession = Yii::$app->session->get('authenticated', false);
             
-            if (!$isAuthenticatedViaSession && !$isAuthenticatedViaUser) {
+            // Verificar autenticación tradicional (usuario/contraseña)
+            if ($isAuthenticatedViaUser) {
+                // Doble verificación: el usuario DEBE tener status ACTIVO
+                $user = Yii::$app->user->identity;
+                if (!$user || $user->status != \common\models\User::STATUS_ACTIVE) {
+                    Yii::$app->user->logout();
+                    Yii::$app->session->setFlash('error', '⏳ Tu cuenta está pendiente de aprobación por el administrador.');
+                    return $this->redirect(['site/login']);
+                }
+            // Verificar autenticación por sesión (magic link)
+            } elseif ($isAuthenticatedViaSession) {
+                // Verificar que el AuthRequest siga aprobado
+                $authEmail = Yii::$app->session->get('auth_user_email');
+                $authRequest = \common\models\AuthRequest::findOne(['email' => $authEmail, 'status' => \common\models\AuthRequest::STATUS_APPROVED]);
+                if (!$authRequest) {
+                    // Limpiar sesión inválida
+                    Yii::$app->session->remove('auth_user_id');
+                    Yii::$app->session->remove('auth_user_email');
+                    Yii::$app->session->remove('auth_user_name');
+                    Yii::$app->session->remove('authenticated');
+                    Yii::$app->session->setFlash('error', 'Tu acceso no está autorizado. Contacta al administrador.');
+                    return $this->redirect(['site/login']);
+                }
+                
+                // También verificar que si existe un User asociado, esté activo
+                $user = \common\models\User::findOne(['email' => $authEmail]);
+                if ($user && $user->status != \common\models\User::STATUS_ACTIVE) {
+                    Yii::$app->session->remove('auth_user_id');
+                    Yii::$app->session->remove('auth_user_email');
+                    Yii::$app->session->remove('auth_user_name');
+                    Yii::$app->session->remove('authenticated');
+                    Yii::$app->session->setFlash('error', '⏳ Tu cuenta está pendiente de aprobación por el administrador.');
+                    return $this->redirect(['site/login']);
+                }
+            } else {
                 Yii::$app->session->setFlash('warning', 'Debe iniciar sesión para acceder al sistema.');
                 return $this->redirect(['site/login']);
             }
@@ -121,13 +156,23 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        // Verificar autenticación (ya verificado en beforeAction, pero por seguridad)
+        // Verificar autenticación doble (beforeAction ya valida, pero por seguridad extra)
         $isAuthenticatedViaSession = Yii::$app->session->get('authenticated', false);
         $isAuthenticatedViaUser = !Yii::$app->user->isGuest;
         
         if (!$isAuthenticatedViaSession && !$isAuthenticatedViaUser) {
             Yii::$app->session->setFlash('warning', 'Debe iniciar sesión para acceder al sistema.');
             return $this->redirect(['site/login']);
+        }
+
+        // Si está autenticado con usuario, verificar que esté activo
+        if ($isAuthenticatedViaUser) {
+            $user = Yii::$app->user->identity;
+            if (!$user || $user->status != \common\models\User::STATUS_ACTIVE) {
+                Yii::$app->user->logout();
+                Yii::$app->session->setFlash('error', '⏳ Tu cuenta está pendiente de aprobación.');
+                return $this->redirect(['site/login']);
+            }
         }
         
         return $this->render('index');
@@ -410,15 +455,23 @@ class SiteController extends Controller
             return $this->redirect(['auth-login']);
         }
 
-        // Crear sesión temporal sin usuario en la tabla user
-        // Usamos un identificador basado en el email del authRequest
-        $identity = new \yii\web\User([
-            'identityClass' => 'common\models\User',
-        ]);
+        // Verificar que el AuthRequest esté aprobado
+        if ($authRequest->status != AuthRequest::STATUS_APPROVED) {
+            Yii::$app->session->setFlash('error', 
+                '⏳ Tu solicitud aún no ha sido aprobada por el administrador. Espera la aprobación.'
+            );
+            return $this->redirect(['login']);
+        }
 
-        // Login usando el ID del auth_request como identificador temporal
-        // Nota: Esto requiere modificar el modelo User o crear un IdentityInterface personalizado
-        // Por simplicidad, vamos a usar sesión directa
+        // Verificar que si hay un User asociado, esté activo
+        $user = \common\models\User::findOne(['email' => $authRequest->email]);
+        if ($user && $user->status != \common\models\User::STATUS_ACTIVE) {
+            Yii::$app->session->setFlash('error', 
+                '⏳ Tu cuenta está pendiente de aprobación por el administrador. ' .
+                'No puedes acceder hasta que sea aprobada.'
+            );
+            return $this->redirect(['login']);
+        }
         
         Yii::$app->session->set('auth_user_id', $authRequest->id);
         Yii::$app->session->set('auth_user_email', $authRequest->email);
