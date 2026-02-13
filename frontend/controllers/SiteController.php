@@ -166,15 +166,30 @@ class SiteController extends Controller
         }
 
         $model = new \common\models\LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
-        } else {
-            $model->password = '';
-
-            return $this->render('login', [
-                'model' => $model,
+        if ($model->load(Yii::$app->request->post())) {
+            // Verificar si el usuario existe pero está inactivo (pendiente de aprobación)
+            $inactiveUser = \common\models\User::findOne([
+                'username' => $model->username, 
+                'status' => \common\models\User::STATUS_INACTIVE
             ]);
+            
+            if ($inactiveUser) {
+                Yii::$app->session->setFlash('error', 
+                    '⏳ Tu cuenta está pendiente de aprobación por el administrador. ' .
+                    'Recibirás un correo electrónico cuando tu cuenta sea aprobada.'
+                );
+                return $this->render('login', ['model' => $model]);
+            }
+            
+            if ($model->login()) {
+                return $this->goBack();
+            }
         }
+        
+        $model->password = '';
+        return $this->render('login', [
+            'model' => $model,
+        ]);
     }
 
     /**
