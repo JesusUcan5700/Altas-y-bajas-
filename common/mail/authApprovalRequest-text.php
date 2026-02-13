@@ -3,7 +3,6 @@
 /* @var $this yii\web\View */
 /* @var $authRequest common\models\AuthRequest */
 /* @var $approveUrl string */
-/* @var $rejectUrl string */
 ?>
 
 NUEVA SOLICITUD DE ACCESO AL SISTEMA DE INVENTARIO

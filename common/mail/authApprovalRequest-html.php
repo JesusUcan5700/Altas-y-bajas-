@@ -4,7 +4,6 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $authRequest common\models\AuthRequest */
 /* @var $approveUrl string */
-/* @var $rejectUrl string */
 ?>
 <!DOCTYPE html>
 <html>

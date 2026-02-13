@@ -373,10 +373,10 @@ class SiteController extends Controller
         $model = new PasswordResetRequestForm();
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             if ($model->sendEmail()) {
-                Yii::$app->session->setFlash('success', 'Revisa tu email para instrucciones de recuperación de contraseña.');
-                return $this->goHome();
+                Yii::$app->session->setFlash('success', '📧 Revisa tu correo electrónico para instrucciones de recuperación de contraseña.');
+                return $this->redirect(['site/login']);
             } else {
-                Yii::$app->session->setFlash('error', 'Lo sentimos, no pudimos enviar el email de recuperación.');
+                Yii::$app->session->setFlash('error', '❌ No pudimos enviar el email de recuperación. Intenta más tarde.');
             }
         }
 
