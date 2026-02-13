@@ -126,8 +126,8 @@ class SiteController extends Controller
             }
         }
         
-        // Deshabilitar CSRF para acciones de eliminación y reciclaje
-        if (in_array($action->id, ['equipo-eliminar', 'equipo-eliminar-multiple', 'ram-eliminar', 'ram-eliminar-multiple', 'eliminar-ram', 'eliminar-ram-masivo', 'procesador-eliminar', 'procesador-eliminar-multiple', 'eliminar-procesador', 'eliminar-procesadores-masivo', 'almacenamiento-eliminar', 'almacenamiento-eliminar-multiple', 'eliminar-almacenamiento', 'eliminar-almacenamiento-masivo', 'fuente-eliminar', 'fuente-eliminar-multiple', 'monitor-eliminar', 'monitor-eliminar-multiple', 'eliminar-monitor', 'eliminar-monitores-masivo', 'registrar-pieza-reciclaje', 'actualizar-pieza-reciclaje', 'eliminar-pieza-reciclaje', 'inventario-piezas-reciclaje', 'detalle-pieza-reciclaje', 'estadisticas-reciclaje', 'opciones-pieza-reciclaje', 'catalogo-piezas-existentes', 'obtener-dispositivos-baja', 'detalle-dispositivo-baja'])) {
+        // Deshabilitar CSRF para acciones de eliminación, reciclaje y aprobación de acceso
+        if (in_array($action->id, ['approve-access', 'equipo-eliminar', 'equipo-eliminar-multiple', 'ram-eliminar', 'ram-eliminar-multiple', 'eliminar-ram', 'eliminar-ram-masivo', 'procesador-eliminar', 'procesador-eliminar-multiple', 'eliminar-procesador', 'eliminar-procesadores-masivo', 'almacenamiento-eliminar', 'almacenamiento-eliminar-multiple', 'eliminar-almacenamiento', 'eliminar-almacenamiento-masivo', 'fuente-eliminar', 'fuente-eliminar-multiple', 'monitor-eliminar', 'monitor-eliminar-multiple', 'eliminar-monitor', 'eliminar-monitores-masivo', 'registrar-pieza-reciclaje', 'actualizar-pieza-reciclaje', 'eliminar-pieza-reciclaje', 'inventario-piezas-reciclaje', 'detalle-pieza-reciclaje', 'estadisticas-reciclaje', 'opciones-pieza-reciclaje', 'catalogo-piezas-existentes', 'obtener-dispositivos-baja', 'detalle-dispositivo-baja'])) {
             $this->enableCsrfValidation = false;
         }
         return parent::beforeAction($action);
