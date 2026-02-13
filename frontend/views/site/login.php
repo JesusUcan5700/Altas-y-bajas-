@@ -124,6 +124,13 @@ $this->registerJs("
                         </div>
                     <?php endif; ?>
 
+                    <?php if (Yii::$app->session->hasFlash('info')): ?>
+                        <div class="alert alert-info alert-dismissible fade show" role="alert">
+                            <i class="fas fa-info-circle me-2"></i><?= Yii::$app->session->getFlash('info') ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if (Yii::$app->session->hasFlash('error')): ?>
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="fas fa-times-circle me-2"></i><?= Yii::$app->session->getFlash('error') ?>
@@ -181,10 +188,17 @@ $this->registerJs("
                         </p>
                         <hr class="my-3">
                         <p class="text-muted small mb-2">¿No tienes cuenta?</p>
-                        <?= Html::a('<i class="fas fa-user-plus me-2"></i>Registrarse', ['site/signup'], [
-                            'class' => 'btn btn-outline-secondary btn-sm',
-                            'style' => 'border-radius: 8px;'
-                        ]) ?>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <?= Html::a('<i class="fas fa-user-plus me-2"></i>Registrarse', ['site/signup'], [
+                                'class' => 'btn btn-outline-secondary btn-sm',
+                                'style' => 'border-radius: 8px;'
+                            ]) ?>
+                            <?= Html::a('<i class="fas fa-paper-plane me-2"></i>Reenviar solicitud', ['site/resend-auth-request'], [
+                                'class' => 'btn btn-outline-warning btn-sm',
+                                'style' => 'border-radius: 8px;',
+                                'title' => '¿Ya te registraste pero no has sido aprobado? Reenvía tu solicitud'
+                            ]) ?>
+                        </div>
                     </div>
                 </div>
             </div>

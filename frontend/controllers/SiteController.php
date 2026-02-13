@@ -80,7 +80,7 @@ class SiteController extends Controller
     public function beforeAction($action)
     {
         // Acciones públicas que no requieren autenticación
-        $publicActions = ['login', 'auth-login', 'magic-login', 'request-access', 'approve-access', 'request-password-reset', 'reset-password', 'signup', 'error', 'captcha'];
+        $publicActions = ['login', 'auth-login', 'magic-login', 'request-access', 'approve-access', 'request-password-reset', 'reset-password', 'signup', 'resend-auth-request', 'error', 'captcha'];
         
         if (!in_array($action->id, $publicActions)) {
             $isAuthenticatedViaUser = !Yii::$app->user->isGuest;
@@ -257,6 +257,118 @@ class SiteController extends Controller
         return $this->render('signup', [
             'model' => $model,
         ]);
+    }
+
+    /**
+     * Reenviar solicitud de autenticación al administrador.
+     * Permite al usuario que ya se registró volver a enviar el email de aprobación.
+     *
+     * @return \yii\web\Response|string
+     */
+    public function actionResendAuthRequest()
+    {
+        if (Yii::$app->request->isPost) {
+            $email = Yii::$app->request->post('email');
+            
+            if (empty($email)) {
+                Yii::$app->session->setFlash('error', 'Debes ingresar tu correo electrónico.');
+                return $this->render('resendAuthRequest');
+            }
+
+            // Buscar usuario inactivo con ese email
+            $user = \common\models\User::findOne([
+                'email' => $email,
+                'status' => \common\models\User::STATUS_INACTIVE,
+            ]);
+
+            if (!$user) {
+                // No revelar si el email existe o no por seguridad
+                Yii::$app->session->setFlash('info', 
+                    'Si existe una cuenta pendiente de aprobación con ese correo, se reenviará la solicitud al administrador.'
+                );
+                return $this->redirect(['site/login']);
+            }
+
+            // Buscar auth_request pendiente
+            $authRequest = \common\models\AuthRequest::findOne([
+                'email' => $email,
+                'status' => \common\models\AuthRequest::STATUS_PENDING,
+            ]);
+
+            if (!$authRequest) {
+                // Crear nueva solicitud si no existe una pendiente
+                $authRequest = new \common\models\AuthRequest();
+                $authRequest->email = $user->email;
+                $authRequest->nombre_completo = $user->username;
+                $authRequest->departamento = '';
+                $authRequest->generateApprovalToken();
+                
+                if (!$authRequest->save()) {
+                    Yii::$app->session->setFlash('error', 'Error al crear la solicitud. Intenta de nuevo.');
+                    return $this->render('resendAuthRequest');
+                }
+            } else {
+                // Regenerar token para el nuevo envío
+                $authRequest->generateApprovalToken();
+                $authRequest->save();
+            }
+
+            // Enviar email de aprobación
+            if ($this->sendResendApprovalEmail($authRequest)) {
+                Yii::$app->session->setFlash('success', 
+                    '✅ Se ha reenviado la solicitud de aprobación al administrador. ' .
+                    'Recibirás un correo cuando tu cuenta sea aprobada.'
+                );
+            } else {
+                Yii::$app->session->setFlash('error', 
+                    '❌ No se pudo enviar el correo. Por favor intenta más tarde o contacta al administrador.'
+                );
+            }
+
+            return $this->redirect(['site/login']);
+        }
+
+        return $this->render('resendAuthRequest');
+    }
+
+    /**
+     * Envía el email de re-aprobación al administrador
+     * @param \common\models\AuthRequest $authRequest
+     * @return bool
+     */
+    protected function sendResendApprovalEmail($authRequest)
+    {
+        $adminEmail = Yii::$app->params['authRequestEmail'] ?? Yii::$app->params['adminEmail'];
+
+        $approveUrl = Yii::$app->urlManager->createAbsoluteUrl([
+            'site/approve-access',
+            'token' => $authRequest->approval_token,
+            'action' => 'approve'
+        ]);
+
+        $rejectUrl = Yii::$app->urlManager->createAbsoluteUrl([
+            'site/approve-access',
+            'token' => $authRequest->approval_token,
+            'action' => 'reject'
+        ]);
+
+        try {
+            return Yii::$app->mailer->compose(
+                ['html' => 'authApprovalRequest-html', 'text' => 'authApprovalRequest-text'],
+                [
+                    'authRequest' => $authRequest,
+                    'approveUrl' => $approveUrl,
+                    'rejectUrl' => $rejectUrl,
+                ]
+            )
+            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName'] ?? 'Sistema de Inventario'])
+            ->setTo($adminEmail)
+            ->setSubject('🔄 [REENVÍO] Solicitud de acceso - ' . $authRequest->nombre_completo)
+            ->send();
+        } catch (\Exception $e) {
+            Yii::error('Error al reenviar email de aprobación: ' . $e->getMessage(), __METHOD__);
+            return false;
+        }
     }
 
     /**
