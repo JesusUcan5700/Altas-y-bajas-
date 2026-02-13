@@ -87,7 +87,7 @@ class SiteController extends Controller
             
             if (!$isAuthenticatedViaSession && !$isAuthenticatedViaUser) {
                 Yii::$app->session->setFlash('warning', 'Debe iniciar sesión para acceder al sistema.');
-                return $this->redirect(['site/auth-login']);
+                return $this->redirect(['site/login']);
             }
         }
         
@@ -127,7 +127,7 @@ class SiteController extends Controller
         
         if (!$isAuthenticatedViaSession && !$isAuthenticatedViaUser) {
             Yii::$app->session->setFlash('warning', 'Debe iniciar sesión para acceder al sistema.');
-            return $this->redirect(['site/auth-login']);
+            return $this->redirect(['site/login']);
         }
         
         return $this->render('index');
@@ -151,7 +151,7 @@ class SiteController extends Controller
         
         Yii::$app->session->setFlash('success', '👋 Has cerrado sesión correctamente.');
 
-        return $this->redirect(['auth-login']);
+        return $this->redirect(['login']);
     }
 
     /**

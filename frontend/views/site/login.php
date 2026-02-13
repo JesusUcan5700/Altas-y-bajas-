@@ -179,6 +179,13 @@ $this->registerJs("
                                 'class' => 'text-decoration-none'
                             ]) ?>
                         </p>
+                        <hr class="my-3">
+                        <p class="text-muted small mb-2">
+                            <?= Html::a('<i class="fas fa-key me-1"></i>Acceder con enlace mágico', ['site/auth-login'], [
+                                'class' => 'text-decoration-none text-info'
+                            ]) ?>
+                        </p>
+                        <hr class="my-3">
                         <p class="text-muted small mb-2">¿No tienes cuenta?</p>
                         <?= Html::a('<i class="fas fa-user-plus me-2"></i>Registrarse', ['site/signup'], [
                             'class' => 'btn btn-outline-secondary btn-sm',
