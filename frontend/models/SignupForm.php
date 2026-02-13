@@ -54,9 +54,11 @@ class SignupForm extends Model
         $user->email = $this->email;
         $user->setPassword($this->password);
         $user->generateAuthKey();
-        $user->status = 10; // Establecer status en 10 como se solicitó
+        $user->status = User::STATUS_INACTIVE; // Inactivo hasta que el admin apruebe
 
         if ($user->save()) {
+            // Crear solicitud de autenticación y enviar email al admin
+            $this->createAuthRequest($user);
             return $user;
         }
 
@@ -64,21 +66,62 @@ class SignupForm extends Model
     }
 
     /**
-     * Sends confirmation email to user
-     * @param User $user user model to with email should be send
-     * @return bool whether the email was sent
+     * Crea una solicitud de autenticación y envía email de aprobación al admin
+     * @param User $user el usuario recién registrado
+     * @return bool
      */
-    protected function sendEmail($user)
+    protected function createAuthRequest($user)
     {
-        return Yii::$app
-            ->mailer
-            ->compose(
-                ['html' => 'emailVerify-html', 'text' => 'emailVerify-text'],
-                ['user' => $user]
+        $authRequest = new \common\models\AuthRequest();
+        $authRequest->email = $user->email;
+        $authRequest->nombre_completo = $user->username;
+        $authRequest->departamento = '';
+        $authRequest->generateApprovalToken();
+
+        if ($authRequest->save()) {
+            return $this->sendApprovalEmail($authRequest);
+        }
+
+        return false;
+    }
+
+    /**
+     * Envía el email de aprobación al administrador
+     * @param \common\models\AuthRequest $authRequest
+     * @return bool
+     */
+    protected function sendApprovalEmail($authRequest)
+    {
+        $adminEmail = Yii::$app->params['authRequestEmail'] ?? Yii::$app->params['adminEmail'];
+
+        $approveUrl = Yii::$app->urlManager->createAbsoluteUrl([
+            'site/approve-access',
+            'token' => $authRequest->approval_token,
+            'action' => 'approve'
+        ]);
+
+        $rejectUrl = Yii::$app->urlManager->createAbsoluteUrl([
+            'site/approve-access',
+            'token' => $authRequest->approval_token,
+            'action' => 'reject'
+        ]);
+
+        try {
+            return Yii::$app->mailer->compose(
+                ['html' => 'authApprovalRequest-html', 'text' => 'authApprovalRequest-text'],
+                [
+                    'authRequest' => $authRequest,
+                    'approveUrl' => $approveUrl,
+                    'rejectUrl' => $rejectUrl,
+                ]
             )
-            ->setFrom([Yii::$app->params['supportEmail'] => Yii::$app->name . ' robot'])
-            ->setTo($this->email)
-            ->setSubject('Account registration at ' . Yii::$app->name)
+            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+            ->setTo($adminEmail)
+            ->setSubject('Nueva Solicitud de Registro - ' . $authRequest->nombre_completo)
             ->send();
+        } catch (\Exception $e) {
+            Yii::error('Error al enviar email de aprobación de registro: ' . $e->getMessage());
+            return false;
+        }
     }
 }

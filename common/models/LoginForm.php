@@ -42,9 +42,14 @@ class LoginForm extends Model
     public function validatePassword($attribute, $params)
     {
         if (!$this->hasErrors()) {
+            // Buscar usuario incluyendo inactivos para dar mensaje adecuado
             $user = $this->getUser();
-            if (!$user || !$user->validatePassword($this->password)) {
-                $this->addError($attribute, 'Incorrect username or password.');
+            $inactiveUser = $this->getInactiveUser();
+            
+            if ($inactiveUser && $inactiveUser->validatePassword($this->password)) {
+                $this->addError($attribute, 'Tu cuenta está pendiente de aprobación por el administrador. Recibirás un correo cuando sea aprobada.');
+            } elseif (!$user || !$user->validatePassword($this->password)) {
+                $this->addError($attribute, 'Usuario o contraseña incorrectos.');
             }
         }
     }
@@ -75,5 +80,14 @@ class LoginForm extends Model
         }
 
         return $this->_user;
+    }
+
+    /**
+     * Busca usuario inactivo (pendiente de aprobación)
+     * @return User|null
+     */
+    protected function getInactiveUser()
+    {
+        return User::findOne(['username' => $this->username, 'status' => User::STATUS_INACTIVE]);
     }
 }

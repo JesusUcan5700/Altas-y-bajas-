@@ -86,7 +86,7 @@ class AccessRequestForm extends Model
      */
     protected function sendApprovalEmail($authRequest)
     {
-        $adminEmail = 'inventarioapoyoinformatico@valladolid.tecnm.mx';
+        $adminEmail = Yii::$app->params['authRequestEmail'] ?? Yii::$app->params['adminEmail'];
         
         $approveUrl = Yii::$app->urlManager->createAbsoluteUrl([
             'site/approve-access',

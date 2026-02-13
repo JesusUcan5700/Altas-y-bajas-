@@ -186,10 +186,12 @@ class SiteController extends Controller
     {
         $model = new \frontend\models\SignupForm();
         if ($model->load(Yii::$app->request->post()) && $user = $model->signup()) {
-            if (Yii::$app->getUser()->login($user)) {
-                Yii::$app->session->setFlash('success', 'Usuario registrado exitosamente con status 10.');
-                return $this->goHome();
-            }
+            Yii::$app->session->setFlash('success', 
+                '✅ Tu cuenta ha sido creada exitosamente. ' .
+                'Se ha enviado una solicitud de aprobación al administrador. ' .
+                'Recibirás un correo cuando tu cuenta sea aprobada y podrás iniciar sesión.'
+            );
+            return $this->redirect(['site/login']);
         }
 
         return $this->render('signup', [
@@ -297,10 +299,17 @@ class SiteController extends Controller
             return $this->goHome();
         }
 
-        $adminEmail = 'inventarioapoyoinformatico@valladolid.tecnm.mx';
+        $adminEmail = Yii::$app->params['authRequestEmail'] ?? Yii::$app->params['adminEmail'];
 
         if ($action === 'approve') {
             if ($authRequest->approve($adminEmail)) {
+                // Activar también el usuario registrado en la tabla user
+                $user = \common\models\User::findOne(['email' => $authRequest->email]);
+                if ($user && $user->status == \common\models\User::STATUS_INACTIVE) {
+                    $user->status = \common\models\User::STATUS_ACTIVE;
+                    $user->save(false);
+                }
+                
                 // Enviar notificación al usuario
                 $this->sendApprovalNotification($authRequest);
                 
