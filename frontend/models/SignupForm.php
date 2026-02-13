@@ -41,9 +41,21 @@ class SignupForm extends Model
 
     /**
      * Valida que no exista una solicitud de autenticación pendiente o aprobada para este email
+     * Si el usuario fue eliminado de la tabla user, permite re-registrarse limpiando auth_requests viejos
      */
     public function validateNoPendingRequest($attribute, $params)
     {
+        // Si el usuario ya no existe en la tabla user, limpiar auth_requests viejos para permitir re-registro
+        $userExists = \common\models\User::find()
+            ->where(['email' => $this->email])
+            ->exists();
+
+        if (!$userExists) {
+            // Eliminar auth_requests viejos ya que el usuario fue borrado
+            \common\models\AuthRequest::deleteAll(['email' => $this->email]);
+            return; // Permitir re-registro
+        }
+
         $existingRequest = \common\models\AuthRequest::find()
             ->where(['email' => $this->email])
             ->andWhere(['in', 'status', [
