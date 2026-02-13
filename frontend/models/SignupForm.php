@@ -31,12 +31,24 @@ class SignupForm extends Model
             ['email', 'required', 'message' => 'El correo electrónico es obligatorio.'],
             ['email', 'email', 'message' => 'Ingrese un correo electrónico válido.'],
             ['email', 'string', 'max' => 255],
+            ['email', 'validateInstitutionalEmail'],
             ['email', 'unique', 'targetClass' => '\common\models\User', 'message' => 'Este correo electrónico ya está registrado.'],
             ['email', 'validateNoPendingRequest'],
 
             ['password', 'required', 'message' => 'La contraseña es obligatoria.'],
             ['password', 'string', 'min' => Yii::$app->params['user.passwordMinLength']],
         ];
+    }
+
+    /**
+     * Valida que el correo sea institucional (@valladolid.tecnm.mx)
+     */
+    public function validateInstitutionalEmail($attribute, $params)
+    {
+        $email = strtolower($this->$attribute);
+        if (!str_ends_with($email, '@valladolid.tecnm.mx')) {
+            $this->addError($attribute, 'Solo se permiten correos institucionales (@valladolid.tecnm.mx). Los correos personales como Gmail, Hotmail, etc. no son aceptados.');
+        }
     }
 
     /**
