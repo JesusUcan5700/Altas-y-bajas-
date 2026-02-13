@@ -84,19 +84,27 @@ class AuthRequest extends ActiveRecord
     }
 
     /**
-     * Genera el token de aprobación
+     * Genera el token de aprobación (único)
      */
     public function generateApprovalToken()
     {
-        $this->approval_token = Yii::$app->security->generateRandomString(64);
+        do {
+            $token = Yii::$app->security->generateRandomString(64);
+        } while (static::findOne(['approval_token' => $token]) !== null);
+        
+        $this->approval_token = $token;
     }
 
     /**
-     * Genera el token de enlace mágico
+     * Genera el token de enlace mágico (único)
      */
     public function generateMagicLinkToken($duration = 900) // 15 minutos por defecto
     {
-        $this->magic_link_token = Yii::$app->security->generateRandomString(64);
+        do {
+            $token = Yii::$app->security->generateRandomString(64);
+        } while (static::findOne(['magic_link_token' => $token]) !== null);
+        
+        $this->magic_link_token = $token;
         $this->token_expiry = time() + $duration;
     }
 

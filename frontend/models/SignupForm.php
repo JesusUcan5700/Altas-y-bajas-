@@ -23,19 +23,42 @@ class SignupForm extends Model
     {
         return [
             ['username', 'trim'],
-            ['username', 'required'],
-            ['username', 'unique', 'targetClass' => '\common\models\User', 'message' => 'This username has already been taken.'],
+            ['username', 'required', 'message' => 'El usuario es obligatorio.'],
+            ['username', 'unique', 'targetClass' => '\common\models\User', 'message' => 'Este nombre de usuario ya está en uso.'],
             ['username', 'string', 'min' => 2, 'max' => 255],
 
             ['email', 'trim'],
-            ['email', 'required'],
-            ['email', 'email'],
+            ['email', 'required', 'message' => 'El correo electrónico es obligatorio.'],
+            ['email', 'email', 'message' => 'Ingrese un correo electrónico válido.'],
             ['email', 'string', 'max' => 255],
-            ['email', 'unique', 'targetClass' => '\common\models\User', 'message' => 'This email address has already been taken.'],
+            ['email', 'unique', 'targetClass' => '\common\models\User', 'message' => 'Este correo electrónico ya está registrado.'],
+            ['email', 'validateNoPendingRequest'],
 
-            ['password', 'required'],
+            ['password', 'required', 'message' => 'La contraseña es obligatoria.'],
             ['password', 'string', 'min' => Yii::$app->params['user.passwordMinLength']],
         ];
+    }
+
+    /**
+     * Valida que no exista una solicitud de autenticación pendiente o aprobada para este email
+     */
+    public function validateNoPendingRequest($attribute, $params)
+    {
+        $existingRequest = \common\models\AuthRequest::find()
+            ->where(['email' => $this->email])
+            ->andWhere(['in', 'status', [
+                \common\models\AuthRequest::STATUS_PENDING,
+                \common\models\AuthRequest::STATUS_APPROVED
+            ]])
+            ->one();
+
+        if ($existingRequest) {
+            if ($existingRequest->status == \common\models\AuthRequest::STATUS_PENDING) {
+                $this->addError($attribute, 'Ya existe una solicitud pendiente para este correo. Espera la aprobación del administrador.');
+            } else {
+                $this->addError($attribute, 'Este correo ya tiene acceso autorizado al sistema.');
+            }
+        }
     }
 
     /**
@@ -72,6 +95,26 @@ class SignupForm extends Model
      */
     protected function createAuthRequest($user)
     {
+        // Verificar si ya existe una solicitud para este email (rechazada anteriormente)
+        $existingRequest = \common\models\AuthRequest::findOne([
+            'email' => $user->email,
+            'status' => \common\models\AuthRequest::STATUS_REJECTED,
+        ]);
+        
+        if ($existingRequest) {
+            // Reutilizar la solicitud rechazada, ponerla como pendiente de nuevo
+            $existingRequest->status = \common\models\AuthRequest::STATUS_PENDING;
+            $existingRequest->nombre_completo = $user->username;
+            $existingRequest->approved_by = null;
+            $existingRequest->approved_at = null;
+            $existingRequest->generateApprovalToken();
+            
+            if ($existingRequest->save()) {
+                return $this->sendApprovalEmail($existingRequest);
+            }
+            return false;
+        }
+
         $authRequest = new \common\models\AuthRequest();
         $authRequest->email = $user->email;
         $authRequest->nombre_completo = $user->username;
