@@ -262,10 +262,15 @@ $this->params['breadcrumbs'][] = $this->title;
                         </div>
                     </div>
 
-                    <div class="form-group text-center mt-4">
-                        <?= Html::submitButton('<i class="fas fa-save me-2"></i>Actualizar Equipo', ['class' => 'btn btn-success btn-lg me-3', 'id' => 'btn-actualizar-equipo']) ?>
-                        <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver al Listado', ['site/equipo-listar'], ['class' => 'btn btn-secondary btn-lg me-3']) ?>
-                        <?= Html::a('<i class="fas fa-home me-2"></i>Menú Principal', ['site/index'], ['class' => 'btn btn-outline-secondary btn-lg']) ?>
+                    <hr class="my-4">
+                    <div class="form-group text-center mt-4 mb-3">
+                        <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar Cambios', [
+                            'class' => 'btn btn-success btn-lg me-3',
+                            'id' => 'btn-actualizar-equipo',
+                            'style' => 'background-color: #198754; color: #fff; border-color: #198754; padding: 12px 30px; font-size: 1.1rem; font-weight: bold; display: inline-block;'
+                        ]) ?>
+                        <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver al Listado', ['site/equipo-listar'], ['class' => 'btn btn-danger btn-lg me-3']) ?>
+                        <?= Html::a('<i class="fas fa-home me-2"></i>Menú Principal', ['site/index'], ['class' => 'btn btn-outline-dark btn-lg']) ?>
                     </div>
 
                     <?php ActiveForm::end(); ?>

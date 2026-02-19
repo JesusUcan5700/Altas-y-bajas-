@@ -308,6 +308,7 @@ class Almacenamiento extends \yii\db\ActiveRecord
             'SanDisk' => 'SanDisk',
             'Toshiba' => 'Toshiba',
             'Crucial' => 'Crucial',
+            'HGST' => 'HGST',
             'Intel' => 'Intel',
             'Otra' => 'Otra'
         ];

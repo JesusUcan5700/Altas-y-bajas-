@@ -6,24 +6,429 @@ $this->title = 'Reciclaje de Piezas de Equipos';
 
 // CSS para la página de reciclaje
 $this->registerCss("
-    .reciclaje-card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    /* ====== VARIABLES Y BASE ====== */
+    .site-reciclaje-piezas {
+        --verde-primary: #1a8a3f;
+        --verde-dark: #0d6e2d;
+        --verde-light: #d4edda;
+        --verde-accent: #28a745;
+        --azul-accent: #0d6efd;
+        --naranja-accent: #fd7e14;
+        --rojo-accent: #dc3545;
+        --cyan-accent: #0dcaf0;
+        --gris-bg: #f0f2f5;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* ====== HERO SECTION ====== */
+    .hero-reciclaje {
+        background: linear-gradient(135deg, #0d6e2d 0%, #1a8a3f 40%, #28a745 70%, #34ce57 100%);
+        color: #ffffff;
+        border-radius: 24px;
+        margin-bottom: 2.5rem;
         border: none;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(26, 138, 63, 0.3);
+    }
+
+    .hero-reciclaje::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    .hero-reciclaje::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -10%;
+        width: 350px;
+        height: 350px;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    .hero-reciclaje h1 {
+        font-weight: 800;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        letter-spacing: -0.5px;
+    }
+
+    .hero-reciclaje .hero-subtitle {
+        font-size: 1.15rem;
+        opacity: 0.92;
+        font-weight: 300;
+    }
+
+    .hero-reciclaje .hero-desc {
+        font-size: 1rem;
+        opacity: 0.85;
+        max-width: 650px;
+        margin: 0 auto;
+    }
+
+    .hero-icon-float {
+        animation: floatIcon 3s ease-in-out infinite;
+    }
+
+    @keyframes floatIcon {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+    }
+
+    /* ====== STATS CARDS ====== */
+    .stats-card {
+        border-radius: 18px;
+        padding: 1.8rem 1.5rem;
+        margin-bottom: 1.5rem;
+        cursor: pointer;
+        transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stats-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 0 0 0 80px;
+        pointer-events: none;
+    }
+
+    .stats-card.card-disponibles {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        box-shadow: 0 6px 20px rgba(102,126,234,0.35);
+    }
+
+    .stats-card.card-reparacion {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: #fff;
+        box-shadow: 0 6px 20px rgba(245,87,108,0.35);
+    }
+
+    .stats-card.card-reutilizadas {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: #fff;
+        box-shadow: 0 6px 20px rgba(79,172,254,0.35);
+    }
+
+    .stats-card.card-tasa {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: #fff;
+        box-shadow: 0 6px 20px rgba(67,233,123,0.35);
+    }
+
+    .stats-card:hover {
+        transform: translateY(-8px) scale(1.02);
+    }
+
+    .stats-card .stats-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 0.3rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .stats-card .stats-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        opacity: 0.9;
+        font-weight: 600;
+    }
+
+    .stats-card .stats-icon {
+        font-size: 2.2rem;
+        opacity: 0.35;
+        position: absolute;
+        top: 15px;
+        right: 18px;
+    }
+
+    /* Contador animado */
+    @keyframes countUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stats-card .stats-number {
+        animation: countUp 0.6s ease-out;
+    }
+
+    /* ====== ACTION BUTTONS ====== */
+    .acciones-rapidas {
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 1.5rem 2rem;
         margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        border: 1px solid #e8ecf1;
     }
-    
-    .reciclaje-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    }
-    
-    .reciclaje-icon {
-        font-size: 3rem;
+
+    .acciones-rapidas .seccion-titulo {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #6c757d;
+        font-weight: 700;
         margin-bottom: 1rem;
     }
-    
+
+    .btn-accion {
+        border-radius: 14px;
+        padding: 14px 22px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border: 2px solid transparent;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-accion:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .btn-accion-primary {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: #fff;
+    }
+    .btn-accion-primary:hover { color: #fff; background: linear-gradient(135deg, #1f8a38, #1aad80); }
+
+    .btn-accion-info {
+        background: linear-gradient(135deg, #0d6efd, #6610f2);
+        color: #fff;
+    }
+    .btn-accion-info:hover { color: #fff; background: linear-gradient(135deg, #0a58ca, #520dc2); }
+
+    .btn-accion-warning {
+        background: linear-gradient(135deg, #fd7e14, #ffc107);
+        color: #fff;
+    }
+    .btn-accion-warning:hover { color: #fff; background: linear-gradient(135deg, #d66a10, #e0a800); }
+
+    .btn-accion-dark {
+        background: linear-gradient(135deg, #343a40, #6c757d);
+        color: #fff;
+    }
+    .btn-accion-dark:hover { color: #fff; background: linear-gradient(135deg, #23272b, #5a6268); }
+
+    /* ====== MAIN PANELS ====== */
+    .panel-main {
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        border: 1px solid #e8ecf1;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .panel-header {
+        padding: 1.2rem 1.5rem;
+        font-weight: 700;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: none;
+    }
+
+    .panel-header.header-verde {
+        background: linear-gradient(135deg, #1a8a3f 0%, #28a745 100%);
+        color: #fff;
+    }
+
+    .panel-header.header-cyan {
+        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        color: #fff;
+    }
+
+    .panel-body {
+        padding: 1.5rem;
+    }
+
+    /* ====== CATEGORIAS SIDEBAR ====== */
+    .categoria-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        transition: all 0.25s ease;
+        cursor: pointer;
+        background: #f8f9fa;
+        border: 1px solid transparent;
+    }
+
+    .categoria-item:hover {
+        background: #e8f5e9;
+        border-color: #c8e6c9;
+        transform: translateX(4px);
+    }
+
+    .categoria-item .cat-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        font-size: 0.92rem;
+    }
+
+    .categoria-item .cat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        color: #fff;
+    }
+
+    .cat-icon.bg-equipo { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .cat-icon.bg-monitor { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+    .cat-icon.bg-impresora { background: linear-gradient(135deg, #868e96, #adb5bd); }
+    .cat-icon.bg-telefonia { background: linear-gradient(135deg, #28a745, #20c997); }
+    .cat-icon.bg-video { background: linear-gradient(135deg, #fd7e14, #ffc107); }
+    .cat-icon.bg-conectividad { background: linear-gradient(135deg, #343a40, #6c757d); }
+    .cat-icon.bg-bateria { background: linear-gradient(135deg, #dc3545, #e35d6a); }
+    .cat-icon.bg-nobreak { background: linear-gradient(135deg, #e67e22, #f39c12); }
+
+    .categoria-item .cat-badge {
+        min-width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+
+    /* ====== PIEZA ITEMS ====== */
+    .pieza-item {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 1.2rem 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 5px solid var(--verde-accent);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .pieza-item:hover {
+        transform: translateX(6px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        border-left-width: 6px;
+    }
+
+    /* ====== ESTADO BADGES ====== */
+    .estado-disponible { background-color: #d4edda; color: #155724; }
+    .estado-en-uso { background-color: #d1ecf1; color: #0c5460; }
+    .estado-reservado { background-color: #fff3cd; color: #856404; }
+    .estado-danado { background-color: #f8d7da; color: #721c24; }
+    .estado-baja { background-color: #6c757d; color: #ffffff; }
+
+    .condicion-excelente { color: #28a745; font-weight: bold; }
+    .condicion-bueno { color: #17a2b8; }
+    .condicion-regular { color: #ffc107; }
+    .condicion-malo { color: #dc3545; }
+
+    /* ====== FORM SECTIONS ====== */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 14px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e8ecf1;
+    }
+
+    .form-section-title {
+        color: #1a8a3f;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #28a745;
+    }
+
+    .required-field::after {
+        content: ' *';
+        color: #dc3545;
+    }
+
+    /* ====== CATEGORIA SECCION (piezas recientes) ====== */
+    .categoria-seccion {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #fafbfc;
+        border-radius: 16px;
+        border: 1px solid #e8ecf1;
+    }
+
+    .seccion-header {
+        padding-bottom: 1rem;
+        border-bottom: 3px solid var(--verde-accent);
+        margin-bottom: 1.5rem;
+    }
+
+    .seccion-header h5 {
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    .seccion-dispositivos {
+        padding: 0.5rem 0;
+    }
+
+    .categoria-seccion .pieza-item {
+        background: #ffffff;
+        border-left: 5px solid;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .categoria-seccion .pieza-item:hover {
+        transform: translateX(8px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ====== RECICLAJE CARDS (legacy) ====== */
+    .reciclaje-card {
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+        border: none;
+        border-radius: 18px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        margin-bottom: 2rem;
+    }
+
+    .reciclaje-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .reciclaje-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
     .btn-reciclaje {
         border-radius: 25px;
         padding: 12px 30px;
@@ -32,265 +437,245 @@ $this->registerCss("
         letter-spacing: 1px;
         transition: all 0.3s ease;
     }
-    
+
     .btn-reciclaje:hover {
         transform: scale(1.05);
     }
-    
-    .hero-reciclaje {
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-        color: #155724;
-        border-radius: 20px;
-        margin-bottom: 3rem;
-        border: 1px solid #c3e6cb;
-    }
-    
-    .stats-card {
-        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-        border-radius: 15px;
+
+    /* ====== FOOTER SECTION ====== */
+    .footer-actions {
+        background: #ffffff;
+        border-radius: 18px;
         padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        cursor: pointer;
-        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        border: 1px solid #e8ecf1;
+        text-align: center;
     }
-    
-    .stats-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    }
-    
-    .pieza-item {
-        background: #ffffff;
-        border-radius: 10px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid #28a745;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .pieza-item:hover {
-        transform: translateX(5px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-    
-    .estado-disponible { background-color: #d4edda; color: #155724; }
-    .estado-en-uso { background-color: #d1ecf1; color: #0c5460; }
-    .estado-reservado { background-color: #fff3cd; color: #856404; }
-    .estado-danado { background-color: #f8d7da; color: #721c24; }
-    .estado-baja { background-color: #6c757d; color: #ffffff; }
-    
-    .condicion-excelente { color: #28a745; font-weight: bold; }
-    .condicion-bueno { color: #17a2b8; }
-    .condicion-regular { color: #ffc107; }
-    .condicion-malo { color: #dc3545; }
-    
-    .form-section {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .form-section-title {
-        color: #28a745;
+
+    .btn-volver {
+        border-radius: 14px;
+        padding: 12px 30px;
         font-weight: 600;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #28a745;
-    }
-    
-    .required-field::after {
-        content: ' *';
-        color: #dc3545;
-    }
-    
-    .categoria-seccion {
-        margin-bottom: 2rem;
-        padding: 1.5rem;
-        background: #f8f9fa;
-        border-radius: 12px;
-        border: 1px solid #e0e0e0;
-    }
-    
-    .seccion-header {
-        padding-bottom: 1rem;
-        border-bottom: 3px solid #28a745;
-        margin-bottom: 1.5rem;
-    }
-    
-    .seccion-header h5 {
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-    
-    .seccion-dispositivos {
-        padding: 0.5rem 0;
-    }
-    
-    .categoria-seccion .pieza-item {
-        background: #ffffff;
-        border-left: 4px solid;
+        background: linear-gradient(135deg, #6c757d, #868e96);
+        color: #fff;
+        border: none;
         transition: all 0.3s ease;
     }
-    
-    .categoria-seccion .pieza-item:hover {
-        transform: translateX(8px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+
+    .btn-volver:hover {
+        background: linear-gradient(135deg, #5a6268, #6c757d);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(108,117,125,0.4);
+    }
+
+    /* ====== EMPTY STATE ====== */
+    .empty-state {
+        padding: 3rem 2rem;
+        text-align: center;
+    }
+
+    .empty-state .empty-icon {
+        font-size: 3.5rem;
+        color: #c8e6c9;
+        margin-bottom: 1rem;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.7; }
+        50% { transform: scale(1.05); opacity: 1; }
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        font-size: 1.05rem;
+    }
+
+    /* ====== Responsive ====== */
+    @media (max-width: 768px) {
+        .hero-reciclaje { border-radius: 16px; }
+        .stats-card { padding: 1.2rem 1rem; }
+        .stats-card .stats-number { font-size: 2rem; }
+        .acciones-rapidas { padding: 1rem; }
+        .btn-accion { padding: 10px 16px; font-size: 0.82rem; }
     }
 ");
 ?>
-?>
 
 <div class="site-reciclaje-piezas">
-    <!-- Hero Section -->
-    <div class="hero-reciclaje p-5 mb-4">
-        <div class="container-fluid py-5 text-center">
-            <h1 class="display-4 fw-bold mb-3">
-                <i class="fas fa-recycle me-3" style="color: #28a745;"></i>Reciclaje de Piezas de Equipos
+    <!-- ====== HERO SECTION ====== -->
+    <div class="hero-reciclaje p-4 p-md-5 mb-4">
+        <div class="container-fluid py-4 text-center position-relative" style="z-index: 1;">
+            <div class="hero-icon-float mb-3">
+                <i class="fas fa-recycle" style="font-size: 3.5rem; opacity: 0.9;"></i>
+            </div>
+            <h1 class="display-5 fw-bold mb-2">
+                Reciclaje de Piezas de Equipos
             </h1>
-            <p class="fs-5 fw-light mb-4">Gestión y aprovechamiento de componentes reutilizables</p>
+            <p class="hero-subtitle mb-3">Gestión y aprovechamiento de componentes reutilizables</p>
             <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <p class="lead">Administra las piezas y componentes recuperados de equipos dados de baja para su reutilización en reparaciones y nuevos ensambles</p>
+                <div class="col-md-7">
+                    <p class="hero-desc mb-0">Administra las piezas y componentes recuperados de equipos dados de baja para su reutilización en reparaciones y nuevos ensambles</p>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="container-fluid">
-        <!-- Estadísticas rápidas -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stats-card text-center">
-                    <div class="reciclaje-icon">
-                        <i class="fas fa-microchip text-primary"></i>
-                    </div>
-                    <h3 class="fw-bold text-primary">45</h3>
-                    <p class="text-muted">Piezas Disponibles</p>
+        <!-- ====== STATS CARDS ====== -->
+        <div class="row mb-4 g-3">
+            <div class="col-6 col-md-3">
+                <div class="stats-card card-disponibles text-center">
+                    <i class="fas fa-microchip stats-icon"></i>
+                    <div class="stats-number">45</div>
+                    <div class="stats-label">Piezas Disponibles</div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stats-card text-center">
-                    <div class="reciclaje-icon">
-                        <i class="fas fa-tools text-warning"></i>
-                    </div>
-                    <h3 class="fw-bold text-warning">12</h3>
-                    <p class="text-muted">En Reparación</p>
+            <div class="col-6 col-md-3">
+                <div class="stats-card card-reparacion text-center">
+                    <i class="fas fa-tools stats-icon"></i>
+                    <div class="stats-number">12</div>
+                    <div class="stats-label">En Reparación</div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stats-card text-center">
-                    <div class="reciclaje-icon">
-                        <i class="fas fa-check-circle text-success"></i>
-                    </div>
-                    <h3 class="fw-bold text-success">28</h3>
-                    <p class="text-muted">Reutilizadas</p>
+            <div class="col-6 col-md-3">
+                <div class="stats-card card-reutilizadas text-center">
+                    <i class="fas fa-check-circle stats-icon"></i>
+                    <div class="stats-number">28</div>
+                    <div class="stats-label">Reutilizadas</div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stats-card text-center">
-                    <div class="reciclaje-icon">
-                        <i class="fas fa-chart-line text-info"></i>
-                    </div>
-                    <h3 class="fw-bold text-info">85%</h3>
-                    <p class="text-muted">Tasa de Reciclaje</p>
+            <div class="col-6 col-md-3">
+                <div class="stats-card card-tasa text-center">
+                    <i class="fas fa-chart-line stats-icon"></i>
+                    <div class="stats-number">85%</div>
+                    <div class="stats-label">Tasa de Reciclaje</div>
                 </div>
             </div>
         </div>
 
+        <!-- ====== ACCIONES RÁPIDAS ====== -->
+        <div class="acciones-rapidas">
+            <div class="seccion-titulo">Acciones Rápidas</div>
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn-accion btn-accion-primary" onclick="registrarPieza()">
+                    <i class="fas fa-plus-circle"></i> Registrar Pieza
+                </button>
+                <button class="btn-accion btn-accion-info" onclick="verInventario()">
+                    <i class="fas fa-boxes"></i> Ver Inventario
+                </button>
+                <button class="btn-accion btn-accion-warning" onclick="verReportes()">
+                    <i class="fas fa-chart-pie"></i> Estadísticas
+                </button>
+                <button class="btn-accion btn-accion-dark" onclick="gestionarUso()">
+                    <i class="fas fa-exchange-alt"></i> Gestionar Uso
+                </button>
+            </div>
+        </div>
 
-        <!-- Listado de piezas recientes -->
-        <div class="row">
+        <!-- ====== CONTENIDO PRINCIPAL ====== -->
+        <div class="row g-4">
+            <!-- Panel izquierdo: Dispositivos de baja -->
             <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-recycle me-2"></i>Dispositivos Dados de Baja Disponibles para Reciclaje
-                        </h5>
+                <div class="panel-main">
+                    <div class="panel-header header-verde">
+                        <i class="fas fa-recycle"></i>
+                        <span>Dispositivos Dados de Baja Disponibles para Reciclaje</span>
                     </div>
-                    <div class="card-body">
-                        <!-- Contenedor dinámico para dispositivos de baja -->
+                    <div class="panel-body">
                         <div id="piezasRecientesContainer">
-                            <div class="text-center p-4">
-                                <div class="spinner-border text-success" role="status">
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <i class="fas fa-recycle"></i>
+                                </div>
+                                <div class="spinner-border spinner-border-sm text-success mb-2" role="status">
                                     <span class="visually-hidden">Cargando...</span>
                                 </div>
-                                <p class="mt-2 text-muted">Cargando dispositivos dados de baja...</p>
+                                <p>Cargando dispositivos dados de baja...</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Panel derecho: Categorías -->
             <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-info-circle me-2"></i>Categorías de Dispositivos
-                        </h5>
+                <div class="panel-main">
+                    <div class="panel-header header-cyan">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Categorías de Dispositivos</span>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span><i class="fas fa-desktop text-primary me-2"></i>Equipos de Cómputo</span>
-                                <span class="badge bg-primary" id="count-memoria">0</span>
+                    <div class="panel-body">
+                        <div class="categoria-item">
+                            <div class="cat-info">
+                                <div class="cat-icon bg-equipo"><i class="fas fa-desktop"></i></div>
+                                <span>Equipos de Cómputo</span>
                             </div>
+                            <span class="cat-badge badge bg-primary" id="count-memoria">0</span>
                         </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span><i class="fas fa-tv text-info me-2"></i>Monitores</span>
-                                <span class="badge bg-info" id="count-monitor">0</span>
+                        <div class="categoria-item">
+                            <div class="cat-info">
+                                <div class="cat-icon bg-monitor"><i class="fas fa-tv"></i></div>
+                                <span>Monitores</span>
                             </div>
+                            <span class="cat-badge badge bg-info" id="count-monitor">0</span>
                         </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span><i class="fas fa-print text-secondary me-2"></i>Impresoras</span>
-                                <span class="badge bg-secondary" id="count-procesador">0</span>
+                        <div class="categoria-item">
+                            <div class="cat-info">
+                                <div class="cat-icon bg-impresora"><i class="fas fa-print"></i></div>
+                                <span>Impresoras</span>
                             </div>
+                            <span class="cat-badge badge bg-secondary" id="count-procesador">0</span>
                         </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span><i class="fas fa-phone text-success me-2"></i>Telefonía</span>
-                                <span class="badge bg-success" id="count-almacenamiento">0</span>
+                        <div class="categoria-item">
+                            <div class="cat-info">
+                                <div class="cat-icon bg-telefonia"><i class="fas fa-phone"></i></div>
+                                <span>Telefonía</span>
                             </div>
+                            <span class="cat-badge badge bg-success" id="count-almacenamiento">0</span>
                         </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span><i class="fas fa-video text-warning me-2"></i>Video Vigilancia</span>
-                                <span class="badge bg-warning" id="count-fuente">0</span>
+                        <div class="categoria-item">
+                            <div class="cat-info">
+                                <div class="cat-icon bg-video"><i class="fas fa-video"></i></div>
+                                <span>Video Vigilancia</span>
                             </div>
+                            <span class="cat-badge badge bg-warning text-dark" id="count-fuente">0</span>
                         </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span><i class="fas fa-network-wired text-dark me-2"></i>Conectividad</span>
-                                <span class="badge bg-dark" id="count-conectividad">0</span>
+                        <div class="categoria-item">
+                            <div class="cat-info">
+                                <div class="cat-icon bg-conectividad"><i class="fas fa-network-wired"></i></div>
+                                <span>Conectividad</span>
                             </div>
+                            <span class="cat-badge badge bg-dark" id="count-conectividad">0</span>
                         </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span><i class="fas fa-battery-full text-danger me-2"></i>Baterías</span>
-                                <span class="badge bg-danger" id="count-bateria">0</span>
+                        <div class="categoria-item">
+                            <div class="cat-info">
+                                <div class="cat-icon bg-bateria"><i class="fas fa-battery-full"></i></div>
+                                <span>Baterías</span>
                             </div>
+                            <span class="cat-badge badge bg-danger" id="count-bateria">0</span>
                         </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span><i class="fas fa-plug text-warning me-2"></i>No Break</span>
-                                <span class="badge bg-warning text-dark" id="count-nobreak">0</span>
+                        <div class="categoria-item">
+                            <div class="cat-info">
+                                <div class="cat-icon bg-nobreak"><i class="fas fa-plug"></i></div>
+                                <span>No Break</span>
                             </div>
+                            <span class="cat-badge badge bg-warning text-dark" id="count-nobreak">0</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Botón para volver -->
-        <div class="row mt-4">
-            <div class="col-12 text-center">
-                <a href="<?= Url::to(['site/index']) ?>" class="btn btn-secondary btn-lg">
-                    <i class="fas fa-home me-2"></i>Volver al Menú Principal
-                </a>
+        <!-- ====== FOOTER / VOLVER ====== -->
+        <div class="row mt-4 mb-3">
+            <div class="col-12">
+                <div class="footer-actions">
+                    <a href="<?= Url::to(['site/index']) ?>" class="btn-volver btn btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Menú Principal
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -1392,7 +1777,7 @@ function cargarEstadisticas() {
                 const stats = result.estadisticas;
                 
                 // Actualizar tarjetas de estadísticas
-                const statsCards = document.querySelectorAll('.stats-card h3');
+                const statsCards = document.querySelectorAll('.stats-card .stats-number');
                 if (statsCards.length >= 4) {
                     statsCards[0].textContent = stats.disponibles;
                     statsCards[1].textContent = stats.enUso;
@@ -1564,8 +1949,12 @@ function cargarPiezasRecientes() {
                 const container = document.getElementById('piezasRecientesContainer');
                 if (container) {
                     container.innerHTML = `
-                        <div class="alert alert-info text-center mt-3">
-                            <i class="fas fa-info-circle me-2"></i>No se encontraron dispositivos dados de baja
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                            <p class="fw-semibold mb-1">Sin dispositivos dados de baja</p>
+                            <p class="text-muted" style="font-size: 0.9rem;">No se encontraron dispositivos disponibles para reciclaje en este momento</p>
                         </div>
                     `;
                 }
@@ -1576,8 +1965,12 @@ function cargarPiezasRecientes() {
             const container = document.getElementById('piezasRecientesContainer');
             if (container) {
                 container.innerHTML = `
-                    <div class="alert alert-danger text-center mt-3">
-                        <i class="fas fa-exclamation-triangle me-2"></i>Error al cargar los dispositivos
+                    <div class="empty-state">
+                        <div class="empty-icon" style="color: #f8d7da;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <p class="text-danger fw-semibold">Error al cargar los dispositivos</p>
+                        <p class="text-muted" style="font-size: 0.9rem;">Intente recargar la página</p>
                     </div>
                 `;
             }

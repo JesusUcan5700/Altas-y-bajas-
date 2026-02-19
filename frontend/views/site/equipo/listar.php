@@ -280,6 +280,18 @@ $this->registerCss("
                                             <td>
                                                 <?php
                                                 $tipoEquipo = $equipo['tipoequipo'] ?? '-';
+                                                // Mapear valor de BD a nombre completo para mostrar
+                                                $tiposMap = [
+                                                    'PC' => 'PC ESCRITORIO',
+                                                    'pc' => 'PC ESCRITORIO',
+                                                    'Laptop' => 'LAPTOP',
+                                                    'laptop' => 'LAPTOP',
+                                                    'Servidor' => 'SERVIDOR',
+                                                    'servidor' => 'SERVIDOR',
+                                                    'Otro' => 'OTRO',
+                                                    'otro' => 'OTRO',
+                                                ];
+                                                $tipoEquipoDisplay = $tiposMap[$tipoEquipo] ?? strtoupper($tipoEquipo);
                                                 $iconoTipo = '';
                                                 switch(strtolower($tipoEquipo)) {
                                                     case 'pc':
@@ -296,7 +308,7 @@ $this->registerCss("
                                                         break;
                                                 }
                                                 ?>
-                                                <?= $iconoTipo ?><?= htmlspecialchars($tipoEquipo) ?>
+                                                <?= $iconoTipo ?><?= htmlspecialchars($tipoEquipoDisplay) ?>
                                             </td>
                                             <td><?= htmlspecialchars($equipo['MARCA'] ?? '-') ?></td>
                                             <td><?= htmlspecialchars($equipo['MODELO'] ?? '-') ?></td>
@@ -869,10 +881,24 @@ function descargarQREquipo(id, marca, modelo, serie) {
     link.click();
 }
 
+// Función auxiliar para limpiar texto extraído del HTML
+function limpiarTexto(texto) {
+    return texto
+        .replace(/\s+/g, ' ')       // Colapsar múltiples espacios/saltos en uno
+        .replace(/[^\S\r\n]+/g, ' ') // Eliminar tabs y espacios extra
+        .trim();
+}
+
 // Función para exportar equipos a PDF
 function exportarAPDF() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4'); // Formato horizontal
+    // Márgenes reducidos: 8mm izq/der para aprovechar más el ancho
+    const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();   // 297
+    const pageHeight = doc.internal.pageSize.getHeight();  // 210
+    const margenIzq = 8;
+    const margenDer = 8;
+    const anchoUtil = pageWidth - margenIzq - margenDer; // ~281mm
     
     // Obtener fecha y hora actual
     const now = new Date();
@@ -884,15 +910,15 @@ function exportarAPDF() {
         minute: '2-digit'
     });
     
-    // Título del documento
-    doc.setFontSize(18);
+    // Título del documento - más compacto
+    doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
-    doc.text('GESTIÓN DE EQUIPOS DE CÓMPUTO', 148.5, 15, { align: 'center' });
+    doc.text('GESTIÓN DE EQUIPOS DE CÓMPUTO', pageWidth / 2, 12, { align: 'center' });
     
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
-    doc.text('COMPUTADORAS, LAPTOPS Y SERVIDORES', 148.5, 22, { align: 'center' });
-    doc.text(`FECHA DE GENERACIÓN: ${fechaHora.toUpperCase()}`, 148.5, 28, { align: 'center' });
+    doc.text('COMPUTADORAS, LAPTOPS Y SERVIDORES', pageWidth / 2, 17, { align: 'center' });
+    doc.text(`FECHA DE GENERACIÓN: ${fechaHora.toUpperCase()}`, pageWidth / 2, 21, { align: 'center' });
     
     // Obtener filas visibles de la tabla HTML
     const tbody = document.getElementById('tbody_equipos');
@@ -900,10 +926,10 @@ function exportarAPDF() {
         return fila.style.display !== 'none' && fila.cells.length > 1;
     });
     
-    // Configurar columnas
+    // Configurar columnas con headers más cortos
     const columns = [
         { header: 'ID', dataKey: 'id' },
-        { header: 'TIPO EQUIPO', dataKey: 'tipoEquipo' },
+        { header: 'TIPO', dataKey: 'tipoEquipo' },
         { header: 'MARCA', dataKey: 'marca' },
         { header: 'MODELO', dataKey: 'modelo' },
         { header: 'CPU', dataKey: 'cpu' },
@@ -912,8 +938,8 @@ function exportarAPDF() {
         { header: 'N° SERIE', dataKey: 'serie' },
         { header: 'N° INVENTARIO', dataKey: 'inventario' },
         { header: 'TIEMPO ACTIVO', dataKey: 'tiempoActivo' },
-        { header: 'UBICACIÓN EDIFICIO', dataKey: 'ubicacionEdificio' },
-        { header: 'UBICACIÓN DETALLE', dataKey: 'ubicacionDetalle' },
+        { header: 'EDIF.', dataKey: 'ubicacionEdificio' },
+        { header: 'UBICACIÓN', dataKey: 'ubicacionDetalle' },
         { header: 'ESTADO', dataKey: 'estado' }
     ];
     
@@ -922,15 +948,14 @@ function exportarAPDF() {
         const celdas = fila.cells;
         
         // Extraer RAMs de los badges con total
-        const ramCell = celdas[6]; // Columna Memoria RAM (ajustado por nueva columna)
+        const ramCell = celdas[6];
         const ramBadges = ramCell.querySelectorAll('.badge');
         let ramTexts = [];
         ramBadges.forEach(badge => {
             const texto = badge.textContent.trim();
-            // Extraer solo el contenido después de "RAM:" o "RAM2:", etc.
             const match = texto.match(/RAM\d*:\s*(.+)/);
             if (match) {
-                ramTexts.push(match[1]);
+                ramTexts.push(limpiarTexto(match[1]));
             }
         });
         
@@ -938,21 +963,20 @@ function exportarAPDF() {
         const ramTotalStrong = ramCell.querySelector('strong.text-primary');
         let ramTotal = '';
         if (ramTotalStrong) {
-            ramTotal = '\n' + ramTotalStrong.textContent.trim();
+            ramTotal = ' | Total: ' + limpiarTexto(ramTotalStrong.textContent);
         }
         
         const ramText = ramTexts.length > 0 ? ramTexts.join(', ') + ramTotal : '-';
         
         // Extraer Discos Duros de los badges con total
-        const ddCell = celdas[7]; // Columna Almacenamiento (ajustado por nueva columna)
+        const ddCell = celdas[7];
         const ddBadges = ddCell.querySelectorAll('.badge');
         let ddTexts = [];
         ddBadges.forEach(badge => {
             const texto = badge.textContent.trim();
-            // Extraer solo el contenido después de "DD:" o "DD2:", etc.
             const match = texto.match(/DD\d*:\s*(.+)/);
             if (match) {
-                ddTexts.push(match[1]);
+                ddTexts.push(limpiarTexto(match[1]));
             }
         });
         
@@ -960,106 +984,168 @@ function exportarAPDF() {
         const ddTotalStrong = ddCell.querySelector('strong.text-success');
         let ddTotal = '';
         if (ddTotalStrong) {
-            ddTotal = '\n' + ddTotalStrong.textContent.trim();
+            ddTotal = ' | Total: ' + limpiarTexto(ddTotalStrong.textContent);
         }
         
         const ddText = ddTexts.length > 0 ? ddTexts.join(', ') + ddTotal : '-';
         
-        // Extraer Tiempo Activo (ajustado por nueva columna)
+        // Extraer Tiempo Activo
         const tiempoCell = celdas[11];
         let tiempoActivo = '-';
         const diasElement = tiempoCell.querySelector('.fw-bold');
         const anosElement = tiempoCell.querySelector('.text-muted');
         if (diasElement && anosElement) {
-            const dias = diasElement.textContent.trim();
-            const anos = anosElement.textContent.trim();
+            const dias = limpiarTexto(diasElement.textContent);
+            const anos = limpiarTexto(anosElement.textContent);
             tiempoActivo = `${dias} (${anos})`;
         } else {
-            tiempoActivo = tiempoCell.textContent.trim() || '-';
+            tiempoActivo = limpiarTexto(tiempoCell.textContent) || '-';
         }
+
+        // Limpiar CPU: quitar caracteres sueltos y espacios extra
+        let cpuText = limpiarTexto(celdas[5].textContent);
+        cpuText = cpuText.replace(/^[&\s]+/, '').replace(/\s*[&|]\s*/g, ' ');
+        
+        // Mapear tipo de equipo al nombre completo
+        let tipoEquipoVal = limpiarTexto(celdas[2].textContent || '-').toUpperCase();
+        const tiposMap = { 'PC': 'PC ESCRITORIO', 'LAPTOP': 'LAPTOP', 'SERVIDOR': 'SERVIDOR' };
+        tipoEquipoVal = tiposMap[tipoEquipoVal] || tipoEquipoVal;
         
         return {
-            id: (celdas[1].textContent.trim() || '-').toUpperCase(),
-            tipoEquipo: (celdas[2].textContent.trim() || '-').toUpperCase(),
-            marca: (celdas[3].textContent.trim() || '-').toUpperCase(),
-            modelo: (celdas[4].textContent.trim() || '-').toUpperCase(),
-            cpu: (celdas[5].textContent.trim() || '-').toUpperCase(),
+            id: limpiarTexto(celdas[1].textContent || '-').toUpperCase(),
+            tipoEquipo: tipoEquipoVal,
+            marca: limpiarTexto(celdas[3].textContent || '-').toUpperCase(),
+            modelo: limpiarTexto(celdas[4].textContent || '-').toUpperCase(),
+            cpu: (cpuText || '-').toUpperCase(),
             ram: ramText.toUpperCase(),
             almacenamiento: ddText.toUpperCase(),
-            serie: (celdas[8].textContent.trim() || '-').toUpperCase(),
-            inventario: (celdas[9].textContent.trim() || '-').toUpperCase(),
+            serie: limpiarTexto(celdas[8].textContent || '-').toUpperCase(),
+            inventario: limpiarTexto(celdas[9].textContent || '-').toUpperCase(),
             tiempoActivo: tiempoActivo.toUpperCase(),
-            ubicacionEdificio: (celdas[12].textContent.trim() || '-').toUpperCase(),
-            ubicacionDetalle: (celdas[13].textContent.trim() || '-').toUpperCase(),
-            estado: (celdas[14].textContent.trim() || '-').toUpperCase()
+            ubicacionEdificio: limpiarTexto(celdas[12].textContent || '-').toUpperCase(),
+            ubicacionDetalle: limpiarTexto(celdas[13].textContent || '-').toUpperCase(),
+            estado: limpiarTexto(celdas[14].textContent || '-').toUpperCase()
         };
     });
+
+    // Proporciones de columna (suman 100%)
+    const colProportions = {
+        id:                 3.0,   // ~8.4mm
+        tipoEquipo:         5.0,   // ~14mm
+        marca:              5.5,   // ~15.5mm
+        modelo:             6.5,   // ~18.3mm
+        cpu:               11.0,   // ~30.9mm
+        ram:               12.0,   // ~33.7mm
+        almacenamiento:    12.0,   // ~33.7mm
+        serie:              9.5,   // ~26.7mm
+        inventario:         9.5,   // ~26.7mm
+        tiempoActivo:       8.5,   // ~23.9mm
+        ubicacionEdificio:  4.5,   // ~12.6mm
+        ubicacionDetalle:   7.5,   // ~21.1mm
+        estado:             5.5    // ~15.5mm
+    };
     
-    // Generar tabla
+    // Calcular anchos en mm proporcionalmente
+    const columnStyles = {};
+    for (const [key, pct] of Object.entries(colProportions)) {
+        columnStyles[key] = {
+            cellWidth: Math.round((pct / 100) * anchoUtil * 10) / 10,
+            halign: ['id', 'tipoEquipo', 'tiempoActivo', 'ubicacionEdificio', 'estado'].includes(key) ? 'center' : 'left'
+        };
+    }
+    
+    // Generar tabla con diseño compacto y ajustado
     doc.autoTable({
         columns: columns,
         body: rows,
-        startY: 35,
+        startY: 25,
+        margin: { left: margenIzq, right: margenDer, top: 25, bottom: 18 },
         theme: 'grid',
         styles: { 
-            fontSize: 7,
-            cellPadding: 1,
+            fontSize: 6,
+            cellPadding: { top: 1, right: 1.5, bottom: 1, left: 1.5 },
             overflow: 'linebreak',
-            lineWidth: 0.1
+            lineWidth: 0.1,
+            lineColor: [180, 180, 180],
+            textColor: [30, 30, 30],
+            valign: 'middle'
         },
         headStyles: { 
-            fillColor: [0, 123, 255],
-            textColor: 255,
+            fillColor: [41, 128, 185],
+            textColor: [255, 255, 255],
             fontStyle: 'bold',
-            halign: 'center'
+            halign: 'center',
+            fontSize: 6,
+            cellPadding: { top: 2, right: 1.5, bottom: 2, left: 1.5 },
+            lineColor: [30, 100, 160],
+            lineWidth: 0.2
         },
         alternateRowStyles: {
-            fillColor: [245, 245, 245]
+            fillColor: [240, 248, 255]
         },
-        columnStyles: {
-            id: { cellWidth: 8, halign: 'center', cellPadding: 0.5 },
-            tipoEquipo: { cellWidth: 16, halign: 'center', cellPadding: 0.5 },
-            marca: { cellWidth: 16, cellPadding: 0.5 },
-            modelo: { cellWidth: 18, cellPadding: 0.5 },
-            cpu: { cellWidth: 22, cellPadding: 0.5 },
-            ram: { cellWidth: 26, cellPadding: 0.5 },
-            almacenamiento: { cellWidth: 26, cellPadding: 0.5 },
-            serie: { cellWidth: 16, cellPadding: 0.5 },
-            inventario: { cellWidth: 16, cellPadding: 0.5 },
-            tiempoActivo: { cellWidth: 20, halign: 'center', cellPadding: 0.5 },
-            ubicacionEdificio: { cellWidth: 14, halign: 'center', cellPadding: 0.5 },
-            ubicacionDetalle: { cellWidth: 18, cellPadding: 0.5 },
-            estado: { cellWidth: 15, halign: 'center', cellPadding: 0.5 }
-        },
+        columnStyles: columnStyles,
+        tableLineColor: [180, 180, 180],
+        tableLineWidth: 0.1,
         didDrawPage: function (data) {
+            // Header en páginas posteriores a la primera
+            if (data.pageNumber > 1) {
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text('GESTIÓN DE EQUIPOS DE CÓMPUTO', pageWidth / 2, 10, { align: 'center' });
+                doc.setFontSize(7);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Pág. ${data.pageNumber} — ${fechaHora.toUpperCase()}`, pageWidth / 2, 15, { align: 'center' });
+            }
+            
             // Footer en cada página
             const pageCount = doc.internal.getNumberOfPages();
-            const pageSize = doc.internal.pageSize;
-            const pageHeight = pageSize.height || pageSize.getHeight();
             
-            doc.setFontSize(8);
+            doc.setDrawColor(180, 180, 180);
+            doc.line(margenIzq, pageHeight - 15, pageWidth - margenDer, pageHeight - 15);
+            
+            doc.setFontSize(7);
             doc.setFont(undefined, 'normal');
+            doc.setTextColor(100, 100, 100);
             doc.text(
-                `PÁGINA ${data.pageNumber} DE ${pageCount}`,
-                pageSize.width / 2,
+                `Página ${data.pageNumber} de ${pageCount}`,
+                pageWidth / 2,
                 pageHeight - 10,
                 { align: 'center' }
             );
-            
             doc.text(
-                'SISTEMA DE GESTIÓN DE EQUIPOS - GENERADO AUTOMÁTICAMENTE',
-                pageSize.width / 2,
-                pageHeight - 5,
+                'Sistema de Gestión de Equipos — Generado automáticamente',
+                pageWidth / 2,
+                pageHeight - 6,
                 { align: 'center' }
             );
+            doc.setTextColor(30, 30, 30);
+        },
+        didParseCell: function(data) {
+            // Resaltar estado con colores
+            if (data.column.dataKey === 'estado' && data.section === 'body') {
+                const val = (data.cell.raw || '').toUpperCase();
+                if (val === 'ACTIVO') {
+                    data.cell.styles.textColor = [39, 174, 96];
+                    data.cell.styles.fontStyle = 'bold';
+                } else if (val === 'BAJA' || val === 'DAÑADO') {
+                    data.cell.styles.textColor = [192, 57, 43];
+                    data.cell.styles.fontStyle = 'bold';
+                } else if (val === 'EN REPARACIÓN' || val === 'MANTENIMIENTO') {
+                    data.cell.styles.textColor = [243, 156, 18];
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            }
         }
     });
     
     // Agregar información adicional al final
-    const finalY = doc.lastAutoTable.finalY || 35;
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'bold');
-    doc.text(`Total de equipos: ${rows.length}`, 14, finalY + 10);
+    const finalY = doc.lastAutoTable.finalY || 25;
+    if (finalY + 12 < pageHeight - 18) {
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(30, 30, 30);
+        doc.text(`Total de equipos: ${rows.length}`, margenIzq, finalY + 7);
+    }
     
     // Descargar el PDF
     const fileName = `Equipos_Computo_${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}.pdf`;

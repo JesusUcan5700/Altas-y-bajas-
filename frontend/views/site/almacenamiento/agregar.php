@@ -429,7 +429,8 @@ document.getElementById('almacenamiento-marca')?.addEventListener('change', func
             'Seagate': 'Barracuda 1TB',
             'Samsung': 'EVO 970 500GB',
             'Kingston': 'A400 240GB',
-            'SanDisk': 'Ultra 64GB'
+            'SanDisk': 'Ultra 64GB',
+            'HGST': 'Ultrastar 1TB'
         };
         
         if (sugerencias[marca]) {
