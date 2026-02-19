@@ -375,41 +375,52 @@ function descargarQRSeleccionados() {
 // Función para descargar QR individual
 function descargarQR(id, marca, modelo, serie) {
     var canvas = document.createElement('canvas');
-    var fecha = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
     // Obtener datos adicionales de la tarjeta
     var card = document.querySelector('input[name="fuente_ids[]"][value="' + id + '"]').closest('.card');
     var tipo = card.querySelector('.fuente-tipo')?.textContent?.trim() || 'N/A';
     var voltaje = card.querySelector('.fuente-voltaje')?.textContent?.trim() || 'N/A';
     var potencia = card.querySelector('.fuente-potencia')?.textContent?.trim() || 'N/A';
     var amperaje = card.querySelector('.fuente-amperaje')?.textContent?.trim() || 'N/A';
-    var inventario = serie || 'N/A';
-    var textoQR = 'Marca: ' + (marca || 'N/A') + ' | Modelo: ' + (modelo || 'N/A') + ' | Tipo: ' + tipo + ' | Voltaje: ' + voltaje + ' | Potencia: ' + potencia + ' | Amperaje: ' + amperaje + ' | Serie: ' + inventario;
+    
+    // Texto QR limpio con campos esenciales
+    var textoQR = 'Marca: ' + (marca || 'N/A') + '\nModelo: ' + (modelo || 'N/A') + '\nTipo: ' + tipo + '\nVoltaje: ' + voltaje + '\nPotencia: ' + potencia + '\nAmperaje: ' + amperaje + '\nSerie: ' + (serie || 'N/A');
+    
     var qr = new QRious({
         element: canvas,
         value: textoQR,
-        size: 200
+        size: 512,
+        level: 'L',
+        foreground: '#000000',
+        background: '#ffffff'
     });
-    var marco = 240;
-    var qrSize = 160;
+    
     var canvasFinal = document.createElement('canvas');
     var ctx = canvasFinal.getContext('2d');
-    canvasFinal.width = marco;
-    canvasFinal.height = marco;
-    // Fondo blanco
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, marco, marco);
-    // Marco amarillo
+    canvasFinal.width = 350;
+    canvasFinal.height = 400;
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasFinal.width, canvasFinal.height);
+    
     ctx.strokeStyle = '#ffc107';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(2, 2, marco - 4, marco - 4);
-    // Fecha arriba del QR, dentro del marco
+    ctx.lineWidth = 3;
+    ctx.strokeRect(5, 5, canvasFinal.width - 10, canvasFinal.height - 10);
+    
     ctx.fillStyle = '#ffc107';
-    ctx.font = 'bold 15px Arial';
+    ctx.fillRect(5, 5, canvasFinal.width - 10, 4);
+    
+    ctx.fillStyle = '#ff9800';
+    ctx.font = 'bold 14px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Impreso: ' + fecha, marco / 2, 28);
-    // QR centrado
-    ctx.drawImage(canvas, (marco - qrSize) / 2, 40, qrSize, qrSize);
-    // Sin texto debajo del QR
+    ctx.fillText('Fuente de Poder #' + id, canvasFinal.width / 2, 28);
+    
+    ctx.drawImage(canvas, 25, 40, 300, 300);
+    
+    ctx.fillStyle = '#ff9800';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText((marca || 'N/A') + ' - ' + (modelo || 'N/A'), canvasFinal.width / 2, 360);
+    
     var link = document.createElement('a');
     link.download = 'QR_FuentePoder_' + id + '.png';
     link.href = canvasFinal.toDataURL('image/png');

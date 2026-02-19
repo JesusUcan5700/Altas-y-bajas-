@@ -250,70 +250,51 @@ function descargarQR(id, marca, modelo, serie) {
     }
     
     const celdas = fila.querySelectorAll('td');
-    const cpu = celdas[3].textContent.trim();
-    const ram = celdas[4].textContent.trim();
-    const dd = celdas[5].textContent.trim();
-    const inventario = celdas[7].textContent.trim();
-    const estado = celdas[8].textContent.trim();
+    const cpu = celdas[3]?.textContent?.trim().substring(0, 30) || 'N/A';
+    const ram = celdas[4]?.textContent?.trim().substring(0, 20) || 'N/A';
+    const dd = celdas[5]?.textContent?.trim().substring(0, 20) || 'N/A';
+    const inventario = celdas[7]?.textContent?.trim().substring(0, 20) || 'N/A';
     
-    // Crear texto con todos los datos
-    var textoQR = 'EQUIPO DE COMPUTO' + '\n' +
-                  'ID: ' + id + '\n' +
-                  'Marca: ' + (marca || 'N/A') + '\n' +
-                  'Modelo: ' + (modelo || 'N/A') + '\n' +
-                  'CPU: ' + cpu + '\n' +
-                  'RAM: ' + ram + '\n' +
-                  'Disco Duro: ' + dd + '\n' +
-                  'No. Serie: ' + (serie || 'N/A') + '\n' +
-                  'No. Inventario: ' + inventario + '\n' +
-                  'Estado: ' + estado;
+    // Texto QR limpio con campos esenciales
+    var textoQR = 'Marca: ' + (marca || 'N/A') + '\nModelo: ' + (modelo || 'N/A') + '\nCPU: ' + cpu + '\nRAM: ' + ram + '\nDD: ' + dd + '\nNo. Serie: ' + (serie || 'N/A') + '\nInventario: ' + inventario;
     
-    // Crear canvas temporal
     var canvas = document.createElement('canvas');
-    
-    // Generar QR con datos en texto
     var qr = new QRious({
         element: canvas,
         value: textoQR,
-        size: 300,
-        level: 'H',
-        foreground: '#212529',
+        size: 512,
+        level: 'L',
+        foreground: '#000000',
         background: '#ffffff'
     });
     
-    // Crear un canvas más grande para agregar texto
     var canvasFinal = document.createElement('canvas');
     var ctx = canvasFinal.getContext('2d');
     canvasFinal.width = 350;
-    canvasFinal.height = 420;
+    canvasFinal.height = 400;
     
-    // Fondo blanco
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvasFinal.width, canvasFinal.height);
     
-    // Borde azul
     ctx.strokeStyle = '#007bff';
     ctx.lineWidth = 3;
     ctx.strokeRect(5, 5, canvasFinal.width - 10, canvasFinal.height - 10);
     
-    // Título
     ctx.fillStyle = '#007bff';
-    ctx.font = 'bold 16px Arial';
+    ctx.fillRect(5, 5, canvasFinal.width - 10, 4);
+    
+    ctx.fillStyle = '#007bff';
+    ctx.font = 'bold 14px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('💻 Equipo de Cómputo', canvasFinal.width / 2, 30);
+    ctx.fillText('Equipo de Cómputo #' + id, canvasFinal.width / 2, 28);
     
-    // Dibujar el QR
-    ctx.drawImage(canvas, 25, 45, 300, 300);
+    ctx.drawImage(canvas, 25, 40, 300, 300);
     
-    // Información del equipo
-    ctx.fillStyle = '#333333';
-    ctx.font = '12px Arial';
+    ctx.fillStyle = '#007bff';
+    ctx.font = 'bold 12px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('ID: ' + id, canvasFinal.width / 2, 365);
-    ctx.fillText('Marca: ' + (marca || 'N/A') + ' | Modelo: ' + (modelo || 'N/A'), canvasFinal.width / 2, 382);
-    ctx.fillText('N° Serie: ' + (serie || 'N/A'), canvasFinal.width / 2, 399);
+    ctx.fillText((marca || 'N/A') + ' - ' + (modelo || 'N/A'), canvasFinal.width / 2, 360);
     
-    // Descargar como imagen
     var link = document.createElement('a');
     link.download = 'QR_Equipo_' + id + '.png';
     link.href = canvasFinal.toDataURL('image/png');

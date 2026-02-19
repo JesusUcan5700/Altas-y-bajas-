@@ -388,91 +388,93 @@ function crearPDF(items) {
     var jsPDF = window.jspdf.jsPDF;
     var doc = new jsPDF('portrait', 'mm', 'letter');
     
-    var qrSize = 65;
-    var margin = 20;
-    var spacingX = 100;
-    var spacingY = 120;
-    var qrsPerRow = 2;
-    var qrsPerPage = 4;
+    var qrSize = 55;
+    var margin = 15;
+    var spacingY = 110;
+    var qrCount = 0;
     
-    function agregarEncabezado() {
-        doc.setFontSize(16);
-        doc.setTextColor(23, 162, 184); // Color cyan/teal
-        doc.text('Códigos QR - Impresoras', doc.internal.pageSize.getWidth() / 2, 12, { align: 'center' });
-        
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text('Fecha: ' + new Date().toLocaleDateString('es-ES'), doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' });
-    }
+    // Título del documento
+    doc.setFontSize(16);
+    doc.setTextColor(23, 162, 184);
+    doc.text('Códigos QR - Impresoras', doc.internal.pageSize.getWidth() / 2, 12, { align: 'center' });
     
-    agregarEncabezado();
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Fecha: ' + new Date().toLocaleDateString('es-ES'), doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' });
     
     items.forEach(function(item, index) {
-        if (index > 0 && index % qrsPerPage === 0) {
-            doc.addPage();
-            agregarEncabezado();
-        }
-        
-        var posInPage = index % qrsPerPage;
-        var row = Math.floor(posInPage / qrsPerRow);
-        var col = posInPage % qrsPerRow;
-        
-        var x = margin + (col * spacingX);
-        var y = 30 + (row * spacingY);
-        
-        // Obtener todos los datos de la fila
+        // Obtener datos de la fila
         const fila = document.querySelector(`tr[data-id="${item.id}"]`);
         const celdas = fila.querySelectorAll('td');
-        const serie = celdas[5].textContent.trim();
-        const estado = celdas[7].textContent.trim();
-        const propiedad = celdas[8].textContent.trim();
-        const edificio = celdas[9].textContent.trim();
-        const ubicacionDetalle = celdas[10].textContent.trim();
-        const tiempoActivo = celdas[11].textContent.trim();
-        const ultimoEditor = celdas[12].textContent.trim();
+        const serie = celdas[5]?.textContent?.trim().substring(0, 30) || 'N/A';
+        const edificio = celdas[9]?.textContent?.trim().substring(0, 20) || 'N/A';
+        const ubicacionDetalle = celdas[10]?.textContent?.trim().substring(0, 20) || 'N/A';
         
-        // Crear texto con todos los datos
-        var textoQR = 'IMPRESORA' + '\n' +
-                      'ID: ' + item.id + '\n' +
-                      'Marca: ' + item.marca + '\n' +
-                      'Modelo: ' + item.modelo + '\n' +
-                      'Tipo: ' + item.tipo + '\n' +
-                      'No. Serie: ' + serie + '\n' +
-                      'No. Inventario: ' + item.inventario + '\n' +
-                      'Estado: ' + estado + '\n' +
-                      'Propiedad: ' + propiedad + '\n' +
-                      'Edificio: ' + edificio + '\n' +
-                      'Ubicacion: ' + ubicacionDetalle + '\n' +
-                      'Tiempo Activo: ' + tiempoActivo + '\n' +
-                      'Ultimo Editor: ' + ultimoEditor;
+        // Texto QR limpio con campos esenciales
+        var textoQR = 'Marca: ' + item.marca + '\nModelo: ' + item.modelo + '\nTipo: ' + item.tipo + '\nNo. Serie: ' + serie + '\nInventario: ' + item.inventario + '\nEdificio: ' + edificio + '\nDetalle: ' + ubicacionDetalle;
         
-        // Crear QR
+        // Crear QR limpio
         var canvas = document.createElement('canvas');
         var qr = new QRious({
             element: canvas,
             value: textoQR,
-            size: 200,
-            level: 'H',
-            foreground: '#212529',
+            size: 512,
+            level: 'L',
+            foreground: '#000000',
             background: '#ffffff'
         });
         
-        // Marco cyan compacto
+        // Nueva página si es necesario (2 QRs por página)
+        if (qrCount > 0 && qrCount % 2 === 0) {
+            doc.addPage();
+            doc.setFontSize(16);
+            doc.setTextColor(23, 162, 184);
+            doc.text('Códigos QR - Impresoras', doc.internal.pageSize.getWidth() / 2, 12, { align: 'center' });
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text('Fecha: ' + new Date().toLocaleDateString('es-ES'), doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' });
+        }
+        
+        var rowNum = qrCount % 2;
+        var currentY = 30 + (rowNum * spacingY);
+        
+        // Marco con diseño mejorado
+        var pad = 8;
+        var marcoAlto = qrSize + pad * 2 + 12;
+        var marcoAncho = qrSize + pad * 2;
+        var marcoX = (doc.internal.pageSize.getWidth() - marcoAncho) / 2;
+        
+        // Sombra
+        doc.setDrawColor(200, 200, 200);
+        doc.setFillColor(245, 245, 245);
+        doc.setLineWidth(0);
+        doc.roundedRect(marcoX + 1.2, currentY + 1.2, marcoAncho, marcoAlto, 3, 3, 'F');
+        
+        // Fondo blanco
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(marcoX, currentY, marcoAncho, marcoAlto, 3, 3, 'F');
+        
+        // Borde
         doc.setDrawColor(23, 162, 184);
-        doc.setLineWidth(0.7);
-        const marcoAlto = qrSize + 22;
-        const marcoAncho = qrSize + 10;
-        doc.rect(x - 3, y + 2, marcoAncho, marcoAlto);
-
-        // Fecha arriba del QR, dentro del marco
-        doc.setFontSize(10);
-        doc.setTextColor(23, 162, 184);
-        doc.setFont('helvetica', 'italic');
-        doc.text('Fecha de impresión: ' + new Date().toLocaleDateString('es-ES'), x + qrSize/2, y + 10, { align: 'center' });
-
-        // QR más abajo para compactar
+        doc.setLineWidth(1);
+        doc.roundedRect(marcoX, currentY, marcoAncho, marcoAlto, 3, 3, 'S');
+        
+        // Barra decorativa arriba
+        doc.setFillColor(23, 162, 184);
+        doc.roundedRect(marcoX, currentY, marcoAncho, 4, 3, 3, 'F');
+        doc.rect(marcoX, currentY + 2, marcoAncho, 2, 'F');
+        
+        // QR centrado
         var imgData = canvas.toDataURL('image/png');
-        doc.addImage(imgData, 'PNG', x, y + 13, qrSize, qrSize);
+        doc.addImage(imgData, 'PNG', marcoX + pad, currentY + 8, qrSize, qrSize);
+        
+        // Etiqueta
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(23, 162, 184);
+        doc.text('Impresora #' + item.id, doc.internal.pageSize.getWidth() / 2, currentY + qrSize + pad + 10, { align: 'center' });
+        
+        qrCount++;
     });
     
     // Agregar números de página

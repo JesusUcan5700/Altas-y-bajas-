@@ -317,10 +317,9 @@ function descargarQRSeleccionados() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('portrait', 'mm', 'letter');
     
-    const qrSize = 65;
-    const margin = 20;
-    const spacingX = 100;
-    const spacingY = 120;
+    const qrSize = 55;
+    const margin = 15;
+    const spacingY = 110;
     
     let qrCount = 0;
     
@@ -335,55 +334,35 @@ function descargarQRSeleccionados() {
     
     seleccionados.forEach(function(checkbox, index) {
         const id = checkbox.value;
-        const marca = checkbox.dataset.marca || 'N/A';
-        const modelo = checkbox.dataset.modelo || 'N/A';
-        const serie = checkbox.dataset.serie || 'N/A';
-        const inventario = checkbox.dataset.inventario || 'N/A';
+        const marca = (checkbox.dataset.marca || 'N/A').substring(0, 30);
+        const modelo = (checkbox.dataset.modelo || 'N/A').substring(0, 30);
+        const serie = (checkbox.dataset.serie || 'N/A').substring(0, 30);
+        const inventario = (checkbox.dataset.inventario || 'N/A').substring(0, 20);
         
-        // Obtener todos los datos de la fila
+        // Obtener datos esenciales de la fila
         const fila = checkbox.closest('tr');
         const celdas = fila.querySelectorAll('td');
+        const tipo = celdas[3]?.textContent?.trim().substring(0, 20) || 'N/A';
+        const potencia = celdas[6]?.textContent?.trim().substring(0, 20) || 'N/A';
+        const edificio = celdas[10]?.textContent?.trim().substring(0, 20) || 'N/A';
+        const ubicacionDetalle = celdas[11]?.textContent?.trim().substring(0, 20) || 'N/A';
         
-        const tipo = celdas[3].textContent.trim();
-        const voltaje = celdas[4].textContent.trim();
-        const amperaje = celdas[5].textContent.trim();
-        const potencia = celdas[6].textContent.trim();
-        const estado = celdas[9].textContent.trim();
-        const edificio = celdas[10].textContent.trim();
-        const ubicacionDetalle = celdas[11].textContent.trim();
-        const fechaCreacion = celdas[12].textContent.trim();
-        const ultimoEditor = celdas[14].textContent.trim();
+        // Texto QR limpio con campos esenciales
+        var textoQR = 'Marca: ' + marca + '\nModelo: ' + modelo + '\nTipo: ' + tipo + '\nPotencia: ' + potencia + '\nNo. Serie: ' + serie + '\nInventario: ' + inventario + '\nEdificio: ' + edificio + '\nDetalle: ' + ubicacionDetalle;
         
-        // Crear texto con todos los datos
-        var textoQR = 'FUENTE DE PODER' + '\n' +
-                      'ID: ' + id + '\n' +
-                      'Marca: ' + marca + '\n' +
-                      'Modelo: ' + modelo + '\n' +
-                      'Tipo: ' + tipo + '\n' +
-                      'Potencia: ' + potencia + '\n' +
-                      'Voltaje: ' + voltaje + '\n' +
-                      'Amperaje: ' + amperaje + '\n' +
-                      'No. Serie: ' + serie + '\n' +
-                      'No. Inventario: ' + inventario + '\n' +
-                      'Estado: ' + estado + '\n' +
-                      'Edificio: ' + edificio + '\n' +
-                      'Ubicacion: ' + ubicacionDetalle + '\n' +
-                      'Fecha Creacion: ' + fechaCreacion + '\n' +
-                      'Ultimo Editor: ' + ultimoEditor;
-        
-        // Generar QR
+        // Generar QR limpio
         var canvas = document.createElement('canvas');
         var qr = new QRious({
             element: canvas,
             value: textoQR,
-            size: 200,
-            level: 'H',
-            foreground: '#212529',
+            size: 512,
+            level: 'L',
+            foreground: '#000000',
             background: '#ffffff'
         });
         
-        // Nueva página si es necesario (4 QRs por página)
-        if (qrCount > 0 && qrCount % 4 === 0) {
+        // Nueva página si es necesario (2 QRs por página)
+        if (qrCount > 0 && qrCount % 2 === 0) {
             doc.addPage();
             doc.setFontSize(16);
             doc.setTextColor(255, 152, 0);
@@ -393,27 +372,45 @@ function descargarQRSeleccionados() {
             doc.text('Fecha: ' + new Date().toLocaleDateString('es-ES'), doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' });
         }
         
-        // Calcular posición
-        const col = qrCount % 2;
-        const rowNum = Math.floor((qrCount % 4) / 2);
-        const currentX = margin + (col * spacingX);
+        // Posición
+        const rowNum = qrCount % 2;
         const currentY = 30 + (rowNum * spacingY);
         
-        // Dibujar borde
+        // Marco con diseño mejorado
+        const pad = 8;
+        const marcoAlto = qrSize + pad * 2 + 12;
+        const marcoAncho = qrSize + pad * 2;
+        const marcoX = (doc.internal.pageSize.getWidth() - marcoAncho) / 2;
+        
+        // Sombra
+        doc.setDrawColor(200, 200, 200);
+        doc.setFillColor(245, 245, 245);
+        doc.setLineWidth(0);
+        doc.roundedRect(marcoX + 1.2, currentY + 1.2, marcoAncho, marcoAlto, 3, 3, 'F');
+        
+        // Fondo blanco
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(marcoX, currentY, marcoAncho, marcoAlto, 3, 3, 'F');
+        
+        // Borde naranja
         doc.setDrawColor(255, 152, 0);
-        doc.setLineWidth(0.5);
-        doc.rect(currentX - 5, currentY - 5, qrSize + 10, qrSize + 30);
+        doc.setLineWidth(1);
+        doc.roundedRect(marcoX, currentY, marcoAncho, marcoAlto, 3, 3, 'S');
         
-        // Agregar QR
+        // Barra decorativa arriba
+        doc.setFillColor(255, 152, 0);
+        doc.roundedRect(marcoX, currentY, marcoAncho, 4, 3, 3, 'F');
+        doc.rect(marcoX, currentY + 2, marcoAncho, 2, 'F');
+        
+        // QR centrado
         const imgData = canvas.toDataURL('image/png');
-        doc.addImage(imgData, 'PNG', currentX, currentY, qrSize, qrSize);
+        doc.addImage(imgData, 'PNG', marcoX + pad, currentY + 8, qrSize, qrSize);
         
-        // Texto
+        // Etiqueta
         doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-        doc.text('ID: ' + id + ' | ' + marca, currentX + qrSize/2, currentY + qrSize + 8, { align: 'center' });
-        doc.text(modelo, currentX + qrSize/2, currentY + qrSize + 15, { align: 'center' });
-        doc.text('Inv: ' + inventario, currentX + qrSize/2, currentY + qrSize + 22, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 152, 0);
+        doc.text('Fuente #' + id, doc.internal.pageSize.getWidth() / 2, currentY + qrSize + pad + 10, { align: 'center' });
         
         qrCount++;
     });
@@ -492,74 +489,54 @@ function exportarPDF() {
 
 // Función para descargar QR individual (desde botón en acciones)
 function descargarQR(id, marca, modelo, serie) {
-    // Obtener todos los datos de la fila correspondiente
+    // Obtener datos esenciales de la fila
     const fila = document.querySelector(`input.fuente-checkbox[value="${id}"]`).closest('tr');
     const celdas = fila.querySelectorAll('td');
+    const tipo = celdas[3]?.textContent?.trim().substring(0, 20) || 'N/A';
+    const potencia = celdas[6]?.textContent?.trim().substring(0, 20) || 'N/A';
+    const inventario = celdas[8]?.textContent?.trim().substring(0, 20) || 'N/A';
+    const edificio = celdas[10]?.textContent?.trim().substring(0, 20) || 'N/A';
+    const ubicacionDetalle = celdas[11]?.textContent?.trim().substring(0, 20) || 'N/A';
     
-    const tipo = celdas[3].textContent.trim();
-    const voltaje = celdas[4].textContent.trim();
-    const amperaje = celdas[5].textContent.trim();
-    const potencia = celdas[6].textContent.trim();
-    const inventario = celdas[8].textContent.trim();
-    const estado = celdas[9].textContent.trim();
-    const edificio = celdas[10].textContent.trim();
-    const ubicacionDetalle = celdas[11].textContent.trim();
-    const fechaCreacion = celdas[12].textContent.trim();
-    const ultimoEditor = celdas[14].textContent.trim();
-    
-    // Crear texto con todos los datos
-    var textoQR = 'FUENTE DE PODER' + '\n' +
-                  'ID: ' + id + '\n' +
-                  'Marca: ' + (marca || 'N/A') + '\n' +
-                  'Modelo: ' + (modelo || 'N/A') + '\n' +
-                  'Tipo: ' + tipo + '\n' +
-                  'Potencia: ' + potencia + '\n' +
-                  'Voltaje: ' + voltaje + '\n' +
-                  'Amperaje: ' + amperaje + '\n' +
-                  'No. Serie: ' + (serie || 'N/A') + '\n' +
-                  'No. Inventario: ' + inventario + '\n' +
-                  'Estado: ' + estado + '\n' +
-                  'Edificio: ' + edificio + '\n' +
-                  'Ubicacion: ' + ubicacionDetalle + '\n' +
-                  'Fecha Creacion: ' + fechaCreacion + '\n' +
-                  'Ultimo Editor: ' + ultimoEditor;
+    // Texto QR limpio
+    var textoQR = 'Marca: ' + (marca || 'N/A') + '\nModelo: ' + (modelo || 'N/A') + '\nTipo: ' + tipo + '\nPotencia: ' + potencia + '\nNo. Serie: ' + (serie || 'N/A') + '\nInventario: ' + inventario + '\nEdificio: ' + edificio + '\nDetalle: ' + ubicacionDetalle;
     
     var canvas = document.createElement('canvas');
-    
     var qr = new QRious({
         element: canvas,
         value: textoQR,
-        size: 300,
-        level: 'H',
-        foreground: '#212529',
+        size: 512,
+        level: 'L',
+        foreground: '#000000',
         background: '#ffffff'
     });
     
     var canvasFinal = document.createElement('canvas');
     var ctx = canvasFinal.getContext('2d');
     canvasFinal.width = 350;
-    canvasFinal.height = 420;
+    canvasFinal.height = 400;
     
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvasFinal.width, canvasFinal.height);
     
-    ctx.strokeStyle = '#ffc107';
+    ctx.strokeStyle = '#ff9800';
     ctx.lineWidth = 3;
     ctx.strokeRect(5, 5, canvasFinal.width - 10, canvasFinal.height - 10);
     
     ctx.fillStyle = '#ff9800';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('⚡ Fuente de Poder', canvasFinal.width / 2, 30);
+    ctx.fillRect(5, 5, canvasFinal.width - 10, 4);
     
-    ctx.drawImage(canvas, 25, 45, 300, 300);
-    
-    ctx.fillStyle = '#333333';
-    ctx.font = '12px Arial';
+    ctx.fillStyle = '#ff9800';
+    ctx.font = 'bold 14px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('ID: ' + id, canvasFinal.width / 2, 365);
-    ctx.fillText('Marca: ' + (marca || 'N/A') + ' | Modelo: ' + (modelo || 'N/A'), canvasFinal.width / 2, 382);
-    ctx.fillText('N° Serie: ' + (serie || 'N/A'), canvasFinal.width / 2, 399);
+    ctx.fillText('Fuente de Poder #' + id, canvasFinal.width / 2, 28);
+    
+    ctx.drawImage(canvas, 25, 40, 300, 300);
+    
+    ctx.fillStyle = '#ff9800';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText((marca || 'N/A') + ' - ' + (modelo || 'N/A'), canvasFinal.width / 2, 360);
     
     var link = document.createElement('a');
     link.download = 'QR_FuentePoder_' + id + '.png';

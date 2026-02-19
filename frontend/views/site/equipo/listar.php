@@ -683,11 +683,10 @@ function descargarQRSeleccionados() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('portrait', 'mm', 'letter');
     
-    // Configuración: 2 QRs por fila, 2 filas por página = 4 QRs por página (más espaciados)
-    const qrSize = 65; // Tamaño del QR en mm
-    const margin = 20;
-    const spacingX = 100; // Espacio horizontal entre QRs
-    const spacingY = 120; // Espacio vertical entre QRs
+    // Configuración: 1 QR por fila con datos al lado, 2 QRs por página
+    const qrSize = 55; // Tamaño del QR en mm
+    const margin = 15;
+    const spacingY = 110; // Espacio vertical entre QRs
     
     let currentX = margin;
     let currentY = margin + 10;
@@ -708,42 +707,50 @@ function descargarQRSeleccionados() {
         const id = checkbox.value;
         const row = checkbox.closest('tr');
         const cells = row.querySelectorAll('td');
-        const marca = cells[2]?.textContent?.trim() || 'N/A';
-        const modelo = cells[3]?.textContent?.trim() || 'N/A';
-        const serie = cells[7]?.textContent?.trim() || 'N/A';
-        const inventario = cells[8]?.textContent?.trim() || 'N/A';
-        const cpu = cells[4]?.textContent?.trim() || 'N/A';
-        const ram = cells[5]?.textContent?.trim().replace(/\n/g, ' ') || 'N/A';
-        const almacenamiento = cells[6]?.textContent?.trim().replace(/\n/g, ' ') || 'N/A';
-        const emision = cells[9]?.textContent?.trim() || 'N/A';
-        const tiempoActivo = cells[10]?.textContent?.trim() || 'N/A';
-        const edificio = cells[11]?.textContent?.trim() || 'N/A';
-        const ubicacionDetalle = cells[12]?.textContent?.trim() || 'N/A';
-        const estado = cells[13]?.textContent?.trim() || 'N/A';
+        // Indices correctos: 0=check, 1=ID, 2=Tipo, 3=Marca, 4=Modelo, 5=CPU, 6=RAM, 7=Almac, 8=Serie, 9=Inventario, 10=Emision, 11=TiempoActivo, 12=Edificio, 13=Detalle, 14=Estado
+        const marca = cells[3]?.textContent?.trim().substring(0, 30) || 'N/A';
+        const modelo = cells[4]?.textContent?.trim().substring(0, 30) || 'N/A';
+        const serie = cells[8]?.textContent?.trim().substring(0, 30) || 'N/A';
+        const inventario = cells[9]?.textContent?.trim().substring(0, 20) || 'N/A';
+        const edificio = cells[12]?.textContent?.trim().substring(0, 20) || 'N/A';
+        const ubicacionDetalle = cells[13]?.textContent?.trim().substring(0, 20) || 'N/A';
+        const cpu = cells[5]?.textContent?.trim() || 'N/A';
+        const estado = cells[14]?.textContent?.trim() || 'N/A';
         
-        // Crear texto con datos esenciales (simplificado para QR legible)
-        var textoQR =
-            'Marca: ' + marca + '\n' +
-            'Modelo: ' + modelo + '\n' +
-            'No. Serie: ' + serie + '\n' +
-            'Inventario: ' + inventario + '\n' +
-            'RAM: ' + (ram ? ram.substring(0, 30) : '') + '\n' +
-            'Almacenamiento: ' + (almacenamiento ? almacenamiento.substring(0, 30) : '') + '\n' +
-            'Ubicación: ' + ubicacionDetalle;
+        // Extraer RAM total limpio (buscar el <strong> con el Total)
+        let ramTotal = 'N/A';
+        const ramStrong = cells[6]?.querySelector('strong');
+        if (ramStrong) {
+            ramTotal = ramStrong.textContent.trim().replace(/Total:\s*/i, '').substring(0, 20);
+        } else if (cells[6]) {
+            ramTotal = cells[6].textContent.trim().substring(0, 20);
+        }
         
-        // Generar QR
+        // Extraer Almacenamiento total limpio
+        let almacTotal = 'N/A';
+        const almacStrong = cells[7]?.querySelector('strong');
+        if (almacStrong) {
+            almacTotal = almacStrong.textContent.trim().replace(/Total:\s*/i, '').substring(0, 20);
+        } else if (cells[7]) {
+            almacTotal = cells[7].textContent.trim().substring(0, 20);
+        }
+        
+        // Datos visibles al escanear el QR (texto corto y limpio)
+        var textoQR = 'Marca: ' + marca + '\nModelo: ' + modelo + '\nNo. Serie: ' + serie + '\nInventario: ' + inventario + '\nRAM: ' + ramTotal + '\nAlmac: ' + almacTotal + '\nEdificio: ' + edificio + '\nDetalle: ' + ubicacionDetalle;
+        
+        // Generar QR con resolución alta y corrección baja para que sea limpio
         var canvas = document.createElement('canvas');
         var qr = new QRious({
             element: canvas,
             value: textoQR,
-            size: 200,
-            level: 'H',
-            foreground: '#212529',
+            size: 512,
+            level: 'L',
+            foreground: '#000000',
             background: '#ffffff'
         });
         
-        // Si ya no cabe en la página, crear nueva página (4 QRs por página)
-        if (qrCount > 0 && qrCount % 4 === 0) {
+        // Si ya no cabe en la página, crear nueva página (2 QRs por página)
+        if (qrCount > 0 && qrCount % 2 === 0) {
             doc.addPage();
             currentX = margin;
             currentY = 30;
@@ -757,30 +764,46 @@ function descargarQRSeleccionados() {
             doc.text('Fecha: ' + new Date().toLocaleDateString('es-ES'), doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' });
         }
         
-        // Calcular posición (2 columnas, 2 filas por página)
-        const col = qrCount % 2;
-        const rowNum = Math.floor((qrCount % 4) / 2);
-        currentX = margin + (col * spacingX);
+        // 1 QR por fila, centrado en marco azul
+        const rowNum = qrCount % 2;
+        currentX = margin;
         currentY = 30 + (rowNum * spacingY);
         
-        // Dibujar borde del QR
-            // Marco azul más compacto
-            doc.setDrawColor(0, 123, 255);
-            doc.setLineWidth(0.7);
-            // Ajustar alto y ancho del marco para que quede pegado al QR y la fecha
-            const marcoAlto = qrSize + 22; // 10 para fecha, 12 para margen inferior
-            const marcoAncho = qrSize + 10;
-            doc.rect(currentX - 3, currentY + 2, marcoAncho, marcoAlto);
+        // Marco azul con mejor diseño
+        const pad = 8;
+        const marcoAlto = qrSize + pad * 2 + 12;
+        const marcoAncho = qrSize + pad * 2;
+        const marcoX = (doc.internal.pageSize.getWidth() - marcoAncho) / 2;
         
-            // Agregar imagen QR al PDF
-            const imgData = canvas.toDataURL('image/png');
-            // QR más abajo para compactar
-            doc.addImage(imgData, 'PNG', currentX, currentY + 8, qrSize, qrSize);
-            // Fecha justo arriba del QR, dentro del marco
-            doc.setFontSize(10);
-            doc.setTextColor(80, 80, 80);
-            doc.setFont('helvetica', 'italic');
-            doc.text('Fecha de impresión: ' + new Date().toLocaleDateString('es-ES'), currentX + qrSize/2, currentY + 10, { align: 'center' });
+        // Sombra sutil (rectángulo gris desplazado)
+        doc.setDrawColor(200, 200, 200);
+        doc.setFillColor(245, 245, 245);
+        doc.setLineWidth(0);
+        doc.roundedRect(marcoX + 1.2, currentY + 1.2, marcoAncho, marcoAlto, 3, 3, 'F');
+        
+        // Fondo blanco del marco
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(marcoX, currentY, marcoAncho, marcoAlto, 3, 3, 'F');
+        
+        // Borde azul con esquinas redondeadas
+        doc.setDrawColor(0, 102, 204);
+        doc.setLineWidth(1);
+        doc.roundedRect(marcoX, currentY, marcoAncho, marcoAlto, 3, 3, 'S');
+        
+        // Línea decorativa azul arriba
+        doc.setFillColor(0, 102, 204);
+        doc.roundedRect(marcoX, currentY, marcoAncho, 4, 3, 3, 'F');
+        doc.rect(marcoX, currentY + 2, marcoAncho, 2, 'F');
+        
+        // QR centrado dentro del marco
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', marcoX + pad, currentY + 8, qrSize, qrSize);
+        
+        // Etiqueta dentro del cuadro, debajo del QR
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 102, 204);
+        doc.text('Equipo #' + id, doc.internal.pageSize.getWidth() / 2, currentY + qrSize + pad + 10, { align: 'center' });
         
         qrCount++;
     });
@@ -817,42 +840,46 @@ function descargarQREquipo(id, marca, modelo, serie) {
     }
     
     const celdas = fila.querySelectorAll('td');
-    const cpu = celdas[4].textContent.trim();
-    const ram = celdas[5].textContent.trim().replace(/\n/g, ' ');
-    const almacenamiento = celdas[6].textContent.trim().replace(/\n/g, ' ');
-    const inventario = celdas[8].textContent.trim();
-    const emision = celdas[9].textContent.trim();
-    const tiempoActivo = celdas[10].textContent.trim();
-    const edificio = celdas[11].textContent.trim();
-    const ubicacionDetalle = celdas[12].textContent.trim();
-    const estado = celdas[13].textContent.trim();
+    // Indices: 0=check, 1=ID, 2=Tipo, 3=Marca, 4=Modelo, 5=CPU, 6=RAM, 7=Almac, 8=Serie, 9=Inventario, 10=Emision, 11=TiempoActivo, 12=Edificio, 13=Detalle, 14=Estado
+    const inventario = celdas[9]?.textContent?.trim() || 'N/A';
+    const edificio = celdas[12]?.textContent?.trim() || 'N/A';
+    const ubicacionDetalle = celdas[13]?.textContent?.trim() || 'N/A';
     
-    // Crear texto con datos esenciales (simplificado para QR legible)
-    var textoQR = 'EQUIPO DE COMPUTO' + '\n' +
-                  'Marca: ' + (marca || 'N/A') + '\n' +
-                  'Modelo: ' + (modelo || 'N/A') + '\n' +
-                  'No. Serie: ' + (serie || 'N/A') + '\n' +
-                  'Inventario: ' + inventario + '\n' +
-                  'Almacenamiento: ' + almacenamiento + '\n' +
-                  'RAM: ' + ram + '\n' +
-                  'Estado: ' + estado + '\n' +
-                  'Edificio: ' + edificio + '\n' +
-                  'Ubicación: ' + ubicacionDetalle;
+    // Extraer RAM total limpio
+    let ramTotal = 'N/A';
+    const ramStrong = celdas[6]?.querySelector('strong');
+    if (ramStrong) {
+        ramTotal = ramStrong.textContent.trim().replace(/Total:\s*/i, '').substring(0, 20);
+    } else if (celdas[6]) {
+        ramTotal = celdas[6].textContent.trim().substring(0, 20);
+    }
+    
+    // Extraer Almacenamiento total limpio
+    let almacTotal = 'N/A';
+    const almacStrong = celdas[7]?.querySelector('strong');
+    if (almacStrong) {
+        almacTotal = almacStrong.textContent.trim().replace(/Total:\s*/i, '').substring(0, 20);
+    } else if (celdas[7]) {
+        almacTotal = celdas[7].textContent.trim().substring(0, 20);
+    }
+    
+    // Datos visibles al escanear el QR
+    var textoQR = 'Marca: ' + (marca || 'N/A') + '\nModelo: ' + (modelo || 'N/A') + '\nNo. Serie: ' + (serie || 'N/A') + '\nInventario: ' + inventario + '\nRAM: ' + ramTotal + '\nAlmac: ' + almacTotal + '\nEdificio: ' + edificio + '\nDetalle: ' + ubicacionDetalle;
     
     var canvas = document.createElement('canvas');
     var qr = new QRious({
         element: canvas,
         value: textoQR,
-        size: 300,
-        level: 'H',
-        foreground: '#212529',
+        size: 512,
+        level: 'L',
+        foreground: '#000000',
         background: '#ffffff'
     });
     
     var canvasFinal = document.createElement('canvas');
     var ctx = canvasFinal.getContext('2d');
     canvasFinal.width = 350;
-    canvasFinal.height = 420;
+    canvasFinal.height = 440;
     
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvasFinal.width, canvasFinal.height);
@@ -871,9 +898,10 @@ function descargarQREquipo(id, marca, modelo, serie) {
     ctx.fillStyle = '#333333';
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('ID: ' + id, canvasFinal.width / 2, 365);
-    ctx.fillText('Marca: ' + (marca || 'N/A') + ' | Modelo: ' + (modelo || 'N/A'), canvasFinal.width / 2, 382);
-    ctx.fillText('N° Serie: ' + (serie || 'N/A'), canvasFinal.width / 2, 399);
+    ctx.fillText('ID: ' + id + ' | Inv: ' + inventario, canvasFinal.width / 2, 360);
+    ctx.fillText('Marca: ' + (marca || 'N/A') + ' | Modelo: ' + (modelo || 'N/A'), canvasFinal.width / 2, 375);
+    ctx.fillText('N° Serie: ' + (serie || 'N/A'), canvasFinal.width / 2, 390);
+    ctx.fillText('RAM: ' + ramTotal + ' | Almac: ' + almacTotal, canvasFinal.width / 2, 405);
     
     var link = document.createElement('a');
     link.download = 'QR_Equipo_' + id + '.png';
