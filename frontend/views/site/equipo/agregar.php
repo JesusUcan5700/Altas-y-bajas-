@@ -283,38 +283,176 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
 <?php
 // Registrar SweetAlert2
 $this->registerJsFile('https://cdn.jsdelivr.net/npm/sweetalert2@11', ['position' => \yii\web\View::POS_HEAD]);
-
-// Registrar el script de validación de duplicados
-$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
-
-// Registrar script de diagnóstico (TEMPORAL - para depuración)
-$this->registerJsFile('@web/js/diagnostico-validacion.js', ['depends' => [\yii\web\JqueryAsset::class]]);
-
-// Script de inicialización
-$initScript = <<<JS
-console.log('[Equipo Agregar] Inicializando validación de duplicados');
-console.log('[Equipo Agregar] jQuery disponible:', typeof jQuery !== 'undefined');
-console.log('[Equipo Agregar] SweetAlert2 disponible:', typeof Swal !== 'undefined');
-
-// Inicializar validación
-if (typeof inicializarValidacionDuplicados === 'function') {
-    inicializarValidacionDuplicados('Equipo');
-    console.log('[Equipo Agregar] Validación inicializada correctamente');
-    
-    // Ejecutar diagnóstico automático
-    setTimeout(function() {
-        if (typeof diagnosticoValidacion === 'function') {
-            console.log('\\n>>> Ejecutando diagnóstico automático <<<');
-            diagnosticoValidacion();
-        }
-    }, 1000);
-} else {
-    console.error('[Equipo Agregar] Función inicializarValidacionDuplicados NO encontrada!');
-}
-JS;
-
-$this->registerJs($initScript, \yii\web\View::POS_READY);
 ?>
+
+<script>
+/**
+ * Validación de Duplicados - Incrustado en la vista
+ */
+
+let modeloActual = 'Equipo';
+let idActual = '';
+
+function inicializarValidacionDuplicados(modelo, id = '') {
+    modeloActual = modelo;
+    idActual = id;
+
+    console.log('✅ VALIDACIÓN INICIALIZADA');
+    console.log('Modelo:', modelo);
+
+    // Buscar campos de número de serie (múltiples variaciones)
+    const camposSerie = document.querySelectorAll(
+        'input[name*="NUM_SERIE"], ' +
+        'input[name*="NUMERO_SERIE"], ' +
+        'input[name*="num_serie"], ' +
+        'input[name*="numero_serie"]'
+    );
+    console.log('Campos de serie encontrados:', camposSerie.length);
+
+    camposSerie.forEach(function(campo) {
+        console.log('Agregando evento blur a:', campo.id || campo.name);
+
+        campo.addEventListener('blur', function() {
+            const valor = this.value.trim();
+            console.log('📝 BLUR en serie:', valor);
+
+            if (valor.length > 0) {
+                validarDuplicado(this, 'serie', valor);
+            }
+        });
+    });
+
+    // Buscar campos de número de inventario (múltiples variaciones)
+    const camposInventario = document.querySelectorAll(
+        'input[name*="NUM_INVENTARIO"], ' +
+        'input[name*="NUMERO_INVENTARIO"], ' +
+        'input[name*="num_inventario"], ' +
+        'input[name*="numero_inventario"]'
+    );
+    console.log('Campos de inventario encontrados:', camposInventario.length);
+
+    camposInventario.forEach(function(campo) {
+        console.log('Agregando evento blur a:', campo.id || campo.name);
+
+        campo.addEventListener('blur', function() {
+            const valor = this.value.trim();
+            console.log('📝 BLUR en inventario:', valor);
+
+            if (valor.length > 0) {
+                validarDuplicado(this, 'inventario', valor);
+            }
+        });
+    });
+}
+
+function validarDuplicado(inputElement, tipo, valor) {
+    console.log('🔍 VALIDANDO:', tipo, valor);
+
+    // Obtener CSRF token - buscarlo en meta tag o en input del formulario
+    let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                   document.querySelector('input[name="_csrf-frontend"]')?.value || '';
+
+    console.log('CSRF token encontrado:', csrfToken ? '✓ Sí' : '✗ No');
+
+    // URL del endpoint
+    const url = '<?= \yii\helpers\Url::to(['site/verificar-duplicado']) ?>';
+    console.log('URL:', url);
+
+    // Preparar datos
+    const formData = new FormData();
+    formData.append('tipo', tipo);
+    formData.append('valor', valor);
+    formData.append('modelo', modeloActual);
+    formData.append('id', idActual);
+    formData.append('_csrf-frontend', csrfToken);
+
+    // Hacer petición
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('📡 Response status:', response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('📬 Respuesta:', data);
+
+        if (data.existe) {
+            console.log('⚠️ DUPLICADO ENCONTRADO');
+            inputElement.classList.add('is-invalid');
+            inputElement.classList.remove('is-valid');
+            inputElement.setAttribute('data-duplicado', 'true');
+
+            // Mostrar SweetAlert
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'question',
+                    title: '¿Por qué no se puede guardar?',
+                    html: `
+                        <div style="text-align: left;">
+                            <h5 style="color: #007bff; margin-bottom: 1rem; border-bottom: 2px solid #e9ecef; padding-bottom: 1rem;">
+                                <i class="fas fa-circle-question me-2"></i>
+                                Este número ya está registrado
+                            </h5>
+
+                            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 4px; margin-bottom: 1rem;">
+                                <p style="margin-bottom: 0.5rem;"><strong>${tipo === 'serie' ? 'Número de Serie' : 'Número de Inventario'}:</strong></p>
+                                <code style="background: white; padding: 0.75rem; border-radius: 3px; display: block; margin: 0.5rem 0; font-weight: bold; color: #d63384; border: 1px solid #dee2e6;">${valor}</code>
+
+                                <p style="margin-top: 1.5rem; margin-bottom: 0.5rem;"><strong>Registrado en:</strong></p>
+                                <div style="background: #fff3cd; padding: 0.75rem; border-radius: 3px; border-left: 4px solid #ffc107;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i> ${data.dispositivo}
+                                </div>
+
+                                ${data.detalles?.marca ? `<p style="margin-top: 1rem; margin-bottom: 0.3rem;"><strong>Marca:</strong> ${data.detalles.marca}</p>` : ''}
+                                ${data.detalles?.modelo ? `<p style="margin-bottom: 0.3rem;"><strong>Modelo:</strong> ${data.detalles.modelo}</p>` : ''}
+                                ${data.detalles?.estado ? `<p style="margin-bottom: 0;"><strong>Estado:</strong> ${data.detalles.estado}</p>` : ''}
+                            </div>
+
+                            <p style="color: #666; font-size: 0.9rem; margin-top: 1rem; background: #e7f3ff; padding: 0.75rem; border-radius: 3px;">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Por favor, ingresa un número diferente.
+                            </p>
+                        </div>
+                    `,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#007bff',
+                    customClass: {
+                        popup: 'swal-custom'
+                    }
+                });
+            } else {
+                alert(`⚠️ ${tipo === 'serie' ? 'Número de Serie' : 'Número de Inventario'} duplicado\n\n${valor}\n\n${data.dispositivo}`);
+            }
+        } else {
+            console.log('✅ Campo válido');
+            inputElement.classList.remove('is-invalid');
+            inputElement.classList.add('is-valid');
+            inputElement.removeAttribute('data-duplicado');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error en fetch:', error);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+    });
+}
+
+console.log('✅ SCRIPT DE VALIDACIÓN CARGADO');
+
+// Inicializar validación cuando el documento esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM Content Loaded - Inicializando validación');
+    inicializarValidacionDuplicados('Equipo');
+});
+</script>
 
 <script>
 let dd2Enabled = false;
@@ -324,7 +462,7 @@ function toggleDD2() {
     const toggleBtn = document.getElementById('toggle-dd2');
     const dd2Section = document.getElementById('dd2-section');
     const dd2Input = document.getElementById('equipo-dd2');
-    
+
     if (!dd2Enabled) {
         // Activar DD2
         dd2Enabled = true;

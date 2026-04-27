@@ -72,6 +72,22 @@ class SiteController extends Controller
                     'logout' => ['post'],
                     'equipo-eliminar' => ['post'],
                     'equipo-eliminar-multiple' => ['post'],
+                    'equipo-revertir' => ['post'],
+                    'equipo-revertir-multiple' => ['post'],
+                    'nobreak-revertir-multiple' => ['post'],
+                    'fuentesdepoder-revertir-multiple' => ['post'],
+                    'impresora-revertir-multiple' => ['post'],
+                    'monitor-revertir-multiple' => ['post'],
+                    'adaptador-revertir-multiple' => ['post'],
+                    'bateria-revertir-multiple' => ['post'],
+                    'almacenamiento-revertir-multiple' => ['post'],
+                    'ram-revertir-multiple' => ['post'],
+                    'sonido-revertir-multiple' => ['post'],
+                    'procesador-revertir-multiple' => ['post'],
+                    'conectividad-revertir-multiple' => ['post'],
+                    'telefonia-revertir-multiple' => ['post'],
+                    'videovigilancia-revertir-multiple' => ['post'],
+                    'verificar-duplicado' => ['post'],
                 ],
             ],
         ];
@@ -126,8 +142,8 @@ class SiteController extends Controller
             }
         }
         
-        // Deshabilitar CSRF para acciones de eliminación, reciclaje y aprobación de acceso
-        if (in_array($action->id, ['approve-access', 'equipo-eliminar', 'equipo-eliminar-multiple', 'ram-eliminar', 'ram-eliminar-multiple', 'eliminar-ram', 'eliminar-ram-masivo', 'procesador-eliminar', 'procesador-eliminar-multiple', 'eliminar-procesador', 'eliminar-procesadores-masivo', 'almacenamiento-eliminar', 'almacenamiento-eliminar-multiple', 'eliminar-almacenamiento', 'eliminar-almacenamiento-masivo', 'fuente-eliminar', 'fuente-eliminar-multiple', 'monitor-eliminar', 'monitor-eliminar-multiple', 'eliminar-monitor', 'eliminar-monitores-masivo', 'registrar-pieza-reciclaje', 'actualizar-pieza-reciclaje', 'eliminar-pieza-reciclaje', 'inventario-piezas-reciclaje', 'detalle-pieza-reciclaje', 'estadisticas-reciclaje', 'opciones-pieza-reciclaje', 'catalogo-piezas-existentes', 'obtener-dispositivos-baja', 'detalle-dispositivo-baja'])) {
+        // Deshabilitar CSRF para acciones de eliminación, reciclaje, aprobación de acceso y validación de duplicados
+        if (in_array($action->id, ['approve-access', 'equipo-eliminar', 'equipo-eliminar-multiple', 'ram-eliminar', 'ram-eliminar-multiple', 'eliminar-ram', 'eliminar-ram-masivo', 'procesador-eliminar', 'procesador-eliminar-multiple', 'eliminar-procesador', 'eliminar-procesadores-masivo', 'almacenamiento-eliminar', 'almacenamiento-eliminar-multiple', 'eliminar-almacenamiento', 'eliminar-almacenamiento-masivo', 'fuente-eliminar', 'fuente-eliminar-multiple', 'monitor-eliminar', 'monitor-eliminar-multiple', 'eliminar-monitor', 'eliminar-monitores-masivo', 'registrar-pieza-reciclaje', 'actualizar-pieza-reciclaje', 'eliminar-pieza-reciclaje', 'inventario-piezas-reciclaje', 'detalle-pieza-reciclaje', 'estadisticas-reciclaje', 'opciones-pieza-reciclaje', 'catalogo-piezas-existentes', 'obtener-dispositivos-baja', 'detalle-dispositivo-baja', 'verificar-duplicado'])) {
             $this->enableCsrfValidation = false;
         }
         return parent::beforeAction($action);
@@ -1141,7 +1157,9 @@ class SiteController extends Controller
     {
         try {
             $equipos = Equipo::find()->where(['!=', 'Estado', 'BAJA'])->orderBy('idEQUIPO ASC')->all();
-            
+            // Obtener también los equipos dados de baja para permitir revertirlos
+            $equiposBaja = Equipo::find()->where(['Estado' => 'BAJA'])->orderBy('idEQUIPO ASC')->all();
+
             // Obtener información del último equipo modificado usando campos de auditoría
             $ultimaModificacion = null;
             try {
@@ -1149,22 +1167,22 @@ class SiteController extends Controller
                 $equipoMasReciente = Equipo::find()
                     ->orderBy('fecha_ultima_edicion DESC')
                     ->one();
-                
-                $totalEquipos = count($equipos);
+
+                $totalEquipos = count($equipos) + count($equiposBaja);
                 $equiposActivos = 0;
-                
+
                 foreach ($equipos as $equipo) {
-                    if ($equipo->Estado === 'activo') {
+                    if ($equipo->Estado === 'Activo') {
                         $equiposActivos++;
                     }
                 }
-                
+
                 if ($equipoMasReciente && !empty($equipoMasReciente->fecha_ultima_edicion)) {
                     // Calcular tiempo desde la última edición
                     $fechaUltima = new \DateTime($equipoMasReciente->fecha_ultima_edicion);
                     $fechaActual = new \DateTime();
                     $diferencia = $fechaActual->diff($fechaUltima);
-                    
+
                     $tiempoTranscurrido = '';
                     if ($diferencia->days == 0) {
                         if ($diferencia->h == 0) {
@@ -1177,10 +1195,10 @@ class SiteController extends Controller
                     } else {
                         $tiempoTranscurrido = 'Hace ' . $diferencia->days . ' días';
                     }
-                    
+
                     // Obtener información del usuario que editó
                     $userInfo = $equipoMasReciente->getInfoUsuarioEditor();
-                    
+
                     $ultimaModificacion = [
                         'equipo' => $equipoMasReciente->MARCA . ' ' . $equipoMasReciente->MODELO,
                         'id' => $equipoMasReciente->idEQUIPO,
@@ -1198,16 +1216,18 @@ class SiteController extends Controller
                 // Si hay error, continuar sin la información de última modificación
                 $ultimaModificacion = null;
             }
-            
+
             $error = null;
         } catch (Exception $e) {
             $equipos = [];
+            $equiposBaja = [];
             $ultimaModificacion = null;
             $error = $e->getMessage();
         }
 
         return $this->render('equipo/listar', [
             'equipos' => $equipos,
+            'equiposBaja' => $equiposBaja ?? [],
             'ultimaModificacion' => $ultimaModificacion,
             'error' => $error
         ]);
@@ -5492,7 +5512,276 @@ class SiteController extends Controller
         return $this->redirect(['equipo-listar']);
     }
 
-    // Método temporal para diagnosticar problemas de eliminación
+    /**
+     * Revierte un equipo dado de baja a estado Activo
+     */
+    public function actionEquipoRevertir()
+    {
+        $request = Yii::$app->request;
+
+        if (!$request->isPost) {
+            Yii::$app->session->setFlash('error', 'Método no permitido');
+            return $this->redirect(['equipo-listar']);
+        }
+
+        $id = $request->post('id');
+
+        if (empty($id)) {
+            Yii::$app->session->setFlash('error', 'ID no proporcionado');
+            return $this->redirect(['equipo-listar']);
+        }
+
+        try {
+            $equipo = Equipo::findOne(['idEQUIPO' => $id]);
+
+            if (!$equipo) {
+                Yii::$app->session->setFlash('error', "Equipo con ID $id no encontrado");
+                return $this->redirect(['equipo-listar']);
+            }
+
+            $marca = $equipo->MARCA ?? 'Sin marca';
+            $modelo = $equipo->MODELO ?? 'Sin modelo';
+            $estadoAnterior = $equipo->Estado;
+
+            // Cambiar estado a Activo
+            $equipo->Estado = 'Activo';
+
+            // Registrar la edición
+            if ($equipo->hasAttribute('fecha_ultima_edicion')) {
+                $equipo->fecha_ultima_edicion = date('Y-m-d H:i:s');
+            }
+            if ($equipo->hasAttribute('ultimo_editor')) {
+                $equipo->ultimo_editor = Yii::$app->user->identity->username ?? 'Sistema';
+            }
+
+            if ($equipo->save()) {
+                Yii::$app->session->setFlash('success', "✅ Equipo $marca $modelo revertido exitosamente de '$estadoAnterior' a 'Activo'");
+            } else {
+                Yii::$app->session->setFlash('error', 'Error al revertir el equipo: ' . implode(', ', $equipo->getFirstErrors()));
+            }
+
+        } catch (Exception $e) {
+            Yii::$app->session->setFlash('error', 'Error al revertir: ' . $e->getMessage());
+        }
+
+        return $this->redirect(['equipo-listar']);
+    }
+
+    /**
+     * Revierte múltiples equipos dados de baja a estado Activo
+     */
+    public function actionEquipoRevertirMultiple()
+    {
+        $request = Yii::$app->request;
+
+        if (!$request->isPost) {
+            Yii::$app->session->setFlash('error', 'Método no permitido');
+            return $this->redirect(['site/historial-bajas']);
+        }
+
+        $ids = $request->post('ids', []);
+
+        if (!$ids || !is_array($ids) || empty($ids)) {
+            Yii::$app->session->setFlash('error', 'No se seleccionaron equipos para revertir');
+            return $this->redirect(['site/historial-bajas']);
+        }
+
+        try {
+            $revertidos = 0;
+            $errores = [];
+
+            foreach ($ids as $id) {
+                if (empty($id)) continue;
+
+                $equipo = Equipo::findOne(['idEQUIPO' => $id]);
+
+                if (!$equipo) {
+                    $errores[] = "Equipo con ID $id no encontrado";
+                    continue;
+                }
+
+                $estadoAnterior = $equipo->Estado;
+                $equipo->Estado = 'Activo';
+
+                // Registrar la edición
+                if ($equipo->hasAttribute('fecha_ultima_edicion')) {
+                    $equipo->fecha_ultima_edicion = date('Y-m-d H:i:s');
+                }
+                if ($equipo->hasAttribute('ultimo_editor')) {
+                    $equipo->ultimo_editor = Yii::$app->user->identity->username ?? 'Sistema';
+                }
+
+                if ($equipo->save()) {
+                    $revertidos++;
+                } else {
+                    $errores[] = "Error al revertir equipo ID $id: " . implode(', ', $equipo->getFirstErrors());
+                }
+            }
+
+            if ($revertidos > 0) {
+                $message = "✅ Se revertieron $revertidos equipo(s) exitosamente a estado 'Activo'";
+                if (count($errores) > 0) {
+                    $message .= ". Errores: " . implode(', ', $errores);
+                }
+                Yii::$app->session->setFlash('success', $message);
+            } else {
+                $message = '❌ No se pudo revertir ningún equipo.';
+                if (count($errores) > 0) {
+                    $message .= " Errores: " . implode(', ', $errores);
+                }
+                Yii::$app->session->setFlash('error', $message);
+            }
+
+        } catch (Exception $e) {
+            Yii::$app->session->setFlash('error', 'Error al revertir equipos: ' . $e->getMessage());
+        }
+
+        return $this->redirect(['site/historial-bajas']);
+    }
+
+    // ===== FUNCIONES GENÉRICAS PARA REVERTIR MÚLTIPLES ELEMENTOS DE CADA CATEGORÍA =====
+
+    public function actionNobreakRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Nobreak::class, 'idNOBREAK', 'No Break');
+    }
+
+    public function actionFuentesdepoderRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(FuentesDePoder::class, 'idFuentePoder', 'Fuentes de Poder');
+    }
+
+    public function actionImpresoraRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Impresora::class, 'idIMPRESORA', 'Impresora');
+    }
+
+    public function actionMonitorRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Monitor::class, 'idMonitor', 'Monitor');
+    }
+
+    public function actionAdaptadorRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Adaptador::class, 'idAdaptador', 'Adaptador');
+    }
+
+    public function actionBateriaRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Bateria::class, 'idBateria', 'Batería');
+    }
+
+    public function actionAlmacenamientoRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Almacenamiento::class, 'idALMACENAMIENTO', 'Almacenamiento');
+    }
+
+    public function actionRamRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Ram::class, 'idRAM', 'RAM');
+    }
+
+    public function actionSonidoRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Sonido::class, 'idSonido', 'Sonido');
+    }
+
+    public function actionProcesadorRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Procesador::class, 'idPROCESADOR', 'Procesador');
+    }
+
+    public function actionConectividadRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Conectividad::class, 'idCONECTIVIDAD', 'Conectividad');
+    }
+
+    public function actionTelefoniaRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(Telefonia::class, 'idTELEFONIA', 'Telefonía');
+    }
+
+    public function actionVideovigilanciaRevertirMultiple()
+    {
+        return $this->revertirMultipleGenerico(VideoVigilancia::class, 'idVIDEOVIGILANCIA', 'Video Vigilancia');
+    }
+
+    /**
+     * Método genérico para revertir múltiples elementos de cualquier categoría
+     * @param string $modelClass Clase del modelo
+     * @param string $idField Campo ID del modelo
+     * @param string $nombreCategoria Nombre legible de la categoría
+     */
+    private function revertirMultipleGenerico($modelClass, $idField, $nombreCategoria)
+    {
+        $request = Yii::$app->request;
+
+        if (!$request->isPost) {
+            Yii::$app->session->setFlash('error', 'Método no permitido');
+            return $this->redirect(['site/historial-bajas']);
+        }
+
+        $ids = $request->post('ids', []);
+
+        if (!$ids || !is_array($ids) || empty($ids)) {
+            Yii::$app->session->setFlash('error', "No se seleccionaron elementos de $nombreCategoria para revertir");
+            return $this->redirect(['site/historial-bajas']);
+        }
+
+        try {
+            $revertidos = 0;
+            $errores = [];
+
+            foreach ($ids as $id) {
+                if (empty($id)) continue;
+
+                $elemento = $modelClass::findOne([$idField => $id]);
+
+                if (!$elemento) {
+                    $errores[] = "Elemento con ID $id no encontrado";
+                    continue;
+                }
+
+                // Determinar el campo de estado (puede ser 'Estado' o 'ESTADO')
+                $estadoField = $elemento->hasAttribute('Estado') ? 'Estado' : 'ESTADO';
+                $elemento->$estadoField = 'Activo';
+
+                // Registrar la edición
+                if ($elemento->hasAttribute('fecha_ultima_edicion')) {
+                    $elemento->fecha_ultima_edicion = date('Y-m-d H:i:s');
+                }
+                if ($elemento->hasAttribute('ultimo_editor')) {
+                    $elemento->ultimo_editor = Yii::$app->user->identity->username ?? 'Sistema';
+                }
+
+                if ($elemento->save()) {
+                    $revertidos++;
+                } else {
+                    $errores[] = "Error al revertir elemento ID $id: " . implode(', ', $elemento->getFirstErrors());
+                }
+            }
+
+            if ($revertidos > 0) {
+                $message = "Se revertieron $revertidos elemento(s) de $nombreCategoria exitosamente a estado 'Activo'";
+                if (count($errores) > 0) {
+                    $message .= ". Errores: " . implode(', ', $errores);
+                }
+                Yii::$app->session->setFlash('success', $message);
+            } else {
+                $message = "No se pudo revertir ningún elemento de $nombreCategoria.";
+                if (count($errores) > 0) {
+                    $message .= " Errores: " . implode(', ', $errores);
+                }
+                Yii::$app->session->setFlash('error', $message);
+            }
+
+        } catch (Exception $e) {
+            Yii::$app->session->setFlash('error', "Error al revertir elementos de $nombreCategoria: " . $e->getMessage());
+        }
+
+        return $this->redirect(['site/historial-bajas']);
+    }
+
     public function actionTestEliminar()
     {
         $equipo = Equipo::find()->limit(1)->one();
@@ -6391,24 +6680,58 @@ class SiteController extends Controller
         if ($existe) {
             $nombreModelo = $this->getNombreModelo($modelo);
             $registro = $query->one();
-            
+
             // Obtener información del dispositivo duplicado
             $infoDispositivo = $this->obtenerInfoDispositivo($modelo, $registro);
-            
-            $mensaje = $tipo === 'serie' 
+
+            // Obtener detalles adicionales del registro
+            $detalles = $this->obtenerDetallesDispositivo($modelo, $registro);
+
+            $mensaje = $tipo === 'serie'
                 ? "⚠️ Este número de serie ya está registrado en otro {$nombreModelo}."
                 : "⚠️ Este número de inventario ya está registrado en otro {$nombreModelo}.";
-            
+
             return [
-                'existe' => true, 
+                'existe' => true,
                 'mensaje' => $mensaje,
-                'dispositivo' => $infoDispositivo
+                'dispositivo' => $infoDispositivo,
+                'detalles' => $detalles
             ];
         }
-        
-        return ['existe' => false, 'mensaje' => '', 'dispositivo' => ''];
+
+        return ['existe' => false, 'mensaje' => '', 'dispositivo' => '', 'detalles' => []];
     }
-    
+
+    /**
+     * Obtiene detalles específicos del dispositivo duplicado
+     */
+    private function obtenerDetallesDispositivo($modelo, $registro)
+    {
+        $detalles = [];
+
+        // Determinar campos de marca y modelo según el modelo
+        $campoMarca = in_array($modelo, ['Ram', 'Almacenamiento', 'Procesador', 'FuentesDePoder']) ? 'marca' : 'MARCA';
+        $campoModelo = in_array($modelo, ['Ram', 'Almacenamiento', 'Procesador', 'FuentesDePoder']) ? 'modelo' : 'MODELO';
+        $campoEstado = in_array($modelo, ['Ram', 'Almacenamiento', 'Procesador', 'FuentesDePoder']) ? 'estado' : 'Estado';
+
+        // Agregar marca
+        if (isset($registro->$campoMarca)) {
+            $detalles['marca'] = $registro->$campoMarca;
+        }
+
+        // Agregar modelo
+        if (isset($registro->$campoModelo)) {
+            $detalles['modelo'] = $registro->$campoModelo;
+        }
+
+        // Agregar estado
+        if (isset($registro->$campoEstado)) {
+            $detalles['estado'] = $registro->$campoEstado;
+        }
+
+        return $detalles;
+    }
+
     /**
      * Obtiene el nombre amigable del modelo
      */
