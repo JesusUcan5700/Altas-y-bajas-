@@ -5,8 +5,8 @@ return [
         'db' => [
             'class' => \yii\db\Connection::class,
             'dsn' => 'mysql:host=localhost;dbname=inventario',
-            'username' => 'root',
-            'password' => '',
+            'username' => 'inventario',
+            'password' => 'inventario2025$',
             'charset' => 'utf8',
         ],
         'mailer' => [
