@@ -100,9 +100,9 @@ class FuentesDePoder extends \yii\db\ActiveRecord
             
             // Otros campos opcionales
             [['TIPO', 'VOLTAJE', 'AMPERAJE', 'POTENCIA_WATTS', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'DESCRIPCION', 'ESTADO', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
-            
-            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otra fuente de poder.'],
-            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otra fuente de poder.'],
+
+            [['NUMERO_SERIE'], 'validarNumSerie'],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
         ];
     }
     
@@ -144,6 +144,42 @@ class FuentesDePoder extends \yii\db\ActiveRecord
     public function getUltimoEditor()
     {
         return $this->hasOne(User::class, ['username' => 'ultimo_editor']);
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_SERIE sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumSerie($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idFuentePoder', $this->idFuentePoder]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de serie ya está registrado en otra fuente de poder (incluso si está dado de baja).');
+        }
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_INVENTARIO sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumInventario($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idFuentePoder', $this->idFuentePoder]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de inventario ya está registrado en otra fuente de poder (incluso si está dado de baja).');
+        }
     }
 
     public static function getEdificios()

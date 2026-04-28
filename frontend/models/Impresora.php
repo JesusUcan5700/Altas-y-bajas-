@@ -74,8 +74,8 @@ class Impresora extends \yii\db\ActiveRecord
             [['propia_rentada'], 'string', 'max' => 10],
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
-            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otra impresora.'],
-            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otra impresora.'],
+            [['NUMERO_SERIE'], 'validarNumSerie'],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
             [['Estado'], 'in', 'range' => [
                 self::ESTADO_ACTIVO, 
                 self::ESTADO_INACTIVO, 
@@ -417,9 +417,45 @@ class Impresora extends \yii\db\ActiveRecord
                 return $user->username;
             }
         }
-        
+
         // Si no hay usuario logueado, usar 'Sistema' como fallback
         return 'Sistema';
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_SERIE sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumSerie($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idIMPRESORA', $this->idIMPRESORA]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de serie ya está registrado en otra impresora (incluso si está dado de baja).');
+        }
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_INVENTARIO sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumInventario($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idIMPRESORA', $this->idIMPRESORA]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de inventario ya está registrado en otra impresora (incluso si está dado de baja).');
+        }
     }
 
     /**

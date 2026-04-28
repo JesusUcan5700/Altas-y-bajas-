@@ -3,6 +3,7 @@ use yii\helpers\Html;
 
 /** @var yii\web\View $this */
 /* @var $equipos array */
+/* @var $equiposBaja array */
 /* @var $error string|null */
 
 $this->title = 'Gestión de Equipos de Cómputo';
@@ -84,6 +85,79 @@ $this->registerCss("
                     <p class="mb-0 mt-2">Computadoras, Laptops y Servidores</p>
                 </div>
                 <div class="card-body">
+                    <!-- Sección de Equipos Dados de Baja -->
+                    <?php
+                    $equiposBaja = $equiposBaja ?? [];
+                    $countBaja = count($equiposBaja);
+                    ?>
+                    <?php if ($countBaja > 0): ?>
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-danger border-danger">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="alert-heading mb-2">
+                                            <i class="fas fa-times-circle me-2"></i>
+                                            Equipos Dados de Baja
+                                        </h5>
+                                        <p class="mb-0">
+                                            Hay <strong><?= $countBaja ?></strong> equipo(s) con estado "BAJA". Puedes revertir estos equipos a estado activo.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#collapseEquiposBaja">
+                                            <i class="fas fa-eye me-2"></i>Ver Equipos
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Tabla de equipos dados de baja (oculta por defecto) -->
+                                <div class="collapse mt-3" id="collapseEquiposBaja">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover table-sm">
+                                            <thead>
+                                                <tr class="bg-danger text-white">
+                                                    <th>ID</th>
+                                                    <th>Marca</th>
+                                                    <th>Modelo</th>
+                                                    <th>Tipo</th>
+                                                    <th>N° Serie</th>
+                                                    <th>N° Inventario</th>
+                                                    <th>Ubicación</th>
+                                                    <th>Estado</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($equiposBaja as $equipo): ?>
+                                                <tr class="table-light">
+                                                    <td><strong><?= htmlspecialchars($equipo['idEQUIPO']) ?></strong></td>
+                                                    <td><?= htmlspecialchars($equipo['MARCA'] ?? '-') ?></td>
+                                                    <td><?= htmlspecialchars($equipo['MODELO'] ?? '-') ?></td>
+                                                    <td><?= htmlspecialchars($equipo['tipoequipo'] ?? '-') ?></td>
+                                                    <td><?= htmlspecialchars($equipo['NUM_SERIE'] ?? '-') ?></td>
+                                                    <td><?= htmlspecialchars($equipo['NUM_INVENTARIO'] ?? '-') ?></td>
+                                                    <td><?= htmlspecialchars($equipo['ubicacion_edificio'] ?? '-') ?> - <?= htmlspecialchars($equipo['ubicacion_detalle'] ?? '-') ?></td>
+                                                    <td>
+                                                        <span class="badge bg-danger"><?= htmlspecialchars($equipo['Estado']) ?></span>
+                                                    </td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-sm btn-success" title="Revertir Estado"
+                                                                onclick="confirmarRevertir(<?= $equipo['idEQUIPO'] ?>, '<?= Html::encode($equipo['MARCA'] . ' ' . $equipo['MODELO']) ?>')">
+                                                            <i class="fas fa-undo me-1"></i>Revertir
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Recuadro de Equipos Dañados -->
                     <?php 
                     $equiposDanados = \frontend\models\Equipo::getEquiposDanados();
@@ -464,10 +538,21 @@ $this->registerCss("
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="<?= \yii\helpers\Url::to(['site/equipo-editar', 'id' => $equipo['idEQUIPO']]) ?>" class="btn btn-sm btn-primary" title="Editar">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <button type="button" class="btn btn-sm btn-danger" title="Eliminar" 
+                                                    <?php
+                                                    $estadoLower = strtolower($equipo['Estado'] ?? '');
+                                                    $esBaja = ($estadoLower === 'baja' || $estadoLower === 'dañado(proceso de baja)');
+                                                    ?>
+                                                    <?php if ($esBaja): ?>
+                                                        <button type="button" class="btn btn-sm btn-success" title="Revertir Estado"
+                                                                onclick="confirmarRevertir(<?= $equipo['idEQUIPO'] ?>, '<?= Html::encode($equipo['MARCA'] . ' ' . $equipo['MODELO']) ?>')">
+                                                            <i class="fas fa-undo me-1"></i>Revertir
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <a href="<?= \yii\helpers\Url::to(['site/equipo-editar', 'id' => $equipo['idEQUIPO']]) ?>" class="btn btn-sm btn-primary" title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    <?php endif; ?>
+                                                    <button type="button" class="btn btn-sm btn-danger" title="Eliminar"
                                                             onclick="confirmarEliminar(<?= $equipo['idEQUIPO'] ?>, '<?= Html::encode($equipo['MARCA'] . ' ' . $equipo['MODELO']) ?>')">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
@@ -670,6 +755,40 @@ function confirmarEliminar(id, nombre) {
     if (confirm('¿Está seguro que desea eliminar el equipo "' + nombre + '"?\\n\\nEsta acción no se puede deshacer.')) {
         eliminarEquipos(id);
     }
+}
+
+// Función para confirmar revertir estado
+function confirmarRevertir(id, nombre) {
+    if (confirm('¿Está seguro que desea revertir el equipo "' + nombre + '" a estado ACTIVO?\\n\\nSu estado anterior será reemplazado.')) {
+        revertirEquipo(id);
+    }
+}
+
+// Función para revertir un equipo a estado Activo
+function revertirEquipo(id) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.style.display = 'none';
+    form.action = '<?= \yii\helpers\Url::to(['site/equipo-revertir']) ?>';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'id';
+    input.value = id;
+    form.appendChild(input);
+
+    // Obtener y agregar CSRF token desde el meta tag
+    const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfTokenMeta) {
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '_csrf-frontend';
+        tokenInput.value = csrfTokenMeta.getAttribute('content');
+        form.appendChild(tokenInput);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
 }
 
 // Función para descargar QR de los equipos seleccionados en un solo PDF

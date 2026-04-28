@@ -135,10 +135,10 @@ class Sonido extends \yii\db\ActiveRecord
             
             // Otros campos opcionales
             [['POTENCIA', 'CONEXIONES', 'DESCRIPCION', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
-            
+
             // Validaciones de unicidad
-            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro equipo de sonido.'],
-            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro equipo de sonido.'],
+            [['NUMERO_SERIE'], 'validarNumSerie'],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
         ];
     }
 
@@ -193,15 +193,15 @@ class Sonido extends \yii\db\ActiveRecord
     {
         // Priorizar el campo FECHA (establecido por el usuario) sobre fecha_creacion
         $fechaBase = $this->FECHA ?: $this->fecha_creacion;
-        
+
         if (!$fechaBase) {
             return 'No disponible';
         }
-        
+
         $fechaInicio = new \DateTime($fechaBase);
         $ahora = new \DateTime();
         $diferencia = $ahora->diff($fechaInicio);
-        
+
         if ($diferencia->days > 0) {
             return $diferencia->days . ($diferencia->days == 1 ? ' día' : ' días');
         } elseif ($diferencia->h > 0) {
@@ -210,6 +210,42 @@ class Sonido extends \yii\db\ActiveRecord
             return $diferencia->i . ($diferencia->i == 1 ? ' minuto' : ' minutos');
         } else {
             return 'Menos de 1 minuto';
+        }
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_SERIE sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumSerie($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idSonido', $this->idSonido]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de serie ya está registrado en otro equipo de sonido (incluso si está dado de baja).');
+        }
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_INVENTARIO sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumInventario($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idSonido', $this->idSonido]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de inventario ya está registrado en otro equipo de sonido (incluso si está dado de baja).');
         }
     }
 

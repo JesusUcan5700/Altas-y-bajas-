@@ -5,8 +5,8 @@ return [
         'db' => [
             'class' => \yii\db\Connection::class,
             'dsn' => 'mysql:host=localhost;dbname=inventario',
-            'username' => 'inventario',
-            'password' => 'inventario2025$',
+            'username' => 'root',
+            'password' => '',
             'charset' => 'utf8',
         ],
         'mailer' => [
@@ -17,7 +17,7 @@ return [
                 'scheme' => 'smtps',
                 'host' => 'smtp.gmail.com',
                 'username' => 'inventarioapoyoinformatico@valladolid.tecnm.mx',
-                'password' => 'jissxviojhjymqih',
+                'password' => 'bottsmwnphrbyfyg',
                 'port' => 465,
                 'encryption' => 'ssl',
             ],

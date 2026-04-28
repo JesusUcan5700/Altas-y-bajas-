@@ -210,7 +210,10 @@ $this->registerCss("
                             <i class="fas fa-battery-half"></i>
                             No Break / UPS
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirNobreak" disabled onclick="revertirSeleccionadosNobreak()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('nobreak', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -222,6 +225,9 @@ $this->registerCss("
                         <table class="table table-hover" id="tabla-nobreak">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllNobreak" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -242,10 +248,13 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="11" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="12" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="nobreak-checkbox-historial" value="<?= $item->idNOBREAK ?>">
+                                                </td>
                                                 <td title="ID: <?= Html::encode($item->idNOBREAK) ?>"><?= Html::encode($item->idNOBREAK) ?></td>
                                                 <td title="Marca: <?= Html::encode($item->MARCA) ?>"><?= Html::encode($item->MARCA) ?></td>
                                                 <td title="Modelo: <?= Html::encode($item->MODELO) ?>"><?= Html::encode($item->MODELO) ?></td>
@@ -282,7 +291,10 @@ $this->registerCss("
                             <i class="fas fa-bolt"></i>
                             Fuentes de Poder
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirFuentesDePoder" disabled onclick="revertirSeleccionadosFuentesDePoder()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('fuentes_de_poder', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -291,9 +303,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-fuentes-de-poder">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllFuentesDePoder" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -317,10 +332,13 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="14" class="text-center">No hay fuentes de poder dadas de baja</td></tr>';
+                                        echo '<tr><td colspan="15" class="text-center">No hay fuentes de poder dadas de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="fuentesdepoder-checkbox-historial" value="<?= $item->idFuentePoder ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idFuentePoder) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -361,7 +379,10 @@ $this->registerCss("
                             <i class="fas fa-desktop"></i>
                             Equipos de Cómputo
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirEquipos" disabled onclick="revertirSeleccionadosEquipos()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('equipos', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -373,6 +394,9 @@ $this->registerCss("
                         <table class="table table-hover" id="tabla-equipos">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllEquipos" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>CPU</th>
                                     <th>DD</th>
@@ -402,10 +426,13 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="20" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="21" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="equipo-checkbox-historial" value="<?= $item->idEQUIPO ?>">
+                                                </td>
                                                 <td title="ID: <?= Html::encode($item->idEQUIPO) ?>"><?= Html::encode($item->idEQUIPO) ?></td>
                                                 <td title="CPU: <?= Html::encode($item->CPU) ?>"><?= Html::encode($item->CPU) ?></td>
                                                 <td title="DD: <?= Html::encode($item->DD) ?>"><?= Html::encode($item->DD) ?></td>
@@ -430,7 +457,7 @@ $this->registerCss("
                                         <?php endforeach;
                                     }
                                 } catch (\Exception $e) {
-                                    echo '<tr><td colspan="13" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
+                                    echo '<tr><td colspan="21" class="text-danger">Error: ' . Html::encode($e->getMessage()) . '</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -449,7 +476,10 @@ $this->registerCss("
                             <i class="fas fa-print"></i>
                             Impresoras
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirImpresoras" disabled onclick="revertirSeleccionadosImpresoras()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('impresoras', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -461,6 +491,9 @@ $this->registerCss("
                         <table class="table table-hover" id="tabla-impresoras">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllImpresoras" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -483,10 +516,13 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="12" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="14" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="impresora-checkbox-historial" value="<?= $item->idIMPRESORA ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idIMPRESORA) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -523,7 +559,10 @@ $this->registerCss("
                             <i class="fas fa-tv"></i>
                             Monitores
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirMonitores" disabled onclick="revertirSeleccionadosMonitores()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('monitores', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -535,6 +574,9 @@ $this->registerCss("
                         <table class="table table-hover" id="tabla-monitores">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllMonitores" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -559,10 +601,13 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="15" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="16" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="monitor-checkbox-historial" value="<?= $item->idMonitor ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idMonitor) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -605,7 +650,10 @@ $this->registerCss("
                             <i class="fas fa-plug"></i>
                             Adaptadores
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirAdaptadores" disabled onclick="revertirSeleccionadosAdaptadores()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('adaptadores', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -614,9 +662,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-adaptadores">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllAdaptadores" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -643,10 +694,13 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="16" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="18" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="adaptador-checkbox-historial" value="<?= $item->idAdaptador ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idAdaptador) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -692,7 +746,10 @@ $this->registerCss("
                             <i class="fas fa-battery-full"></i>
                             Baterías
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirBaterias" disabled onclick="revertirSeleccionadosBaterias()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('baterias', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -701,9 +758,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-baterias">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllBaterias" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -732,10 +792,13 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="19" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="20" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="bateria-checkbox-historial" value="<?= $item->idBateria ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idBateria) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -783,7 +846,10 @@ $this->registerCss("
                             <i class="fas fa-hdd"></i>
                             Almacenamiento
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirAlmacenamiento" disabled onclick="revertirSeleccionadosAlmacenamiento()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('almacenamiento', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -792,9 +858,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-almacenamiento">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllAlmacenamiento" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>N° Inventario</th>
                                     <th>Marca</th>
@@ -815,10 +884,13 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="11" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="12" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="almacenamiento-checkbox-historial" value="<?= $item->idALMACENAMIENTO ?? $item->id ?? 'N/A' ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idALMACENAMIENTO ?? $item->id ?? 'N/A') ?></td>
                                                 <td><?= Html::encode($item->NUMERO_INVENTARIO) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
@@ -853,7 +925,10 @@ $this->registerCss("
                             <i class="fas fa-memory"></i>
                             Memoria RAM
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirRam" disabled onclick="revertirSeleccionadosRam()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('ram', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -862,9 +937,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-ram">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllRam" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -887,10 +965,13 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="13" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="14" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="ram-checkbox-historial" value="<?= $item->idRAM ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idRAM) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -926,7 +1007,10 @@ $this->registerCss("
                             <i class="fas fa-volume-up"></i>
                             Equipo de Sonido
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirSonido" disabled onclick="revertirSeleccionadosSonido()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('sonido', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -935,9 +1019,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-sonido">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllSonido" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -960,10 +1047,13 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="13" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="14" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="sonido-checkbox-historial" value="<?= $item->idSonido ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idSonido) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -1003,7 +1093,10 @@ $this->registerCss("
                             <i class="fas fa-microchip"></i>
                             Procesadores
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirProcesadores" disabled onclick="revertirSeleccionadosProcesadores()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('procesadores', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -1012,9 +1105,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-procesadores">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllProcesadores" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -1037,10 +1133,13 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="13" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="14" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="procesador-checkbox-historial" value="<?= $item->idPROCESADOR ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idPROCESADOR) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -1079,7 +1178,10 @@ $this->registerCss("
                             <i class="fas fa-network-wired"></i>
                             Conectividad
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirConectividad" disabled onclick="revertirSeleccionadosConectividad()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('conectividad', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -1088,9 +1190,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-conectividad">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllConectividad" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Tipo</th>
                                     <th>Marca</th>
@@ -1109,10 +1214,13 @@ $this->registerCss("
                                         ->where(['Estado' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="9" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="10" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="conectividad-checkbox-historial" value="<?= $item->idCONECTIVIDAD ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idCONECTIVIDAD) ?></td>
                                                 <td><?= Html::encode($item->TIPO) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
@@ -1145,7 +1253,10 @@ $this->registerCss("
                             <i class="fas fa-phone"></i>
                             Telefonía
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirTelefonia" disabled onclick="revertirSeleccionadosTelefonia()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('telefonia', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -1154,9 +1265,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-telefonia">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllTelefonia" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -1178,10 +1292,13 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="12" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="13" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="telefonia-checkbox-historial" value="<?= $item->idTELEFONIA ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idTELEFONIA) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -1216,7 +1333,10 @@ $this->registerCss("
                             <i class="fas fa-video"></i>
                             Video Vigilancia
                         </h3>
-                        <div class="dropdown no-print">
+                        <div class="dropdown no-print d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" id="btnRevertirVideoVigilancia" disabled onclick="revertirSeleccionadosVideoVigilancia()">
+                                <i class="fas fa-undo me-1"></i>Revertir Seleccionados
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="exportarTabla('videovigilancia', 'excel')">
                                 <i class="fas fa-file-excel"></i> Exportar Excel
                             </button>
@@ -1225,9 +1345,12 @@ $this->registerCss("
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="tabla-videovigilancia">
                             <thead>
                                 <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAllVideoVigilancia" title="Seleccionar todos">
+                                    </th>
                                     <th>ID</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -1252,10 +1375,13 @@ $this->registerCss("
                                         ->where(['ESTADO' => 'BAJA'])
                                         ->all();
                                     if (empty($items)) {
-                                        echo '<tr><td colspan="15" class="text-center">No hay elementos dados de baja</td></tr>';
+                                        echo '<tr><td colspan="16" class="text-center">No hay elementos dados de baja</td></tr>';
                                     } else {
                                         foreach ($items as $item): ?>
                                             <tr>
+                                                <td>
+                                                    <input type="checkbox" class="videovigilancia-checkbox-historial" value="<?= $item->idVIDEOVIGILANCIA ?>">
+                                                </td>
                                                 <td><?= Html::encode($item->idVIDEOVIGILANCIA) ?></td>
                                                 <td><?= Html::encode($item->MARCA) ?></td>
                                                 <td><?= Html::encode($item->MODELO) ?></td>
@@ -1470,5 +1596,148 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ejecutar al cargar y redimensionar
     adjustColumnWidths();
     window.addEventListener('resize', adjustColumnWidths);
+
+    // ===== MANEJO DE SELECCIÓN DE EQUIPOS DADOS DE BAJA =====
+    const selectAllEquipos = document.getElementById('selectAllEquipos');
+    const equipoCheckboxes = document.querySelectorAll('.equipo-checkbox-historial');
+    const btnRevertirEquipos = document.getElementById('btnRevertirEquipos');
+
+    if (selectAllEquipos) {
+        selectAllEquipos.addEventListener('change', function() {
+            equipoCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            actualizarBotonRevertir();
+        });
+    }
+
+    equipoCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', actualizarBotonRevertir);
+    });
+
+    function actualizarBotonRevertir() {
+        const seleccionados = document.querySelectorAll('.equipo-checkbox-historial:checked');
+        btnRevertirEquipos.disabled = seleccionados.length === 0;
+    }
+
+    window.revertirSeleccionadosEquipos = function() {
+        const seleccionados = Array.from(document.querySelectorAll('.equipo-checkbox-historial:checked')).map(cb => cb.value);
+
+        if (seleccionados.length === 0) {
+            alert('Por favor, selecciona al menos un equipo');
+            return;
+        }
+
+        const mensaje = '¿Estás seguro de que deseas revertir ' + seleccionados.length + ' equipo(s) a estado ACTIVO?\n\nEsta acción no se puede deshacer.';
+
+        if (confirm(mensaje)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.style.display = 'none';
+            form.action = '<?= Url::to(['site/equipo-revertir-multiple']) ?>';
+
+            // Agregar IDs
+            seleccionados.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ids[]';
+                input.value = id;
+                form.appendChild(input);
+            });
+
+            // Agregar CSRF token
+            const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+            if (csrfTokenMeta) {
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '_csrf-frontend';
+                tokenInput.value = csrfTokenMeta.getAttribute('content');
+                form.appendChild(tokenInput);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+
+    // ===== FUNCIONES GENERALES PARA TODAS LAS CATEGORÍAS =====
+    function crearGestorCategoria(categoria, tipoModelo) {
+        const selectAllCheckbox = document.getElementById('selectAll' + tipoModelo);
+        const categoryCheckboxes = document.querySelectorAll('.' + categoria + '-checkbox-historial');
+        const btnRevertir = document.getElementById('btnRevertir' + tipoModelo);
+
+        if (!selectAllCheckbox) return;
+
+        selectAllCheckbox.addEventListener('change', function() {
+            categoryCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            actualizarBotonCategoria(categoria, btnRevertir);
+        });
+
+        categoryCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => actualizarBotonCategoria(categoria, btnRevertir));
+        });
+
+        window['revertirSeleccionados' + tipoModelo] = function() {
+            const seleccionados = Array.from(document.querySelectorAll('.' + categoria + '-checkbox-historial:checked')).map(cb => cb.value);
+
+            if (seleccionados.length === 0) {
+                alert('Por favor, selecciona al menos un elemento');
+                return;
+            }
+
+            const mensaje = '¿Estás seguro de que deseas revertir ' + seleccionados.length + ' elemento(s) a estado ACTIVO?\n\nEsta acción no se puede deshacer.';
+
+            if (confirm(mensaje)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.style.display = 'none';
+                form.action = '<?= Url::to(['site/']) ?>' + categoria + '-revertir-multiple';
+
+                // Agregar IDs
+                seleccionados.forEach(id => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'ids[]';
+                    input.value = id;
+                    form.appendChild(input);
+                });
+
+                // Agregar CSRF token
+                const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+                if (csrfTokenMeta) {
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '_csrf-frontend';
+                    tokenInput.value = csrfTokenMeta.getAttribute('content');
+                    form.appendChild(tokenInput);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        };
+    }
+
+    function actualizarBotonCategoria(categoria, btnRevertir) {
+        const seleccionados = document.querySelectorAll('.' + categoria + '-checkbox-historial:checked');
+        btnRevertir.disabled = seleccionados.length === 0;
+    }
+
+    // Inicializar gestores para todas las categorías
+    crearGestorCategoria('nobreak', 'Nobreak');
+    crearGestorCategoria('fuentesdepoder', 'FuentesDePoder');
+    crearGestorCategoria('impresora', 'Impresoras');
+    crearGestorCategoria('monitor', 'Monitores');
+    crearGestorCategoria('adaptador', 'Adaptadores');
+    crearGestorCategoria('bateria', 'Baterias');
+    crearGestorCategoria('almacenamiento', 'Almacenamiento');
+    crearGestorCategoria('ram', 'Ram');
+    crearGestorCategoria('sonido', 'Sonido');
+    crearGestorCategoria('procesador', 'Procesadores');
+    crearGestorCategoria('conectividad', 'Conectividad');
+    crearGestorCategoria('telefonia', 'Telefonia');
+    crearGestorCategoria('videovigilancia', 'VideoVigilancia');
 });
 </script>

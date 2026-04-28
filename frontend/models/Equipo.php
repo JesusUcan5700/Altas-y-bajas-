@@ -94,8 +94,8 @@ class Equipo extends \yii\db\ActiveRecord
             [['ultimo_editor'], 'string', 'max' => 100],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['EMISION_INVENTARIO'], 'date', 'format' => 'yyyy-MM-dd'],
-            [['NUM_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro equipo.'],
-            [['NUM_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro equipo.'],
+            [['NUM_SERIE'], 'validarNumSerie'],
+            [['NUM_INVENTARIO'], 'validarNumInventario'],
             [['Estado'], 'string'],
             [['Estado'], 'in', 'range' => array_keys(self::getEstados())],
             [['Estado'], 'default', 'value' => self::ESTADO_ACTIVO],
@@ -166,6 +166,42 @@ class Equipo extends \yii\db\ActiveRecord
                 'skipUpdateOnClean' => false,
             ],
         ];
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUM_SERIE sea único en TODOS los registros
+     * sin importar el estado (incluyendo los dados de baja)
+     */
+    public function validarNumSerie($attribute, $params)
+    {
+        $query = self::find()->where(['NUM_SERIE' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idEQUIPO', $this->idEQUIPO]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de serie ya está registrado en otro equipo (incluso si está dado de baja).');
+        }
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUM_INVENTARIO sea único en TODOS los registros
+     * sin importar el estado (incluyendo los dados de baja)
+     */
+    public function validarNumInventario($attribute, $params)
+    {
+        $query = self::find()->where(['NUM_INVENTARIO' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idEQUIPO', $this->idEQUIPO]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de inventario ya está registrado en otro equipo (incluso si está dado de baja).');
+        }
     }
 
     /**

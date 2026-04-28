@@ -49,6 +49,8 @@ class Pila extends \yii\db\ActiveRecord
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
             [['FORMATO_PILA', 'VOLTAJE', 'CAPACIDAD', 'USO', 'DESCRIPCION', 'NUMERO_INVENTARIO', 'USO_PERSONALIZADO', 'NUMERO_SERIE'], 'safe'],
             [['FECHA', 'ESTADO', 'FECHA_VENCIMIENTO', 'FECHA_REEMPLAZO', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
+            [['NUMERO_SERIE'], 'validarNumSerie'],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
         ];
     }
 
@@ -216,6 +218,56 @@ class Pila extends \yii\db\ActiveRecord
             'Micrófonos' => 'Micrófonos',
             'Otro' => 'Otro'
         ];
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_SERIE sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumSerie($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            // Para Pila, el ID podría ser diferente. Vamos a asumir que es 'id' o buscar el primaryKey
+            $pk = $this->primaryKey();
+            if (!empty($pk) && is_array($pk)) {
+                $pkField = $pk[0];
+            } else {
+                $pkField = 'id';
+            }
+            $query->andWhere(['!=', $pkField, $this->{$pkField}]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de serie ya está registrado (incluso si está dado de baja).');
+        }
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_INVENTARIO sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumInventario($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            // Para Pila, el ID podría ser diferente. Vamos a asumir que es 'id' o buscar el primaryKey
+            $pk = $this->primaryKey();
+            if (!empty($pk) && is_array($pk)) {
+                $pkField = $pk[0];
+            } else {
+                $pkField = 'id';
+            }
+            $query->andWhere(['!=', $pkField, $this->{$pkField}]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de inventario ya está registrado (incluso si está dado de baja).');
+        }
     }
 
     /**

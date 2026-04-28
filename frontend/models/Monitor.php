@@ -97,8 +97,8 @@ class Monitor extends ActiveRecord
             [['ESTADO'], 'string', 'max' => 100, 'except' => 'simplificado'],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
             [['ultimo_editor'], 'string', 'max' => 100, 'except' => 'simplificado'],
-            [['NUMERO_SERIE'], 'unique', 'message' => 'Este número de serie ya está registrado en otro monitor.'],
-            [['NUMERO_INVENTARIO'], 'unique', 'message' => 'Este número de inventario ya está registrado en otro monitor.'],
+            [['NUMERO_SERIE'], 'validarNumSerie'],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
             [['ESTADO'], 'in', 'range' => [
                 self::ESTADO_ACTIVO, 
                 self::ESTADO_INACTIVO, 
@@ -249,9 +249,45 @@ class Monitor extends ActiveRecord
                 return $user->username;
             }
         }
-        
+
         // Si no hay usuario logueado, usar 'Sistema' como fallback
         return 'Sistema';
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_SERIE sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumSerie($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idMonitor', $this->idMonitor]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de serie ya está registrado en otro monitor (incluso si está dado de baja).');
+        }
+    }
+
+    /**
+     * Validador personalizado: Verifica que NUMERO_INVENTARIO sea único en TODOS los registros
+     * sin importar el estado
+     */
+    public function validarNumInventario($attribute, $params)
+    {
+        $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
+
+        // Si es una actualización, excluir el registro actual
+        if (!$this->isNewRecord) {
+            $query->andWhere(['!=', 'idMonitor', $this->idMonitor]);
+        }
+
+        if ($query->exists()) {
+            $this->addError($attribute, 'Este número de inventario ya está registrado en otro monitor (incluso si está dado de baja).');
+        }
     }
 
     /**
