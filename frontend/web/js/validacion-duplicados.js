@@ -1,223 +1,164 @@
 /**
- * Validación de Duplicados para Números de Serie e Inventario
- * Muestra alertas modales con SweetAlert2 cuando se detectan duplicados
+ * Validación de Duplicados - Debug Version
  */
 
-// Variable global para almacenar el modelo actual
+console.log('🔴 [VALIDACION] Script cargado correctamente');
+
 let modeloActual = '';
 let idActual = '';
+let urlVerificarDuplicado = '/site/verificar-duplicado';
 
-/**
- * Inicializa la validación de duplicados para un modelo específico
- * @param {string} modelo - Nombre del modelo (ej: 'Nobreak', 'Equipo', etc.)
- * @param {string} id - ID del registro (opcional, para edición)
- */
+// Función principal de inicialización
 function inicializarValidacionDuplicados(modelo, id = '') {
+    console.log('🔵 [VALIDACION] Inicializando con modelo:', modelo, 'ID:', id);
+
     modeloActual = modelo;
     idActual = id;
 
-    console.log('[Validación Duplicados] Inicializando para modelo:', modelo);
-
-    // Buscar campos de número de serie (todas las variaciones)
-    const camposSerie = $('input[name*="NUMERO_SERIE"], input[name*="numero_serie"], input[name*="NUM_SERIE"], input[name*="num_serie"]');
-    console.log('[Validación Duplicados] Campos de serie encontrados:', camposSerie.length, camposSerie);
-    
-    camposSerie.each(function() {
-        const campo = $(this);
-        console.log('[Validación Duplicados] Campo serie - ID:', campo.attr('id'), 'Name:', campo.attr('name'));
-        
-        // Agregar validación
-        campo.on('blur', function () {
-            console.log('[Validación Duplicados] Blur en campo de serie');
-            validarDuplicado($(this), 'serie');
-        });
-    });
-
-    // Buscar campos de número de inventario (todas las variaciones)
-    const camposInventario = $('input[name*="NUMERO_INVENTARIO"], input[name*="numero_inventario"], input[name*="NUM_INVENTARIO"], input[name*="num_inventario"]');
-    console.log('[Validación Duplicados] Campos de inventario encontrados:', camposInventario.length, camposInventario);
-    
-    camposInventario.each(function() {
-        const campo = $(this);
-        console.log('[Validación Duplicados] Campo inventario - ID:', campo.attr('id'), 'Name:', campo.attr('name'));
-        
-        // Agregar validación
-        campo.on('blur', function () {
-            console.log('[Validación Duplicados] Blur en campo de inventario');
-            validarDuplicado($(this), 'inventario');
-        });
-    });
-
-    // Prevenir envío del formulario si hay duplicados
-    $('form').on('beforeSubmit', function (e) {
-        const form = $(this);
-
-        // Verificar si hay campos marcados como inválidos
-        if (form.find('.is-invalid[data-duplicado="true"]').length > 0) {
-            e.preventDefault();
-
-            Swal.fire({
-                icon: 'error',
-                title: '¡Atención!',
-                text: 'Hay números duplicados en el formulario. Por favor corrígelos antes de continuar.',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#d33'
-            });
-
-            return false;
-        }
-    });
-    
-    console.log('[Validación Duplicados] Inicialización completada');
-}
-
-/**
- * Valida si un número está duplicado en el sistema
- * @param {jQuery} input - Campo de entrada a validar
- * @param {string} tipo - 'serie' o 'inventario'
- */
-function validarDuplicado(input, tipo) {
-    const valor = input.val().trim();
-    
-    console.log('[Validación Duplicados] Validando', tipo, ':', valor);
-
-    // No validar si el campo está vacío
-    if (!valor) {
-        input.removeClass('is-invalid is-valid');
-        input.removeAttr('data-duplicado');
-        console.log('[Validación Duplicados] Campo vacío, no se valida');
-        return;
-    }
-
-    // Mostrar indicador de carga
-    input.addClass('validating');
-    console.log('[Validación Duplicados] Enviando petición AJAX...');
-    
-    // Obtener token CSRF de Yii o de la meta tag
-    let csrfToken = '';
-    if (typeof yii !== 'undefined' && yii.getCsrfToken) {
-        csrfToken = yii.getCsrfToken();
+    // Esperar a que el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', configurarValidadores);
     } else {
-        csrfToken = $('meta[name="csrf-token"]').attr('content');
+        console.log('🟢 [VALIDACION] DOM ya cargado, configurando validadores');
+        setTimeout(configurarValidadores, 500);
     }
-    
-    console.log('[Validación Duplicados] CSRF Token:', csrfToken ? 'OK' : 'NO ENCONTRADO');
+}
 
-    $.ajax({
-        url: '/altas_bajas/frontend/web/index.php?r=site/verificar-duplicado',
-        method: 'POST',
-        data: {
-            tipo: tipo,
-            valor: valor,
-            modelo: modeloActual,
-            id: idActual,
-            _csrf: csrfToken
-        },
-        success: function (response) {
-            input.removeClass('validating');
-            console.log('[Validación Duplicados] Respuesta recibida:', response);
+function configurarValidadores() {
+    console.log('🔧 [VALIDACION] Configurando validadores...');
 
-            if (response.existe) {
-                console.log('[Validación Duplicados] DUPLICADO ENCONTRADO!');
-                
-                // Marcar como inválido
-                input.addClass('is-invalid');
-                input.removeClass('is-valid');
-                input.attr('data-duplicado', 'true');
+    // Buscar campos de SERIE
+    const camposSerie = document.querySelectorAll('input[name*="NUM_SERIE"], input[name*="NUMERO_SERIE"]');
+    console.log('📍 [VALIDACION] Campos de serie encontrados:', camposSerie.length);
 
-                // Mostrar alerta modal con SweetAlert2
-                mostrarAlertaDuplicado(tipo, valor, response.dispositivo);
-
-            } else {
-                console.log('[Validación Duplicados] No hay duplicado, campo válido');
-                
-                // Marcar como válido
-                input.removeClass('is-invalid');
-                input.addClass('is-valid');
-                input.removeAttr('data-duplicado');
+    camposSerie.forEach((campo, idx) => {
+        console.log(`  [${idx}] Campo serie: ${campo.name} (ID: ${campo.id})`);
+        campo.addEventListener('blur', function() {
+            const valor = this.value.trim();
+            console.log('👁️ [BLUR] Evento blur en serie:', valor);
+            if (valor.length > 0) {
+                validarDuplicado(this, 'serie', valor);
             }
-        },
-        error: function (xhr, status, error) {
-            input.removeClass('validating');
-            console.error('[Validación Duplicados] Error en AJAX:', status, error);
-        ole.log('[Validación Duplicados] Mostrando modal de duplicado');
-    console.log('[Validación Duplicados] SweetAlert2 disponible:', typeof Swal !== 'undefined');
-    
-    const tipoCampo = tipo === 'serie' ? 'Número de Serie' : 'Número de Inventario';
+        });
+    });
 
-    if (typeof Swal === 'undefined') {
-        console.error('[Validación Duplicados] SweetAlert2 no está cargado!');
-        alert(`¡${tipoCampo} Duplicado!\n\n${tipoCampo}: ${valor}\n\nEste número ya está registrado en:\n${dispositivo}\n\nPor favor, ingresa un número diferente.`);
-        return;
-    }
+    // Buscar campos de INVENTARIO
+    const camposInventario = document.querySelectorAll('input[name*="NUM_INVENTARIO"], input[name*="NUMERO_INVENTARIO"]');
+    console.log('📍 [VALIDACION] Campos de inventario encontrados:', camposInventario.length);
 
-    Swal.fire({
-        icon: 'warning',
-        title: '¡Número Duplicado!',
-        html: `
-            <div class="text-start">
-                <p class="mb-2"><strong>${tipoCampo}:</strong> <code>${valor}</code></p>
-                <p class="mb-2">Este número ya está registrado en:</p>
-                <div class="alert alert-danger mb-0">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>${dispositivo}</strong>
-                </div>
-                <p class="mt-3 text-muted small">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Por favor, ingresa un número diferente para continuar.
-                </p>
-            </div>
-        `,
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#d33',
-        customClass: {
-            popup: 'swal-wide',
-            htmlContainer: 'text-start'
-        },
-        didOpen: () => {
-            console.log('[Validación Duplicados] Modal abierto');="mt-3 text-muted small">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Por favor, ingresa un número diferente para continuar.
-                </p>
-            </div>
-        `,
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#d33',
-        customClass: {
-            popup: 'swal-wide',
-            htmlContainer: 'text-start'
-        },
-        didOpen: () => {
-            // Enfocar el campo después de cerrar la alerta
-            Swal.getConfirmButton().addEventListener('click', function () {
-                setTimeout(() => {
-                    $('input.is-invalid[data-duplicado="true"]').first().focus().select();
-                }, 100);
-            });
-        }
+    camposInventario.forEach((campo, idx) => {
+        console.log(`  [${idx}] Campo inventario: ${campo.name} (ID: ${campo.id})`);
+        campo.addEventListener('blur', function() {
+            const valor = this.value.trim();
+            console.log('👁️ [BLUR] Evento blur en inventario:', valor);
+            if (valor.length > 0) {
+                validarDuplicado(this, 'inventario', valor);
+            }
+        });
     });
 }
 
-// Estilos CSS para el indicador de carga
-const style = document.createElement('style');
-style.textContent = `
-    .validating {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%230d6efd' stroke-width='2'%3E%3Canimate attributeName='stroke-dasharray' values='0 50;50 0' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        background-size: 20px 20px;
+// Función para validar duplicados
+function validarDuplicado(inputElement, tipo, valor) {
+    console.log('🔍 [VALIDACION] Validando', tipo, ':', valor);
+
+    // Obtener CSRF token
+    let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    console.log('🔐 [VALIDACION] CSRF Token:', csrfToken ? 'OK' : 'NO ENCONTRADO');
+
+    // URL
+    const url = (typeof urlVerificarDuplicado !== 'undefined') ? urlVerificarDuplicado : '/site/verificar-duplicado';
+    console.log('🌐 [VALIDACION] URL:', url);
+
+    // Preparar datos
+    const formData = new FormData();
+    formData.append('tipo', tipo);
+    formData.append('valor', valor);
+    formData.append('modelo', modeloActual);
+    formData.append('id', idActual);
+    formData.append('_csrf-frontend', csrfToken);
+
+    console.log('📤 [VALIDACION] Enviando solicitud...');
+
+    // Hacer petición
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('📡 [RESPUESTA] HTTP:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('📊 [DATOS] Respuesta recibida:', data);
+
+        if (data.existe) {
+            console.log('🚨 [ALERTA] ¡DUPLICADO DETECTADO!');
+
+            // Marcar como inválido
+            inputElement.classList.add('is-invalid');
+            inputElement.classList.remove('is-valid');
+            inputElement.setAttribute('data-duplicado', 'true');
+
+            // MOSTRAR POPUP
+            mostrarPopup(tipo, valor, data);
+        } else {
+            console.log('✅ [OK] Número válido');
+            inputElement.classList.remove('is-invalid');
+            inputElement.classList.add('is-valid');
+            inputElement.removeAttribute('data-duplicado');
+        }
+    })
+    .catch(error => {
+        console.error('❌ [ERROR] Error de fetch:', error);
+        alert('Error al validar: ' + error.message);
+    });
+}
+
+// Mostrar popup
+function mostrarPopup(tipo, valor, data) {
+    console.log('🎯 [POPUP] Intentando mostrar popup...');
+    console.log('🎯 [POPUP] SweetAlert disponible:', typeof Swal !== 'undefined');
+
+    // Si SweetAlert está disponible, usarlo
+    if (typeof Swal !== 'undefined') {
+        console.log('🎯 [POPUP] Usando SweetAlert');
+
+        Swal.fire({
+            icon: 'warning',
+            title: '⚠️ ¡NÚMERO DUPLICADO!',
+            html: `
+                <div style="text-align: left;">
+                    <div style="background: #ffc107; color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h4 style="margin: 0;">Este ${tipo === 'serie' ? 'número de serie' : 'número de inventario'} ya está en uso</h4>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <p><strong>${tipo === 'serie' ? 'Número de Serie' : 'Número de Inventario'}:</strong></p>
+                        <code style="background: white; padding: 0.5rem; font-size: 1.1rem; font-weight: bold; color: #d63384;">${valor}</code>
+
+                        <p style="margin-top: 1rem;"><strong>Registrado en:</strong></p>
+                        <div style="background: white; padding: 0.5rem; border-left: 4px solid #0d6efd; color: #0d6efd;">
+                            ${data.dispositivo || 'N/A'}
+                        </div>
+
+                        ${data.detalles?.marca ? `<p style="margin: 0.5rem 0 0;"><strong>Marca:</strong> ${data.detalles.marca}</p>` : ''}
+                        ${data.detalles?.modelo ? `<p style="margin: 0.25rem 0 0;"><strong>Modelo:</strong> ${data.detalles.modelo}</p>` : ''}
+                        ${data.detalles?.estado ? `<p style="margin: 0.25rem 0 0;"><strong>Estado:</strong> ${data.detalles.estado}</p>` : ''}
+                    </div>
+                </div>
+            `,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#ff9800'
+        });
+    } else {
+        // Fallback a alert si SweetAlert no está disponible
+        console.log('🎯 [POPUP] SweetAlert NO disponible, usando alert()');
+        alert('⚠️ NÚMERO DUPLICADO\n\n' + valor + '\n\nRegistrado en: ' + (data.dispositivo || 'N/A') + '\n\nPor favor usa un número diferente');
     }
-    
-    .swal-wide {
-        width: 600px !important;
-    }
-    
-    .swal2-html-container code {
-        background: #f8f9fa;
-        padding: 2px 6px;
-        border-radius: 3px;
-        color: #d63384;
-        font-family: 'Courier New', monospace;
-    }
-`;
-document.head.appendChild(style);
+}
+
+console.log('🟢 [VALIDACION] Script listo para inicializar');

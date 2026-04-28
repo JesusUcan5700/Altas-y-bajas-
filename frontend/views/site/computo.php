@@ -8,6 +8,9 @@ use yii\widgets\ActiveForm;
 
 $this->title = 'Agregar Equipo de Cómputo';
 $this->params['breadcrumbs'][] = $this->title;
+
+// Registrar script de validación de duplicados
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['position' => \yii\web\View::POS_END, 'depends' => [\yii\web\JqueryAsset::class]]);
 ?>
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -1323,3 +1326,12 @@ function restoreFormData() {
     }
 }
 </script>
+
+<?php
+// Registrar inicialización de validación de duplicados
+$verificarUrl = \yii\helpers\Url::to(['site/verificar-duplicado']);
+$this->registerJs("
+    window.urlVerificarDuplicado = " . json_encode($verificarUrl) . ";
+    inicializarValidacionDuplicados('Equipo', '');
+", \yii\web\View::POS_END);
+?>

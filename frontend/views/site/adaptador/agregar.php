@@ -174,6 +174,10 @@ $this->registerCss("
 $this->registerJsFile('https://cdn.jsdelivr.net/npm/sweetalert2@11', ['position' => \yii\web\View::POS_HEAD]);
 
 // Registrar el script de validación de duplicados
-$this->registerJsFile('@web/js/validacion-duplicados.js', ['depends' => [\yii\web\JqueryAsset::class]]);
-$this->registerJs("inicializarValidacionDuplicados('Adaptador');", \yii\web\View::POS_READY);
+$this->registerJsFile('@web/js/validacion-duplicados.js', ['position' => \yii\web\View::POS_END, 'depends' => [\yii\web\JqueryAsset::class]]);
+$verificarUrl = \yii\helpers\Url::to(['site/verificar-duplicado']);
+$this->registerJs("
+    window.urlVerificarDuplicado = " . json_encode($verificarUrl) . ";
+    inicializarValidacionDuplicados('Adaptador');
+", \yii\web\View::POS_END);
 ?>
