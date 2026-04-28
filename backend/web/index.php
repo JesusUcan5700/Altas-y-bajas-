@@ -15,4 +15,19 @@ $config = yii\helpers\ArrayHelper::merge(
     require __DIR__ . '/../config/main-local.php'
 );
 
+// Crear carpetas de runtime necesarias
+$runtimeDirs = [
+    __DIR__ . '/../runtime',
+    __DIR__ . '/../runtime/debug',
+    __DIR__ . '/../runtime/debug/mail',
+    __DIR__ . '/../runtime/mail',
+];
+
+foreach ($runtimeDirs as $dir) {
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    @chmod($dir, 0755);
+}
+
 (new yii\web\Application($config))->run();
