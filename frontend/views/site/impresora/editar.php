@@ -266,11 +266,44 @@ $this->registerJs($script);
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <?php
-// Registrar el script de validación de duplicados
-$this->registerJsFile('@web/js/validacion-duplicados.js', ['position' => \yii\web\View::POS_END, 'depends' => [\yii\web\JqueryAsset::class]]);
-$verificarUrl = \yii\helpers\Url::to(['site/verificar-duplicado']);
+// Registrar script para mostrar errores de validación como SweetAlert
 $this->registerJs("
-    window.urlVerificarDuplicado = " . json_encode($verificarUrl) . ";
-    inicializarValidacionDuplicados('Impresora', " . $model->idImpresora . ");
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar a que SweetAlert esté disponible
+    let intento = 0;
+    const verificarSweetAlert = setInterval(() => {
+        intento++;
+
+        if (typeof Swal !== 'undefined') {
+            clearInterval(verificarSweetAlert);
+
+            // Buscar campos con errores
+            const camposConError = document.querySelectorAll('input.is-invalid, textarea.is-invalid, select.is-invalid');
+
+            if (camposConError.length > 0) {
+                // Obtener los mensajes de error
+                let erroresHTML = '<ul style=\"text-align: left; list-style: none; padding: 0;\">';
+                camposConError.forEach(campo => {
+                    const errorDiv = campo.parentElement.querySelector('.invalid-feedback');
+                    if (errorDiv) {
+                        erroresHTML += '<li style=\"margin: 0.75rem 0;\"><strong>' + (campo.getAttribute('placeholder') || campo.name) + '</strong><br><span style=\"color: #dc3545;\">' + errorDiv.textContent + '</span></li>';
+                    }
+                });
+                erroresHTML += '</ul>';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: '❌ Error de Validación',
+                    html: '<div style=\"padding: 1rem; background: #f8f9fa; border-radius: 8px; text-align: left;\">' + erroresHTML + '</div>',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#dc3545',
+                    width: '600px'
+                });
+            }
+        } else if (intento > 50) {
+            clearInterval(verificarSweetAlert);
+        }
+    }, 100);
+});
 ", \yii\web\View::POS_END);
 ?>
