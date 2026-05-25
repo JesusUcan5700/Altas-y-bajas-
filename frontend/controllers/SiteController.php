@@ -4194,6 +4194,7 @@ class SiteController extends Controller
                 $model->RESOLUCION = $model->RESOLUCION ?: 'N/A';
                 $model->fecha = date('Y-m-d');
                 $model->ubicacion_edificio = 'Catálogo';
+                $model->EDIFICIO = 'Catálogo';
             }
             
             if ($model->save()) {

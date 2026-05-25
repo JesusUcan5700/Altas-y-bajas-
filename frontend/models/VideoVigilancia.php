@@ -360,6 +360,9 @@ class VideoVigilancia extends \yii\db\ActiveRecord
             if (empty($this->fecha)) {
                 $this->fecha = date('Y-m-d');
             }
+            if (empty($this->EDIFICIO)) {
+                $this->EDIFICIO = 'N/A';
+            }
             return true;
         }
         return false;
