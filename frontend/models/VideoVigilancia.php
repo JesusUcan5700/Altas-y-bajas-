@@ -363,6 +363,18 @@ class VideoVigilancia extends \yii\db\ActiveRecord
             if (empty($this->EDIFICIO)) {
                 $this->EDIFICIO = 'N/A';
             }
+            if (empty($this->VIDEO_VIGILANCIA_COL)) {
+                $this->VIDEO_VIGILANCIA_COL = 'N/A';
+            }
+            if (empty($this->EMISION_INVENTARIO)) {
+                $this->EMISION_INVENTARIO = 'N/A';
+            }
+            if (empty($this->TIEMPO_TRANSCURRIDO)) {
+                $this->TIEMPO_TRANSCURRIDO = 'N/A';
+            }
+            if (empty($this->DESCRIPCION)) {
+                $this->DESCRIPCION = 'N/A';
+            }
             return true;
         }
         return false;
