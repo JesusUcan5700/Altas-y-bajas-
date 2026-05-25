@@ -455,49 +455,49 @@ function crearPDF(equipos) {
 function exportarPDF() {
     var jsPDF = window.jspdf.jsPDF;
     var doc = new jsPDF('landscape');
-    
+
     doc.setFontSize(18);
     doc.setTextColor(220, 53, 69);
     doc.text('Gestión de Video Vigilancia', 14, 20);
-    
+
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text('Cámaras y Equipos de Seguridad', 14, 28);
     doc.text('Fecha de exportación: ' + new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), 14, 35);
-    
+
     var tabla = document.getElementById('camarasTable');
     var filas = tabla.querySelectorAll('tbody tr');
     var datos = [];
-    
+
     filas.forEach(function(fila) {
         if (fila.style.display !== 'none') {
             var celdas = fila.querySelectorAll('td');
             if (celdas.length >= 11) {
                 datos.push([
-                    celdas[1].textContent.trim().toUpperCase(),
-                    celdas[2].textContent.trim().toUpperCase(),
-                    celdas[3].textContent.trim().toUpperCase(),
-                    celdas[4].textContent.trim().toUpperCase(),
-                    celdas[5].textContent.trim().toUpperCase(),
-                    celdas[6].textContent.trim().toUpperCase(),
-                    celdas[7].textContent.trim().toUpperCase(),
-                    celdas[8].textContent.trim().toUpperCase(),
-                    celdas[9].textContent.trim().toUpperCase(),
-                    celdas[10].textContent.trim().toUpperCase()
+                    celdas[1].textContent.trim(),
+                    celdas[2].textContent.trim(),
+                    celdas[3].textContent.trim(),
+                    celdas[4].textContent.trim(),
+                    celdas[5].textContent.trim(),
+                    celdas[6].textContent.trim(),
+                    celdas[7].textContent.trim(),
+                    celdas[8].textContent.trim(),
+                    celdas[9].textContent.trim(),
+                    celdas[10].textContent.trim()
                 ]);
             }
         }
     });
-    
+
     doc.autoTable({
         startY: 42,
-        head: [['ID', 'Marca', 'Modelo', 'Tipo', 'N° Serie', 'Estado', 'Ubicación Edificio', 'Ubicación Detalle', 'Tiempo Activo', 'Último Editor']],
+        head: [['ID', 'Marca', 'Modelo', 'Tipo Cámara', 'Estado', 'Ubicación Edificio', 'Ubicación Detalle', 'Tiempo Activo', 'Último Editor', 'Acciones']],
         body: datos,
         styles: { fontSize: 7, cellPadding: 0.5, overflow: 'linebreak', lineWidth: 0.1 },
         headStyles: { fillColor: [220, 53, 69], textColor: 255, fontStyle: 'bold', halign: 'center' },
         alternateRowStyles: { fillColor: [252, 228, 230] }
     });
-    
+
     var pageCount = doc.internal.getNumberOfPages();
     for (var i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -505,7 +505,7 @@ function exportarPDF() {
         doc.setTextColor(150);
         doc.text('Página ' + i + ' de ' + pageCount + ' - Sistema de Gestión de Componentes', doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
     }
-    
+
     doc.save('videovigilancia_' + new Date().toISOString().slice(0,10) + '.pdf');
 }
 </script>
