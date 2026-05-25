@@ -94,6 +94,9 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                     'placeholder' => 'Opcional - puedes completarlo después'
                                 ]) ?>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <?= $form->field($model, 'EMISION_INVENTARIO')->input('date', ['class' => 'form-control']) ?>
+                            </div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
