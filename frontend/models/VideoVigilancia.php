@@ -369,12 +369,17 @@ class VideoVigilancia extends \yii\db\ActiveRecord
             if (empty($this->EMISION_INVENTARIO)) {
                 $this->EMISION_INVENTARIO = 'N/A';
             }
-            if (empty($this->TIEMPO_TRANSCURRIDO)) {
-                $this->TIEMPO_TRANSCURRIDO = 'N/A';
-            }
             if (empty($this->DESCRIPCION)) {
                 $this->DESCRIPCION = 'N/A';
             }
+
+            // Calcular tiempo transcurrido automáticamente basado en la fecha
+            if (!empty($this->fecha)) {
+                $this->TIEMPO_TRANSCURRIDO = $this->getTiempoActivo();
+            } else {
+                $this->TIEMPO_TRANSCURRIDO = 'N/A';
+            }
+
             return true;
         }
         return false;

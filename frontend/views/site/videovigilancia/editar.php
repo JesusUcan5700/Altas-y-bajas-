@@ -151,9 +151,11 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                 </div>
                                 <div class="card-body">
                                     <?= $form->field($model, 'EMISION_INVENTARIO')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
-                                    
+
                                     <?= $form->field($model, 'VIDEO_VIGILANCIA_COL')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
-                                    
+
+                                    <?= $form->field($model, 'TIEMPO_TRANSCURRIDO')->textInput(['maxlength' => true, 'class' => 'form-control', 'readonly' => true, 'placeholder' => 'Se calcula automáticamente']) ?>
+
                                     <?= $form->field($model, 'EDIFICIO')->textInput(['maxlength' => true, 'class' => 'form-control', 'placeholder' => 'Campo legacy - opcional']) ?>
                                 </div>
                             </div>
@@ -188,3 +190,51 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
 <script src="<?= Yii::getAlias('@web') ?>/js/confirm-save.js"></script>
 <!-- Configuraciones específicas de confirmación -->
 <script src="<?= Yii::getAlias('@web') ?>/js/edit-confirmations-config.js"></script>
+
+<script>
+// Calcular tiempo transcurrido automáticamente
+function calcularTiempoTranscurrido() {
+    const fechaInput = document.getElementById('videovigilancia-fecha');
+    const tiempoInput = document.getElementById('videovigilancia-tiempo_transcurrido');
+
+    if (!fechaInput || !tiempoInput) return;
+
+    const fecha = fechaInput.value;
+    if (!fecha) {
+        tiempoInput.value = '';
+        return;
+    }
+
+    const fechaInicio = new Date(fecha + 'T00:00:00');
+    const fechaActual = new Date();
+
+    const diffTime = Math.abs(fechaActual - fechaInicio);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffMonths / 12);
+
+    let resultado = '';
+    if (diffYears > 0) {
+        resultado += diffYears + (diffYears === 1 ? ' año' : ' años');
+    }
+    if (diffMonths % 12 > 0) {
+        if (resultado) resultado += ', ';
+        resultado += (diffMonths % 12) + (diffMonths % 12 === 1 ? ' mes' : ' meses');
+    }
+    if (diffDays % 30 > 0 && diffYears === 0) {
+        if (resultado) resultado += ', ';
+        resultado += (diffDays % 30) + (diffDays % 30 === 1 ? ' día' : ' días');
+    }
+
+    tiempoInput.value = resultado || 'Menos de 1 día';
+}
+
+// Ejecutar al cargar
+document.addEventListener('DOMContentLoaded', calcularTiempoTranscurrido);
+
+// Ejecutar cuando cambia la fecha
+const fechaInput = document.getElementById('videovigilancia-fecha');
+if (fechaInput) {
+    fechaInput.addEventListener('change', calcularTiempoTranscurrido);
+}
+</script>
