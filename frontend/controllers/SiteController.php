@@ -4187,11 +4187,9 @@ class SiteController extends Controller
                 $timestamp = time() . rand(100, 999);
                 $model->ubicacion_detalle = 'Catálogo';
                 $model->ESTADO = 'Activo';
-                $model->TIPO = $model->TIPO ?: 'N/A';
                 $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
-                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
                 $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
-                $model->RESOLUCION = $model->RESOLUCION ?: 'N/A';
+                $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
                 $model->fecha = date('Y-m-d');
                 $model->ubicacion_edificio = 'Catálogo';
                 $model->EDIFICIO = 'Catálogo';

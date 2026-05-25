@@ -60,7 +60,7 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                             <h5><i class="fas fa-info-circle me-2"></i>Modo Catálogo</h5>
                             Esta cámara de videovigilancia se guardará SOLO con marca y modelo para uso en catálogo.
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <?= $form->field($model, 'MARCA')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
@@ -69,13 +69,25 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                 <?= $form->field($model, 'MODELO')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
                             </div>
                         </div>
-                        
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <?= $form->field($model, 'tipo_camara')->dropDownList(
+                                    VideoVigilancia::getTiposCamara(),
+                                    ['class' => 'form-select', 'prompt' => 'Seleccionar tipo de cámara']
+                                ) ?>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <?= $form->field($model, 'NUMERO_SERIE')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
+                            </div>
+                        </div>
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver', 
-                                ['videovigilancia-catalogo-listar'], 
+                            <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver',
+                                ['videovigilancia-catalogo-listar'],
                                 ['class' => 'btn btn-secondary me-md-2']) ?>
-                            
-                            <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar en Catálogo', 
+
+                            <?= Html::submitButton('<i class="fas fa-save me-2"></i>Guardar en Catálogo',
                                 ['class' => 'btn btn-danger']) ?>
                         </div>
                         
