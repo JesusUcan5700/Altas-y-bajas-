@@ -94,7 +94,7 @@ class Bateria extends \yii\db\ActiveRecord
         return [
             [['CAPACIDAD', 'USO', 'DESCRIPCION', 'FECHA_VENCIMIENTO', 'FECHA_REEMPLAZO', 'ubicacion_edificio', 'ubicacion_detalle', 'USO_PERSONALIZADO', 'NUMERO_SERIE', 'ultimo_editor'], 'default', 'value' => null],
             [['RECARGABLE'], 'default', 'value' => 0],
-            [['MARCA', 'MODELO', 'TIPO', 'FORMATO_PILA', 'VOLTAJE', 'NUMERO_INVENTARIO', 'ESTADO', 'FECHA'], 'required'],
+            [['MARCA', 'MODELO', 'TIPO', 'FORMATO_PILA', 'VOLTAJE', 'ESTADO', 'FECHA'], 'required'],
             [['RECARGABLE'], 'integer'],
             [['FECHA', 'FECHA_VENCIMIENTO', 'FECHA_REEMPLAZO', 'fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['MARCA', 'MODELO', 'USO', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],

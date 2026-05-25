@@ -82,7 +82,7 @@ class Equipo extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['CPU', 'DD', 'RAM', 'MARCA', 'MODELO', 'NUM_SERIE', 'NUM_INVENTARIO', 'EMISION_INVENTARIO', 'tipoequipo'], 'required'],
+            [['CPU', 'DD', 'RAM', 'MARCA', 'MODELO', 'EMISION_INVENTARIO', 'tipoequipo'], 'required'],
             [['FUENTE_PODER', 'MONITOR_ID', 'CPU_ID', 'DD_ID', 'DD2_ID', 'DD3_ID', 'DD4_ID', 'RAM_ID', 'RAM2_ID', 'RAM3_ID', 'RAM4_ID'], 'integer'],
             [['FUENTE_PODER', 'MONITOR_ID', 'CPU_ID', 'DD_ID', 'DD2_ID', 'DD3_ID', 'DD4_ID', 'RAM_ID', 'RAM2_ID', 'RAM3_ID', 'RAM4_ID', 'CPU_DESC', 'DD_DESC', 'RAM_DESC'], 'safe'],
             [['CPU_DESC', 'DD_DESC', 'RAM_DESC'], 'string', 'max' => 255],
@@ -94,8 +94,8 @@ class Equipo extends \yii\db\ActiveRecord
             [['ultimo_editor'], 'string', 'max' => 100],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['EMISION_INVENTARIO'], 'date', 'format' => 'yyyy-MM-dd'],
-            [['NUM_SERIE'], 'validarNumSerie'],
-            [['NUM_INVENTARIO'], 'validarNumInventario'],
+            [['NUM_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUM_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
             [['Estado'], 'string'],
             [['Estado'], 'in', 'range' => array_keys(self::getEstados())],
             [['Estado'], 'default', 'value' => self::ESTADO_ACTIVO],
