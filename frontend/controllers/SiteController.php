@@ -4180,21 +4180,20 @@ class SiteController extends Controller
     {
         $model = new VideoVigilancia();
         $modoSimplificado = Yii::$app->request->get('simple', false);
-        
+
         if ($model->load(Yii::$app->request->post())) {
             // Si es modo catálogo, establecer valores por defecto
             if ($modoSimplificado) {
-                $timestamp = time() . rand(100, 999);
                 $model->ubicacion_detalle = 'Catálogo';
                 $model->ESTADO = 'Activo';
-                $model->NUMERO_INVENTARIO = $model->NUMERO_INVENTARIO ?: 'CAT-' . $timestamp;
-                $model->NUMERO_SERIE = $model->NUMERO_SERIE ?: 'CAT-' . $timestamp;
+                // No generar números automáticamente - permiten quedarse vacíos para llenarlos después
+                // Solo usar valores por defecto si están completamente vacíos
                 $model->DESCRIPCION = $model->DESCRIPCION ?: 'Item de catálogo';
                 $model->fecha = date('Y-m-d');
                 $model->ubicacion_edificio = 'Catálogo';
                 $model->EDIFICIO = 'Catálogo';
             }
-            
+
             if ($model->save()) {
                 Yii::$app->session->setFlash('success', 'Cámara de videovigilancia agregada exitosamente.');
                 if ($modoSimplificado) {
@@ -4206,7 +4205,7 @@ class SiteController extends Controller
                 Yii::$app->session->setFlash('error', 'Error: ' . print_r($errors, true));
             }
         }
-        
+
         return $this->render('videovigilancia/editar', [
             'model' => $model,
             'modoSimplificado' => $modoSimplificado,

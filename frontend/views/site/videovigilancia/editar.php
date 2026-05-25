@@ -58,7 +58,7 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                         <!-- MODO CATÁLOGO: Solo marca y modelo -->
                         <div class="alert alert-info" role="alert">
                             <h5><i class="fas fa-info-circle me-2"></i>Modo Catálogo</h5>
-                            Esta cámara de videovigilancia se guardará SOLO con marca y modelo para uso en catálogo.
+                            <p class="mb-0">Completa marca y modelo. Los campos de serie e inventario son <strong>opcionales</strong> - puedes llenarlos ahora o después.</p>
                         </div>
 
                         <div class="row">
@@ -78,7 +78,21 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                 ) ?>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <?= $form->field($model, 'NUMERO_SERIE')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
+                                <?= $form->field($model, 'NUMERO_SERIE')->textInput([
+                                    'maxlength' => true,
+                                    'class' => 'form-control',
+                                    'placeholder' => 'Opcional - puedes completarlo después'
+                                ]) ?>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <?= $form->field($model, 'NUMERO_INVENTARIO')->textInput([
+                                    'maxlength' => true,
+                                    'class' => 'form-control',
+                                    'placeholder' => 'Opcional - puedes completarlo después'
+                                ]) ?>
                             </div>
                         </div>
 

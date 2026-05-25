@@ -76,7 +76,12 @@ class VideoVigilancia extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'required'],
+            [['MARCA', 'MODELO'], 'required'],
+            // NUMERO_SERIE e INVENTARIO son opcionales al guardar, pero si se proporcionan deben ser únicos
+            [['NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'required', 'when' => function ($model) {
+                // Solo requeridos si el registro ya estaba guardado con estos datos
+                return !$model->isNewRecord && (!empty($model->getOldAttribute('NUMERO_SERIE')) || !empty($model->getOldAttribute('NUMERO_INVENTARIO')));
+            }, 'enableClientValidation' => false],
             [['fecha'], 'date', 'format' => 'yyyy-MM-dd'],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['ultimo_editor'], 'string', 'max' => 100],
@@ -85,12 +90,13 @@ class VideoVigilancia extends \yii\db\ActiveRecord
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
-            [['NUMERO_SERIE'], 'validarNumSerie'],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
+            // Validadores personalizados solo se aplican si el campo no está vacío
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
             [['ESTADO'], 'in', 'range' => [
-                self::ESTADO_ACTIVO, 
-                self::ESTADO_INACTIVO, 
-                self::ESTADO_DANADO, 
+                self::ESTADO_ACTIVO,
+                self::ESTADO_INACTIVO,
+                self::ESTADO_DANADO,
                 self::ESTADO_MANTENIMIENTO,
                 self::ESTADO_BAJA
             ]],
@@ -411,10 +417,15 @@ class VideoVigilancia extends \yii\db\ActiveRecord
 
     /**
      * Validador personalizado: Verifica que NUMERO_SERIE sea único en TODOS los registros
-     * sin importar el estado
+     * sin importar el estado (solo si no está vacío)
      */
     public function validarNumSerie($attribute, $params)
     {
+        // Si está vacío, es válido (es opcional)
+        if (empty($this->$attribute)) {
+            return;
+        }
+
         $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
@@ -429,10 +440,15 @@ class VideoVigilancia extends \yii\db\ActiveRecord
 
     /**
      * Validador personalizado: Verifica que NUMERO_INVENTARIO sea único en TODOS los registros
-     * sin importar el estado
+     * sin importar el estado (solo si no está vacío)
      */
     public function validarNumInventario($attribute, $params)
     {
+        // Si está vacío, es válido (es opcional)
+        if (empty($this->$attribute)) {
+            return;
+        }
+
         $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
