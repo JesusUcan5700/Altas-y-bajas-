@@ -150,7 +150,7 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                     <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Información Adicional</h5>
                                 </div>
                                 <div class="card-body">
-                                    <?= $form->field($model, 'EMISION_INVENTARIO')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
+                                    <?= $form->field($model, 'EMISION_INVENTARIO')->input('date', ['class' => 'form-control']) ?>
 
                                     <?= $form->field($model, 'VIDEO_VIGILANCIA_COL')->textInput(['maxlength' => true, 'class' => 'form-control']) ?>
 
