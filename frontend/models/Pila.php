@@ -49,8 +49,8 @@ class Pila extends \yii\db\ActiveRecord
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
             [['FORMATO_PILA', 'VOLTAJE', 'CAPACIDAD', 'USO', 'DESCRIPCION', 'NUMERO_INVENTARIO', 'USO_PERSONALIZADO', 'NUMERO_SERIE'], 'safe'],
             [['FECHA', 'ESTADO', 'FECHA_VENCIMIENTO', 'FECHA_REEMPLAZO', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
-            [['NUMERO_SERIE'], 'validarNumSerie'],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
         ];
     }
 
@@ -226,6 +226,9 @@ class Pila extends \yii\db\ActiveRecord
      */
     public function validarNumSerie($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
@@ -251,6 +254,9 @@ class Pila extends \yii\db\ActiveRecord
      */
     public function validarNumInventario($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual

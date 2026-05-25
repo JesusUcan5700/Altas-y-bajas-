@@ -106,7 +106,7 @@ class Sonido extends \yii\db\ActiveRecord
     {
         return [
             // Campos requeridos
-            [['MARCA', 'MODELO', 'TIPO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'ESTADO', 'FECHA'], 'required'],
+            [['MARCA', 'MODELO', 'TIPO', 'ESTADO', 'FECHA'], 'required'],
             
             // Validación de fecha solo para FECHA (no para campos de auditoría)
             [['FECHA'], 'date', 'format' => 'php:Y-m-d'],
@@ -137,8 +137,8 @@ class Sonido extends \yii\db\ActiveRecord
             [['POTENCIA', 'CONEXIONES', 'DESCRIPCION', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
 
             // Validaciones de unicidad
-            [['NUMERO_SERIE'], 'validarNumSerie'],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
         ];
     }
 
@@ -219,6 +219,9 @@ class Sonido extends \yii\db\ActiveRecord
      */
     public function validarNumSerie($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
@@ -237,6 +240,9 @@ class Sonido extends \yii\db\ActiveRecord
      */
     public function validarNumInventario($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual

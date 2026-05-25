@@ -108,8 +108,8 @@ class Almacenamiento extends \yii\db\ActiveRecord
             [['INTERFAZ', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'DESCRIPCION', 'ESTADO', 'ubicacion_edificio', 'ubicacion_detalle', 'ultimo_editor'], 'safe'],
             
             // Validaciones de unicidad
-            [['NUMERO_SERIE'], 'validarNumSerie'],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
         ];
     }
 
@@ -192,6 +192,9 @@ class Almacenamiento extends \yii\db\ActiveRecord
      */
     public function validarNumSerie($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
@@ -210,6 +213,9 @@ class Almacenamiento extends \yii\db\ActiveRecord
      */
     public function validarNumInventario($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual

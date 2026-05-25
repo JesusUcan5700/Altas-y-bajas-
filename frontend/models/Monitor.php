@@ -97,8 +97,8 @@ class Monitor extends ActiveRecord
             [['ESTADO'], 'string', 'max' => 100, 'except' => 'simplificado'],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
             [['ultimo_editor'], 'string', 'max' => 100, 'except' => 'simplificado'],
-            [['NUMERO_SERIE'], 'validarNumSerie'],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
             [['ESTADO'], 'in', 'range' => [
                 self::ESTADO_ACTIVO, 
                 self::ESTADO_INACTIVO, 
@@ -260,6 +260,9 @@ class Monitor extends ActiveRecord
      */
     public function validarNumSerie($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
@@ -278,6 +281,9 @@ class Monitor extends ActiveRecord
      */
     public function validarNumInventario($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual

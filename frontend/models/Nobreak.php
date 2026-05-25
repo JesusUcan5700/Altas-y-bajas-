@@ -68,7 +68,7 @@ class Nobreak extends \yii\db\ActiveRecord
         return [
             // En modo catálogo solo MARCA y MODELO son requeridos
             [['MARCA', 'MODELO'], 'required'],
-            [['CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'Estado', 'EMISION_INVENTARIO'], 'required', 'except' => 'catalogo'],
+            [['CAPACIDAD', 'Estado', 'EMISION_INVENTARIO'], 'required', 'except' => 'catalogo'],
             [['EMISION_INVENTARIO', 'fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['MARCA', 'MODELO', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
             [['DESCRIPCION'], 'string', 'max' => 100],
@@ -77,8 +77,8 @@ class Nobreak extends \yii\db\ActiveRecord
             [['ultimo_editor'], 'string', 'max' => 100],
             [['Estado'], 'in', 'range' => array_keys(self::getEstados())],
             // Validaciones de unicidad
-            [['NUMERO_SERIE'], 'validarNumSerie'],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
         ];
     }
 
@@ -149,6 +149,9 @@ class Nobreak extends \yii\db\ActiveRecord
      */
     public function validarNumSerie($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
@@ -167,6 +170,9 @@ class Nobreak extends \yii\db\ActiveRecord
      */
     public function validarNumInventario($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual

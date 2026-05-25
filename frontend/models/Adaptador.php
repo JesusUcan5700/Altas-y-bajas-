@@ -47,7 +47,7 @@ class Adaptador extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO', 'TIPO', 'ESTADO', 'NUMERO_INVENTARIO', 'EMISION_INVENTARIO'], 'required'],
+            [['MARCA', 'MODELO', 'TIPO', 'ESTADO', 'EMISION_INVENTARIO'], 'required'],
             [['NUMERO_SERIE', 'ENTRADA', 'SALIDA', 'VOLTAJE', 'AMPERAJE', 'POTENCIA_WATTS', 'COMPATIBILIDAD', 'DESCRIPCION', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
             [['EMISION_INVENTARIO', 'fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['MARCA', 'MODELO', 'TIPO', 'NUMERO_SERIE', 'ENTRADA', 'SALIDA'], 'string', 'max' => 45],
@@ -65,8 +65,8 @@ class Adaptador extends \yii\db\ActiveRecord
                 self::ESTADO_MANTENIMIENTO,
                 self::ESTADO_BAJA
             ]],
-            [['NUMERO_SERIE'], 'validarNumSerie'],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
         ];
     }
 
@@ -129,6 +129,9 @@ class Adaptador extends \yii\db\ActiveRecord
      */
     public function validarNumSerie($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
@@ -147,6 +150,9 @@ class Adaptador extends \yii\db\ActiveRecord
      */
     public function validarNumInventario($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual

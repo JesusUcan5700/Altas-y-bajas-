@@ -95,7 +95,7 @@ class Procesador extends \yii\db\ActiveRecord
     {
         return [
             // Reglas para escenario por defecto (modo completo)
-            [['MARCA', 'MODELO', 'FRECUENCIA_BASE', 'NUCLEOS', 'HILOS', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'ubicacion_edificio'], 'required', 'except' => 'simplificado'],
+            [['MARCA', 'MODELO', 'FRECUENCIA_BASE', 'NUCLEOS', 'HILOS', 'ubicacion_edificio'], 'required', 'except' => 'simplificado'],
             
             // Reglas para escenario simplificado (solo marca y modelo)
             [['MARCA', 'MODELO'], 'required', 'on' => 'simplificado'],
@@ -114,8 +114,8 @@ class Procesador extends \yii\db\ActiveRecord
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
             [['ultimo_editor'], 'string', 'max' => 100],
-            [['NUMERO_SERIE'], 'validarNumSerie'],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
             [['FRECUENCIA_BASE'], 'match', 'pattern' => '/^[\d\.]+\s?(GHz|MHz)$/i', 'message' => 'Formato: 3.2 GHz o 2800 MHz', 'except' => 'simplificado'],
             [['ubicacion_edificio'], 'in', 'range' => ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U'], 'except' => 'simplificado'],
             
@@ -276,6 +276,9 @@ class Procesador extends \yii\db\ActiveRecord
      */
     public function validarNumSerie($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
@@ -294,6 +297,9 @@ class Procesador extends \yii\db\ActiveRecord
      */
     public function validarNumInventario($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual

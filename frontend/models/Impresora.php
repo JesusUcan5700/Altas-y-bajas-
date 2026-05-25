@@ -65,7 +65,7 @@ class Impresora extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['MARCA', 'MODELO', 'TIPO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'EMISION_INVENTARIO', 'Estado', 'propia_rentada'], 'required'],
+            [['MARCA', 'MODELO', 'TIPO', 'EMISION_INVENTARIO', 'Estado', 'propia_rentada'], 'required'],
             [['EMISION_INVENTARIO'], 'date', 'format' => 'yyyy-MM-dd'],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['MARCA', 'MODELO', 'TIPO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'EMISION_INVENTARIO', 'DESCRIPCION'], 'string', 'max' => 45],
@@ -74,8 +74,8 @@ class Impresora extends \yii\db\ActiveRecord
             [['propia_rentada'], 'string', 'max' => 10],
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
-            [['NUMERO_SERIE'], 'validarNumSerie'],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario'],
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
             [['Estado'], 'in', 'range' => [
                 self::ESTADO_ACTIVO, 
                 self::ESTADO_INACTIVO, 
@@ -428,6 +428,9 @@ class Impresora extends \yii\db\ActiveRecord
      */
     public function validarNumSerie($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_SERIE' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
@@ -446,6 +449,9 @@ class Impresora extends \yii\db\ActiveRecord
      */
     public function validarNumInventario($attribute, $params)
     {
+        if (empty($this->$attribute)) {
+            return;
+        }
         $query = self::find()->where(['NUMERO_INVENTARIO' => $this->$attribute]);
 
         // Si es una actualización, excluir el registro actual
