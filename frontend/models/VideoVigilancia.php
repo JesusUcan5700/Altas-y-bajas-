@@ -77,11 +77,9 @@ class VideoVigilancia extends \yii\db\ActiveRecord
     {
         return [
             [['MARCA', 'MODELO'], 'required'],
-            // NUMERO_SERIE e INVENTARIO son opcionales al guardar, pero si se proporcionan deben ser únicos
-            [['NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'required', 'when' => function ($model) {
-                // Solo requeridos si el registro ya estaba guardado con estos datos
-                return !$model->isNewRecord && (!empty($model->getOldAttribute('NUMERO_SERIE')) || !empty($model->getOldAttribute('NUMERO_INVENTARIO')));
-            }, 'enableClientValidation' => false],
+            // NUMERO_SERIE e INVENTARIO son OPCIONALES - solo se validan si tienen valor
+            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
+            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
             [['fecha'], 'date', 'format' => 'yyyy-MM-dd'],
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['ultimo_editor'], 'string', 'max' => 100],
@@ -90,9 +88,6 @@ class VideoVigilancia extends \yii\db\ActiveRecord
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
-            // Validadores personalizados solo se aplican si el campo no está vacío
-            [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],
-            [['NUMERO_INVENTARIO'], 'validarNumInventario', 'skipOnEmpty' => true],
             [['ESTADO'], 'in', 'range' => [
                 self::ESTADO_ACTIVO,
                 self::ESTADO_INACTIVO,
