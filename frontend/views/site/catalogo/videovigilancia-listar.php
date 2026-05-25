@@ -60,92 +60,81 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
                             <!-- Botones de acción múltiple -->
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="select-all" onchange="toggleSelectAll(this)">
-                                        <label class="form-check-label" for="select-all">
-                                            Seleccionar todos
-                                        </label>
-                                    </div>
+                                    <input type="text" id="searchInput" class="form-control" placeholder="Buscar en catálogo...">
                                 </div>
                                 <div class="col-md-6 text-end">
-                                    <button type="button" class="btn btn-danger" id="btn-eliminar-seleccionados" onclick="eliminarSeleccionados()" disabled>
+                                    <button type="button" class="btn btn-danger me-2" onclick="eliminarSeleccionados()" id="btnEliminar">
                                         <i class="fas fa-trash me-2"></i>Eliminar Seleccionados
                                     </button>
                                     <button type="button" class="btn btn-dark" onclick="exportarPDF()">
                                         <i class="fas fa-file-pdf me-2"></i>Exportar a PDF
                                     </button>
-                                    <span id="contador-seleccionados" class="ms-3 text-muted"></span>
                                 </div>
                             </div>
 
-                            <!-- Lista de Equipos de Video Vigilancia -->
-                            <div class="row g-3">
-                                <?php foreach ($videovigilancias as $videovigilancia): ?>
-                                    <div class="col-lg-4 col-md-6">
-                                        <div class="card h-100 shadow-sm border-dark">
-                                            <div class="card-body">
-                                                <!-- Checkbox de selección -->
-                                                <div class="form-check position-absolute" style="top: 10px; left: 10px; z-index: 1;">
-                                                    <input type="checkbox" name="videovigilancia_ids[]" class="form-check-input item-checkbox" value="<?= $videovigilancia->idVIDEO_VIGILANCIA ?>">
-                                                </div>
-                                                
-                                                <div class="d-flex align-items-start justify-content-between">
-                                                    <div class="flex-grow-1 ps-4">
-                                                        <h6 class="card-title mb-1 text-dark fw-bold">
-                                                            <i class="fas fa-video me-2"></i><?= Html::encode($videovigilancia->MARCA) ?>
-                                                        </h6>
-                                                        <p class="card-text mb-2 text-dark fw-medium"><?= Html::encode($videovigilancia->MODELO) ?></p>
-                                                        
-                                                        <!-- Estado y información -->
-                                                        <div class="mb-2">
-                                                            <span class="badge bg-success">
-                                                                <i class="fas fa-infinity me-1"></i>Catálogo
-                                                            </span>
-                                                            <span class="badge bg-dark ms-1"><?= Html::encode($videovigilancia->ESTADO) ?></span>
-                                                        </div>
-
-                                                        <!-- Tipo de cámara -->
-                                                        <small class="text-muted d-block">
-                                                            <i class="fas fa-camera me-1"></i>Tipo: <?= Html::encode($videovigilancia->tipo_camara ?? 'N/A') ?>
-                                                        </small>
-
-                                                        <!-- Número de inventario -->
-                                                        <small class="text-muted">
-                                                            <i class="fas fa-tag me-1"></i><?= Html::encode($videovigilancia->NUMERO_INVENTARIO) ?>
-                                                        </small>
-                                                    </div>
-                                                    
-                                                    <!-- Botones de acción -->
-                                                    <div class="dropdown">
-                                                        <button class="btn btn-outline-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                            <i class="fas fa-cog"></i>
-                                                        </button>
-                                                        <ul class="dropdown-menu">
-                                                            <li>
-                                                                <?= Html::a('<i class="fas fa-eye me-2"></i>Ver Detalles', ['videovigilancia-ver', 'id' => $videovigilancia->idVIDEO_VIGILANCIA], ['class' => 'dropdown-item']) ?>
-                                                            </li>
-                                                            <li>
-                                                                <?= Html::a('<i class="fas fa-edit me-2"></i>Editar', ['videovigilancia-editar', 'id' => $videovigilancia->idVIDEO_VIGILANCIA], ['class' => 'dropdown-item']) ?>
-                                                            </li>
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            <li>
-                                                                <a href="javascript:void(0)" onclick="eliminarItem(<?= $videovigilancia->idVIDEO_VIGILANCIA ?>, '<?= Html::encode($videovigilancia->MARCA . ' ' . $videovigilancia->MODELO) ?>')" class="dropdown-item text-danger">
-                                                                    <i class="fas fa-trash me-2"></i>Eliminar
-                                                                </a>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="card-footer bg-light text-muted">
-                                                <small>
-                                                    <i class="fas fa-clock me-1"></i>
-                                                    Agregado: <?= Yii::$app->formatter->asDatetime($videovigilancia->fecha_creacion ?? 'now', 'short') ?>
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
+                            <!-- Tabla de Equipos de Video Vigilancia -->
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="videosTable">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
+                                            <th>ID</th>
+                                            <th>Marca</th>
+                                            <th>Modelo</th>
+                                            <th>Tipo de Cámara</th>
+                                            <th>Estado</th>
+                                            <th>Ubicación Edificio</th>
+                                            <th>Ubicación Detalle</th>
+                                            <th><i class="fas fa-clock text-info"></i> Tiempo Activo</th>
+                                            <th><i class="fas fa-user-edit text-warning"></i> Último Editor</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($videovigilancias as $videovigilancia): ?>
+                                            <tr data-id="<?= Html::encode($videovigilancia->idVIDEO_VIGILANCIA) ?>" data-marca="<?= Html::encode($videovigilancia->MARCA ?? '-') ?>" data-modelo="<?= Html::encode($videovigilancia->MODELO ?? '-') ?>">
+                                                <td>
+                                                    <input type="checkbox" class="equipo-checkbox" value="<?= $videovigilancia->idVIDEO_VIGILANCIA ?>">
+                                                </td>
+                                                <td><?= Html::encode($videovigilancia->idVIDEO_VIGILANCIA) ?></td>
+                                                <td><?= Html::encode($videovigilancia->MARCA ?? '-') ?></td>
+                                                <td><?= Html::encode($videovigilancia->MODELO ?? '-') ?></td>
+                                                <td>
+                                                    <span class="badge bg-info">
+                                                        <?= Html::encode(ucfirst($videovigilancia->tipo_camara ?? 'fija')) ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-<?= strtolower($videovigilancia->ESTADO) === 'activo' ? 'success' : 'warning' ?>">
+                                                        <?= Html::encode($videovigilancia->ESTADO ?? '-') ?>
+                                                    </span>
+                                                </td>
+                                                <td><?= Html::encode($videovigilancia->ubicacion_edificio ?? '-') ?></td>
+                                                <td><?= Html::encode($videovigilancia->ubicacion_detalle ?? '-') ?></td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock text-info"></i>
+                                                        <?= $videovigilancia->getTiempoActivo() ?>
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-user text-warning"></i>
+                                                        <?= Html::encode($videovigilancia->getInfoUltimoEditor()) ?>
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <?= Html::a('<i class="fas fa-eye"></i>',
+                                                        ['videovigilancia-ver', 'id' => $videovigilancia->idVIDEO_VIGILANCIA],
+                                                        ['class' => 'btn btn-sm btn-info me-1', 'title' => 'Ver']) ?>
+                                                    <?= Html::a('<i class="fas fa-edit"></i>',
+                                                        ['videovigilancia-editar', 'id' => $videovigilancia->idVIDEO_VIGILANCIA],
+                                                        ['class' => 'btn btn-sm btn-danger', 'title' => 'Editar']) ?>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
                             </div>
 
                         <?php endif; ?>
@@ -176,78 +165,117 @@ $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qriou
 
 <?php
 $this->registerJs(<<<JS
-    function toggleSelectAll(checkbox) {
-        document.querySelectorAll('.item-checkbox').forEach(function(item) {
-            item.checked = checkbox.checked;
-        });
-        actualizarContador();
-    }
-    window.toggleSelectAll = toggleSelectAll;
+    // Funcionalidad de búsqueda
+    function buscarVideos() {
+        const input = document.getElementById('searchInput');
+        const filtro = input.value.toLowerCase().trim();
+        const table = document.getElementById('videosTable');
+        const tbody = table.getElementsByTagName('tbody')[0];
+        const filas = tbody.getElementsByTagName('tr');
 
-    function actualizarContador() {
-        var seleccionados = document.querySelectorAll('.item-checkbox:checked').length;
-        var contador = document.getElementById('contador-seleccionados');
-        var btnEliminar = document.getElementById('btn-eliminar-seleccionados');
-        
-        if (seleccionados > 0) {
-            contador.textContent = seleccionados + ' seleccionado(s)';
-            btnEliminar.disabled = false;
-        } else {
-            contador.textContent = '';
-            btnEliminar.disabled = true;
-        }
+        Array.from(filas).forEach(fila => {
+            if (filtro === '') {
+                fila.style.display = '';
+                return;
+            }
+
+            let encontrado = false;
+            const celdas = fila.cells;
+
+            for (let i = 0; i < celdas.length; i++) {
+                const textoCelda = celdas[i].textContent.toLowerCase();
+                if (textoCelda.includes(filtro)) {
+                    encontrado = true;
+                    break;
+                }
+            }
+
+            fila.style.display = encontrado ? '' : 'none';
+        });
     }
-    
-    document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
-        checkbox.addEventListener('change', actualizarContador);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputBusqueda = document.getElementById('searchInput');
+        if (inputBusqueda) {
+            inputBusqueda.addEventListener('keyup', buscarVideos);
+            inputBusqueda.addEventListener('input', buscarVideos);
+        }
     });
 
-    function eliminarSeleccionados() {
-        var seleccionados = [];
-        document.querySelectorAll('.item-checkbox:checked').forEach(function(checkbox) {
-            seleccionados.push(checkbox.value);
+    // Seleccionar todo
+    function toggleSelectAll(checkbox) {
+        const checkboxes = document.querySelectorAll('.equipo-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
         });
-        
-        if (seleccionados.length === 0) {
-            alert('No hay elementos seleccionados');
+    }
+
+    // Eliminar seleccionados
+    function eliminarSeleccionados() {
+        const checkboxes = document.querySelectorAll('.equipo-checkbox:checked');
+        if (checkboxes.length === 0) {
+            alert('⚠️ Por favor seleccione al menos un equipo para eliminar.');
             return;
         }
-        
-        alert('❌ PROTEGIDO: Los items del catálogo NO se pueden eliminar.\n\n✅ Son reutilizables infinitamente.\n\nEstos ' + seleccionados.length + ' equipos de video vigilancia están protegidos y disponibles para uso ilimitado.');
-    }
-    window.eliminarSeleccionados = eliminarSeleccionados;
 
-    function eliminarItem(id, nombre) {
-        alert('❌ PROTEGIDO: Los items del catálogo NO se pueden eliminar.\n\n✅ Son reutilizables infinitamente.\n\nPuedes usar este equipo de video vigilancia cuantas veces quieras sin que se agote.');
+        alert('❌ PROTEGIDO: Los items del catálogo NO se pueden eliminar.\\n\\n✅ Son reutilizables infinitamente.\\n\\nEstos ' + checkboxes.length + ' equipos de video vigilancia están protegidos y disponibles para uso ilimitado.');
     }
-    window.eliminarItem = eliminarItem;
 
+    // Exportar PDF
     function exportarPDF() {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        doc.setFontSize(16);
+        const doc = new jsPDF('landscape');
+
+        doc.setFontSize(18);
+        doc.setTextColor(0, 0, 0);
         doc.text('Catálogo de Video Vigilancia', 14, 20);
+
         doc.setFontSize(10);
-        doc.text('Fecha: ' + new Date().toLocaleDateString(), 14, 28);
-        
-        const tableData = [];
-        document.querySelectorAll('.card.border-dark').forEach(function(card) {
-            const marca = card.querySelector('.card-title')?.textContent?.trim() || '';
-            const modelo = card.querySelector('.card-text')?.textContent?.trim() || '';
-            const inventario = card.querySelector('.fa-tag')?.parentElement?.textContent?.trim() || '';
-            tableData.push([marca.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase(), modelo.toUpperCase(), inventario.toUpperCase()]);
+        doc.setTextColor(100);
+        doc.text('Fecha de exportación: ' + new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), 14, 28);
+
+        const tabla = document.getElementById('videosTable');
+        const filas = tabla.querySelectorAll('tbody tr');
+        const datos = [];
+
+        filas.forEach(function(fila) {
+            if (fila.style.display !== 'none') {
+                const celdas = fila.querySelectorAll('td');
+                if (celdas.length >= 10) {
+                    datos.push([
+                        celdas[1].textContent.trim(),
+                        celdas[2].textContent.trim(),
+                        celdas[3].textContent.trim(),
+                        celdas[4].textContent.trim(),
+                        celdas[5].textContent.trim(),
+                        celdas[6].textContent.trim(),
+                        celdas[7].textContent.trim(),
+                        celdas[8].textContent.trim(),
+                        celdas[9].textContent.trim()
+                    ]);
+                }
+            }
         });
-        
+
         doc.autoTable({
-            head: [['Marca', 'Modelo', 'Inventario']],
-            body: tableData,
-            startY: 35
+            startY: 35,
+            head: [['ID', 'Marca', 'Modelo', 'Tipo Cámara', 'Estado', 'Ubicación Edificio', 'Ubicación Detalle', 'Tiempo Activo', 'Último Editor']],
+            body: datos,
+            styles: { fontSize: 7, cellPadding: 0.5, overflow: 'linebreak', lineWidth: 0.1 },
+            headStyles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            alternateRowStyles: { fillColor: [240, 240, 240] }
         });
-        
-        doc.save('catalogo_videovigilancia.pdf');
+
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('Página ' + i + ' de ' + pageCount, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+        }
+
+        doc.save('catalogo_videovigilancia_' + new Date().toISOString().slice(0,10) + '.pdf');
     }
-    window.exportarPDF = exportarPDF;
 JS
 );
 ?>
