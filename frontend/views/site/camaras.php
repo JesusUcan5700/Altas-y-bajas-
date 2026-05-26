@@ -74,7 +74,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <?= $form->field($model, 'fecha')->input('date') ?>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'TIEMPO_TRANSCURRIDO')->textInput(['maxlength' => true]) ?>
+                        <?= $form->field($model, 'TIEMPO_TRANSCURRIDO')->textInput(['maxlength' => true, 'readonly' => true, 'class' => 'form-control']) ?>
                     </div>
                 </div>
                 <div class="row">
@@ -93,3 +93,44 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 </div>
+
+<script>
+// Calcular tiempo transcurrido automáticamente
+document.addEventListener('DOMContentLoaded', function() {
+    const inputFecha = document.getElementById('videovigilancia-fecha');
+    const inputTiempo = document.getElementById('videovigilancia-tiempo_transcurrido');
+
+    function calcularTiempo() {
+        if (!inputFecha || !inputFecha.value) return;
+
+        const fecha = new Date(inputFecha.value + 'T00:00:00');
+        const hoy = new Date();
+        const diffTime = Math.abs(hoy - fecha);
+        const dias = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const meses = Math.floor(dias / 30);
+        const anos = Math.floor(meses / 12);
+
+        let resultado = '';
+        if (anos > 0) {
+            resultado += anos + (anos === 1 ? ' año' : ' años');
+        }
+        if (meses % 12 > 0) {
+            if (resultado) resultado += ', ';
+            resultado += (meses % 12) + (meses % 12 === 1 ? ' mes' : ' meses');
+        }
+        if (dias % 30 > 0 && anos === 0) {
+            if (resultado) resultado += ', ';
+            resultado += (dias % 30) + (dias % 30 === 1 ? ' día' : ' días');
+        }
+
+        if (inputTiempo) {
+            inputTiempo.value = resultado || 'Menos de 1 día';
+        }
+    }
+
+    if (inputFecha) {
+        inputFecha.addEventListener('change', calcularTiempo);
+        calcularTiempo(); // Calcular al cargar
+    }
+});
+</script>
