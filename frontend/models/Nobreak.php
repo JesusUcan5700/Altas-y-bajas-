@@ -71,7 +71,7 @@ class Nobreak extends \yii\db\ActiveRecord
             [['CAPACIDAD', 'Estado', 'EMISION_INVENTARIO'], 'required', 'except' => 'catalogo'],
             [['EMISION_INVENTARIO', 'fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['MARCA', 'MODELO', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
-            [['DESCRIPCION'], 'string', 'max' => 100],
+            [['DESCRIPCION'], 'string'],
             [['Estado'], 'string', 'max' => 30],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
             [['ultimo_editor'], 'string', 'max' => 100],

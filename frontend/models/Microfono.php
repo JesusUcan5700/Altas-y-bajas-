@@ -44,7 +44,7 @@ class Microfono extends \yii\db\ActiveRecord
             [['PATRON_POLAR', 'FRECUENCIA_RESPUESTA', 'DESCRIPCION', 'ubicacion_edificio', 'ubicacion_detalle'], 'safe'],
             [['FECHA'], 'date', 'format' => 'php:Y-m-d'],
             [['MARCA', 'MODELO', 'TIPO', 'PATRON_POLAR', 'CONECTIVIDAD', 'FRECUENCIA_RESPUESTA', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
-            [['DESCRIPCION'], 'string', 'max' => 100],
+            [['DESCRIPCION'], 'string'],
             [['ESTADO'], 'string', 'max' => 15],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
             [['NUMERO_SERIE'], 'validarNumSerie', 'skipOnEmpty' => true],

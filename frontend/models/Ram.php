@@ -140,7 +140,7 @@ class Ram extends \yii\db\ActiveRecord
             [['CAPACIDAD', 'TIPO_INTERFAZ'], 'string', 'max' => 20, 'except' => 'simplificado'],
             [['TIPO_DDR', 'ESTADO'], 'string', 'max' => 100, 'except' => 'simplificado'],
             [['numero_serie', 'numero_inventario'], 'string', 'max' => 15, 'except' => 'simplificado'],
-            [['Descripcion'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['Descripcion'], 'string', 'except' => 'simplificado'],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
             [['ultimo_editor'], 'string', 'max' => 100, 'except' => 'simplificado'],
             

@@ -106,7 +106,8 @@ class Conectividad extends \yii\db\ActiveRecord
         return [
             [['TIPO', 'MARCA', 'MODELO', 'CANTIDAD_PUERTOS'], 'required'],
             [['fecha'], 'date', 'format' => 'yyyy-MM-dd'],
-            [['TIPO', 'MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'CANTIDAD_PUERTOS', 'DESCRIPCION'], 'string', 'max' => 45],
+            [['TIPO', 'MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'CANTIDAD_PUERTOS'], 'string', 'max' => 45],
+            [['DESCRIPCION'], 'string'],
             [['Estado'], 'string', 'max' => 100],
             
             // Validación de estados permitidos

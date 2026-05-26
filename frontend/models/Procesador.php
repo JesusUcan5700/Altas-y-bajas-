@@ -106,7 +106,7 @@ class Procesador extends \yii\db\ActiveRecord
             [['fecha'], 'date', 'format' => 'yyyy-MM-dd'],
             [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
             [['FRECUENCIA_BASE'], 'string', 'max' => 20],
-            [['DESCRIPCION'], 'string', 'max' => 100],
+            [['DESCRIPCION'], 'string'],
             [['Estado'], 'string'],
             [['Estado'], 'in', 'range' => [self::ESTADO_ACTIVO, self::ESTADO_INACTIVO, self::ESTADO_DANADO, self::ESTADO_MANTENIMIENTO, self::ESTADO_BAJA]],
             [['Estado'], 'default', 'value' => self::ESTADO_ACTIVO],

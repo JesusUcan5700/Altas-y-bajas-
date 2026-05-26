@@ -116,7 +116,7 @@ class Sonido extends \yii\db\ActiveRecord
             [['TIPO'], 'string', 'max' => 30],
             [['POTENCIA'], 'string', 'max' => 20],
             [['CONEXIONES'], 'string', 'max' => 100],
-            [['DESCRIPCION'], 'string', 'max' => 100],
+            [['DESCRIPCION'], 'string'],
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
             [['ultimo_editor'], 'string', 'max' => 100],

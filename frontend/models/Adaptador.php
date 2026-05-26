@@ -52,7 +52,7 @@ class Adaptador extends \yii\db\ActiveRecord
             [['EMISION_INVENTARIO', 'fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['MARCA', 'MODELO', 'TIPO', 'NUMERO_SERIE', 'ENTRADA', 'SALIDA'], 'string', 'max' => 45],
             [['VOLTAJE', 'AMPERAJE', 'POTENCIA_WATTS'], 'string', 'max' => 20],
-            [['COMPATIBILIDAD', 'DESCRIPCION'], 'string', 'max' => 100],
+            [['COMPATIBILIDAD', 'DESCRIPCION'], 'string'],
             [['ESTADO'], 'string', 'max' => 100],
             [['NUMERO_INVENTARIO'], 'string', 'max' => 45],
             [['ubicacion_edificio'], 'string', 'max' => 100],

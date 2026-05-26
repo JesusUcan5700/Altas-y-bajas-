@@ -100,7 +100,7 @@ class Bateria extends \yii\db\ActiveRecord
             [['MARCA', 'MODELO', 'USO', 'NUMERO_INVENTARIO'], 'string', 'max' => 45],
             [['TIPO', 'CAPACIDAD'], 'string', 'max' => 20],
             [['FORMATO_PILA', 'VOLTAJE'], 'string', 'max' => 10],
-            [['DESCRIPCION', 'USO_PERSONALIZADO', 'ultimo_editor'], 'string', 'max' => 100],
+            [['DESCRIPCION', 'USO_PERSONALIZADO', 'ultimo_editor'], 'string'],
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
             [['NUMERO_SERIE'], 'string', 'max' => 50],

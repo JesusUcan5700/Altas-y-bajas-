@@ -93,7 +93,7 @@ class Monitor extends ActiveRecord
             [['TIPO_PANTALLA'], 'string', 'max' => 25, 'except' => 'simplificado'],
             [['FRECUENCIA_HZ'], 'string', 'max' => 10, 'except' => 'simplificado'],
             [['ENTRADAS_VIDEO'], 'string', 'max' => 100, 'except' => 'simplificado'],
-            [['DESCRIPCION'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['DESCRIPCION'], 'string', 'except' => 'simplificado'],
             [['ESTADO'], 'string', 'max' => 100, 'except' => 'simplificado'],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
             [['ultimo_editor'], 'string', 'max' => 100, 'except' => 'simplificado'],

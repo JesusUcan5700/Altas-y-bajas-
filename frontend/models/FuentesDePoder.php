@@ -94,7 +94,7 @@ class FuentesDePoder extends \yii\db\ActiveRecord
             [['VOLTAJE', 'AMPERAJE', 'POTENCIA_WATTS'], 'string', 'max' => 20, 'except' => 'simplificado'],
             [['NUMERO_SERIE'], 'string', 'max' => 50, 'except' => 'simplificado'],
             [['NUMERO_INVENTARIO'], 'string', 'max' => 45, 'except' => 'simplificado'],
-            [['DESCRIPCION', 'ultimo_editor'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['DESCRIPCION', 'ultimo_editor'], 'string', 'except' => 'simplificado'],
             [['ESTADO'], 'string', 'max' => 100, 'except' => 'simplificado'],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
             

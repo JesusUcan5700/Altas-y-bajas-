@@ -102,7 +102,7 @@ class Almacenamiento extends \yii\db\ActiveRecord
             // Validaciones solo para modo normal
             [['INTERFAZ', 'ESTADO'], 'string', 'max' => 100, 'except' => 'simplificado'],
             [['NUMERO_SERIE', 'NUMERO_INVENTARIO'], 'string', 'max' => 45, 'except' => 'simplificado'],
-            [['DESCRIPCION', 'ultimo_editor'], 'string', 'max' => 100, 'except' => 'simplificado'],
+            [['DESCRIPCION', 'ultimo_editor'], 'string', 'except' => 'simplificado'],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255, 'except' => 'simplificado'],
             
             [['INTERFAZ', 'CAPACIDAD', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'DESCRIPCION', 'ESTADO', 'ubicacion_edificio', 'ubicacion_detalle', 'ultimo_editor'], 'safe'],

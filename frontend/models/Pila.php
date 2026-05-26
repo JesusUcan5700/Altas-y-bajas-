@@ -44,7 +44,7 @@ class Pila extends \yii\db\ActiveRecord
             [['MARCA', 'MODELO', 'USO', 'NUMERO_INVENTARIO', 'NUMERO_SERIE'], 'string', 'max' => 45],
             [['TIPO', 'CAPACIDAD'], 'string', 'max' => 20],
             [['FORMATO_PILA', 'VOLTAJE'], 'string', 'max' => 10],
-            [['DESCRIPCION', 'USO_PERSONALIZADO'], 'string', 'max' => 100],
+            [['DESCRIPCION', 'USO_PERSONALIZADO'], 'string'],
             [['ESTADO'], 'string', 'max' => 15],
             [['ubicacion_edificio', 'ubicacion_detalle'], 'string', 'max' => 255],
             [['FORMATO_PILA', 'VOLTAJE', 'CAPACIDAD', 'USO', 'DESCRIPCION', 'NUMERO_INVENTARIO', 'USO_PERSONALIZADO', 'NUMERO_SERIE'], 'safe'],
