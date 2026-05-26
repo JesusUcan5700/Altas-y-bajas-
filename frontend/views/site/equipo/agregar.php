@@ -193,10 +193,7 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                     'placeholder' => 'Código de inventario interno'
                                 ])->label('Número de Inventario <span class="required-field">*</span>') ?>
 
-                                <?= $form->field($model, 'EMISION_INVENTARIO')->textInput([
-                                    'maxlength' => true,
-                                    'placeholder' => 'Código de emisión'
-                                ])->label('Emisión de Inventario <span class="required-field">*</span>') ?>
+                                <?= $form->field($model, 'EMISION_INVENTARIO')->input('date', ['class' => 'form-control'])->label('Emisión de Inventario <span class="required-field">*</span>') ?>
 
                                 <?= $form->field($model, 'Estado')->dropDownList(
                                     Equipo::getEstados(),

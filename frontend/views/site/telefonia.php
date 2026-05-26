@@ -81,7 +81,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'EMISION_INVENTARIO')->textInput(['maxlength' => true]) ?>
+                        <?= $form->field($model, 'EMISION_INVENTARIO')->input('date', ['class' => 'form-control']) ?>
                     </div>
                     <div class="col-md-6 mb-3">
                         <?= $form->field($model, 'TIEMPO_TRANSCURRIDO')->textInput(['maxlength' => true]) ?>

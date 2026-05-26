@@ -108,11 +108,7 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                                 'placeholder' => 'Código de inventario interno'
                             ]) ?>
 
-                            <?= $form->field($model, 'EMISION_INVENTARIO')->textInput([
-                                'maxlength' => true,
-                                'class' => 'form-control',
-                                'placeholder' => 'Código de emisión'
-                            ]) ?>
+                            <?= $form->field($model, 'EMISION_INVENTARIO')->input('date', ['class' => 'form-control']) ?>
                         </div>
 
                         <!-- Estado y Ubicación -->

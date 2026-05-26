@@ -169,7 +169,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <?= $form->field($model, 'EMISION_INVENTARIO')->textInput(['maxlength' => true]) ?>
+                        <?= $form->field($model, 'EMISION_INVENTARIO')->input('date', ['class' => 'form-control']) ?>
                     </div>
                     <div class="col-md-6 mb-3">
                         <?= $form->field($model, 'Estado')->dropDownList(frontend\models\Equipo::getEstados(), ['prompt' => 'Selecciona Estado']) ?>
@@ -803,10 +803,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     'placeholder' => 'Código de inventario interno'
                                 ])->label('Número de Inventario <span class="required-field">*</span>') ?>
 
-                                <?= $form->field($model, 'EMISION_INVENTARIO')->textInput([
-                                    'maxlength' => true,
-                                    'placeholder' => 'Código de emisión'
-                                ])->label('Emisión de Inventario <span class="required-field">*</span>') ?>
+                                <?= $form->field($model, 'EMISION_INVENTARIO')->input('date', ['class' => 'form-control'])->label('Emisión de Inventario <span class="required-field">*</span>') ?>
 
                                 <?= $form->field($model, 'Estado')->dropDownList(
                                     Equipo::getEstados(),
