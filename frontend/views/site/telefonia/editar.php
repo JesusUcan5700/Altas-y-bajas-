@@ -139,6 +139,17 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                         </div>
                     </div>
 
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5><i class="fas fa-file-alt me-2"></i>Información Adicional</h5>
+                            <?= $form->field($model, 'DESCRIPCION')->textArea([
+                                'rows' => 4,
+                                'class' => 'form-control',
+                                'placeholder' => 'Descripción detallada del equipo de telefonía'
+                            ]) ?>
+                        </div>
+                    </div>
+
                     <div class="mt-4">
                         <div class="d-flex justify-content-between">
                             <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Lista', 

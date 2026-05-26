@@ -108,6 +108,11 @@ $this->params['breadcrumbs'][] = $this->title;
                         ])->hint('Se convertirá automáticamente a MAYÚSCULAS') ?>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <?= $form->field($model, 'DESCRIPCION')->textArea(['rows' => 4, 'placeholder' => 'Descripción del equipo de telefonía']) ?>
+                    </div>
+                </div>
                     <div class="form-group text-center mt-4">
                         <?= Html::submitButton('Guardar', ['class' => 'btn btn-success btn-lg me-2']) ?>
                         <?= Html::a('<i class="fas fa-arrow-left me-2"></i>Volver a Agregar Nuevo', ['site/agregar-nuevo'], ['class' => 'btn btn-secondary btn-lg me-2']) ?>
