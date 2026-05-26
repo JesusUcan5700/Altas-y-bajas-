@@ -133,7 +133,19 @@ $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.
                         </div>
                     </div>
 
+                    <div class="row justify-content-center">
+                        <!-- Descripción -->
+                        <div class="col-lg-8">
+                            <div class="form-section">
+                                <h5><i class="fas fa-file-alt me-2"></i>Descripción</h5>
 
+                                <?= $form->field($model, 'DESCRIPCION')->textarea([
+                                    'rows' => 4,
+                                    'placeholder' => 'Descripción detallada del dispositivo de almacenamiento'
+                                ]) ?>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Botones de Acción -->
                     <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
