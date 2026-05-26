@@ -83,6 +83,7 @@ class Telefonia extends \yii\db\ActiveRecord
             ]],
             [['ESTADO'], 'default', 'value' => self::ESTADO_ACTIVO],
             [['fecha'], 'default', 'value' => date('Y-m-d')],
+            [['EDIFICIO'], 'default', 'value' => 'Catálogo'],
             [['ubicacion_edificio'], 'in', 'range' => ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U']],
         ];
     }
