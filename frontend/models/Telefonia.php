@@ -70,7 +70,7 @@ class Telefonia extends \yii\db\ActiveRecord
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['ultimo_editor'], 'string', 'max' => 100],
             [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'EDIFICIO', 'EMISION_INVENTARIO', 'TIEMPO_TRANSCURRIDO'], 'string', 'max' => 45],
-            [['DESCRIPCION'], 'string'],
+            [['DESCRIPCION'], 'string', 'max' => 255],
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
