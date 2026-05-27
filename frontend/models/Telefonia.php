@@ -21,6 +21,7 @@ use common\models\User;
  * @property string $fecha
  * @property string $ubicacion_edificio
  * @property string $ubicacion_detalle
+ * @property string $DESCRIPCION
  * @property string $fecha_creacion
  * @property string $fecha_ultima_edicion
  * @property string $ultimo_editor
@@ -69,6 +70,7 @@ class Telefonia extends \yii\db\ActiveRecord
             [['fecha_creacion', 'fecha_ultima_edicion'], 'safe'],
             [['ultimo_editor'], 'string', 'max' => 100],
             [['MARCA', 'MODELO', 'NUMERO_SERIE', 'NUMERO_INVENTARIO', 'EDIFICIO', 'EMISION_INVENTARIO', 'TIEMPO_TRANSCURRIDO'], 'string', 'max' => 45],
+            [['DESCRIPCION'], 'string', 'max' => 255],
             [['ESTADO'], 'string', 'max' => 100],
             [['ubicacion_edificio'], 'string', 'max' => 15],
             [['ubicacion_detalle'], 'string', 'max' => 255],
@@ -103,6 +105,7 @@ class Telefonia extends \yii\db\ActiveRecord
             'ESTADO' => 'Estado',
             'EMISION_INVENTARIO' => 'Emisión de Inventario',
             'TIEMPO_TRANSCURRIDO' => 'Tiempo Transcurrido',
+            'DESCRIPCION' => 'Descripción',
             'fecha' => 'Fecha de Registro',
             'ubicacion_edificio' => 'Edificio',
             'ubicacion_detalle' => 'Ubicación Detallada',

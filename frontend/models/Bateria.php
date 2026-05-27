@@ -399,13 +399,13 @@ class Bateria extends \yii\db\ActiveRecord
     {
         return [
             'Control Remoto' => 'Control Remoto',
-            'Juguete' => 'Juguete',
-            'Reloj' => 'Reloj',
+            'Multímetro' => 'Multímetro',
+            'Micrófono' => 'Micrófono',
             'Calculadora' => 'Calculadora',
             'Radio' => 'Radio',
             'Linterna' => 'Linterna',
             'UPS' => 'UPS',
-            'Equipo Médico' => 'Equipo Médico',
+            'Tester' => 'Tester',
             'Seguridad' => 'Seguridad',
             'Cámara' => 'Cámara',
             'Mouse/Teclado' => 'Mouse/Teclado',
