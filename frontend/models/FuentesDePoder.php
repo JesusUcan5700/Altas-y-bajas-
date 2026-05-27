@@ -37,7 +37,12 @@ class FuentesDePoder extends \yii\db\ActiveRecord
             } else {
                 $this->ultimo_editor = 'Sistema';
             }
-            
+
+            // Convertir ubicacion_detalle a mayúsculas
+            if (!empty($this->ubicacion_detalle)) {
+                $this->ubicacion_detalle = strtoupper($this->ubicacion_detalle);
+            }
+
             // Si estamos en escenario simplificado, completar campos faltantes
             if ($this->scenario === 'simplificado' && $insert) {
                 $this->TIPO = $this->TIPO ?: 'PSU';
